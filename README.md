@@ -15,7 +15,7 @@
 ## 🚀 快速开始 (用户版)
 
 ### 最简单的方式 - 一键运行！
-1. **下载 OOPS** - 从 [Release页面](https://github.com/your-username/OOPS/releases) 下载 `oops.exe`
+1. **下载 OOPS** - 从 [Release页面](https://github.com/idk500/OOPS/releases) 下载 `oops.exe`
 2. **双击运行** - 直接双击 `oops.exe` 文件
 3. **选择项目** - 在弹出的窗口中选择你要检测的项目：
    - 🐉 OneDragon (绝区零一条龙)
@@ -36,14 +36,20 @@ OOPS 提供了多个预置配置模板，开箱即用：
 
 ### 命令行使用 (高级用户)
 ```bash
-# 快速扫描所有启用项目
-oops.exe --profile quick_scan
+# 默认运行（自动检测并打开报告）
+oops.exe
 
-# 完整扫描指定项目
-oops.exe --projects zenless_zone_zero --profile full_scan
+# 指定项目检测
+oops.exe --project zenless_zone_zero
 
-# 仅游戏设置检测
-oops.exe --profile game_only --projects zenless_zone_zero
+# 不自动打开浏览器
+oops.exe --no-browser
+
+# 详细输出模式
+oops.exe --verbose
+
+# 生成JSON格式报告
+oops.exe --report-format json
 ```
 
 ---
@@ -97,11 +103,12 @@ projects:
 ```
 
 ### 核心开发文档
-- **架构设计**: [`project_structure.md`](project_structure.md) - 项目结构和核心文件
-- **功能设计**: [`functional_design.md`](functional_design.md) - 详细功能模块设计  
-- **多项目支持**: [`multi_project_architecture.md`](multi_project_architecture.md) - 多项目架构
-- **游戏检测**: [`game_setting_detection.md`](game_setting_detection.md) - 游戏设置检测
-- **功能清单**: [`FEATURE_LIST.md`](FEATURE_LIST.md) - 完整功能列表
+- **文档索引**: [`DOCUMENTATION_INDEX.md`](docs/dev/DOCUMENTATION_INDEX.md) - 完整文档导航
+- **架构设计**: [`project_structure.md`](docs/dev/project_structure.md) - 项目结构和核心文件
+- **功能设计**: [`FEATURE_LIST.md`](docs/dev/FEATURE_LIST.md) - 完整功能列表
+- **实施计划**: [`IMPLEMENTATION_PLAN.md`](docs/dev/IMPLEMENTATION_PLAN.md) - 分阶段实施计划
+- **多项目支持**: [`multi_project_architecture.md`](docs/dev/multi_project_architecture.md) - 多项目架构
+- **游戏检测**: [`game_setting_yolo_fallback.md`](docs/dev/game_setting_yolo_fallback.md) - 游戏设置检测
 
 ---
 
@@ -284,25 +291,30 @@ OOPS/
 
 ## Roadmap | 发展路线
 
-### 🚀 短期目标 (v1.0)
-- [x] 基础检测框架
-- [x] 网络连通性检测
-- [x] 环境依赖检测
-- [x] 路径规范检查
-- [ ] 图形化界面
-- [ ] 一键修复功能
+### 🚀 短期目标 (v1.0 - 最小化底座)
+- [x] 项目规划和架构设计
+- [x] 文档体系建立
+- [x] 配置系统设计
+- [ ] 基础检测框架实现
+- [ ] 网络连通性检测
+- [ ] 环境依赖检测
+- [ ] 路径规范检查
+- [ ] 报告系统实现
 
-### 🔮 中期目标 (v2.0)
+### 🔮 中期目标 (v2.0 - 核心功能)
+- [ ] 图形化界面开发
 - [ ] YOLO模型识别集成
 - [ ] 跨项目配置文件适配
 - [ ] 自动化修复工具
-- [ ] 多语言支持
+- [ ] 一键修复功能
+- [ ] 知识库系统集成
 
-### 🌟 长期愿景
+### 🌟 长期愿景 (v3.0+)
 - [ ] 机器学习问题预测
 - [ ] 云端知识库同步
 - [ ] 多平台支持
 - [ ] 插件生态系统
+- [ ] 多语言支持
 
 ---
 

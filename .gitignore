@@ -1,0 +1,87 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Virtual Environment
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Logs
+*.log
+oops.log
+
+# Reports
+reports/*.html
+reports/*.json
+reports/*.markdown
+!reports/.gitkeep
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.temp_clone*/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Build artifacts
+*.exe
+!dist/*.exe
+*.dmg
+*.pkg
+*.deb
+*.rpm
+build/build/
+build/dist/
+
+# Config (keep templates)
+# configs/*.yaml
+# !configs/*_template.yaml
+
+
+ZenlessZoneZero-OneDragon-v2.3.3-Full-Environment/
+*.zip

@@ -1,0 +1,49 @@
+# OOPS 生产环境依赖
+# 开源一键问题排查器 - 核心运行依赖
+
+# 核心依赖
+python>=3.8                      # Python版本要求
+
+# 异步网络请求
+aiohttp>=3.8.0                   # 异步HTTP客户端
+aiofiles>=23.0.0                 # 异步文件操作
+
+# 配置管理
+pyyaml>=6.0                      # YAML配置解析
+pydantic>=2.0.0                  # 数据验证和设置管理
+
+# 系统操作
+psutil>=5.9.0                    # 系统信息和进程管理
+platformdirs>=3.0.0              # 跨平台目录管理
+
+# 网络和连接检测
+requests>=2.28.0                 # HTTP请求库
+urllib3>=1.26.0                  # HTTP客户端
+
+# 日志和输出
+colorama>=0.4.6                  # 跨平台彩色输出
+rich>=13.0.0                     # 丰富的终端输出
+
+# 路径和文件操作
+pathlib2>=2.3.0; python_version < '3.10'  # 路径操作（Python 3.10以下）
+pathlib>=1.0.0; python_version >= '3.10'   # 路径操作（Python 3.10+）
+
+# 数据序列化
+ujson>=5.0.0                     # 快速JSON处理
+
+# 命令行界面
+click>=8.1.0                     # 命令行界面创建
+
+# 类型提示支持
+typing-extensions>=4.5.0         # 类型提示扩展
+
+# 可选依赖（增强功能）
+# onnxruntime>=1.18.0            # ONNX运行时（用于YOLO模型，可选）
+# opencv-python>=4.5.0           # 图像处理（用于游戏设置检测，可选）
+# pyautogui>=0.9.0               # 图形界面自动化（可选）
+# pyside6>=6.5.0                 # Qt图形界面（可选）
+
+# 开发工具（仅开发环境需要，生产环境可选）
+# black>=23.0.0                  # 代码格式化
+# pytest>=7.0.0                  # 测试框架
+# mypy>=1.0.0                    # 静态类型检查

@@ -1,0 +1,72 @@
+name: Build OOPS Executable
+
+on:
+  push:
+    branches: [ main, develop ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build executable with PyInstaller
+      run: |
+        pyinstaller --clean --noconfirm build.spec
+    
+    - name: Test executable
+      run: |
+        dist\oops.exe --version
+        dist\oops.exe --help
+    
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: oops-windows-exe
+        path: dist/oops.exe
+        retention-days: 30
+    
+    - name: Create Release (on tag)
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/oops.exe
+          README.md
+          USER_GUIDE.md
+        body: |
+          ## OOPS ${{ github.ref_name }}
+          
+          ### 下载说明
+          - 下载 `oops.exe` 文件
+          - 放到项目根目录
+          - 双击运行即可
+          
+          ### 更新内容
+          请查看 [CHANGELOG.md](CHANGELOG.md)
+          
+          ### 使用文档
+          - [用户指南](USER_GUIDE.md)
+          - [快速开始](QUICKSTART.md)
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

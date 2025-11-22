@@ -1,0 +1,45 @@
+# OOPS 开发环境依赖
+# 用于开发、测试和代码质量检查
+
+# 核心开发依赖
+black>=23.0.0                    # 代码格式化
+isort>=5.12.0                    # import 排序
+flake8>=6.0.0                    # 代码风格检查
+mypy>=1.0.0                      # 静态类型检查
+pytest>=7.0.0                    # 测试框架
+pytest-asyncio>=0.21.0           # 异步测试支持
+pytest-cov>=4.0.0                # 测试覆盖率
+pre-commit>=3.0.0                # Git hooks
+
+# 代码质量工具
+bandit>=1.7.0                    # 安全漏洞检测
+safety>=2.0.0                    # 依赖安全扫描
+radon>=5.1.0                     # 代码复杂度分析
+pylint>=2.17.0                   # 代码质量分析
+
+# 文档工具
+mkdocs>=1.4.0                    # 文档生成
+mkdocs-material>=9.0.0           # Material主题
+mkdocstrings>=0.21.0             # 自动API文档
+markdown-include>=0.8.0          # Markdown包含
+
+# 构建和发布工具
+build>=0.10.0                    # PEP 517构建工具
+twine>=4.0.0                     # PyPI包上传
+setuptools>=65.0.0               # 包管理
+wheel>=0.38.0                    # 二进制包构建
+
+# 其他开发工具
+ipython>=8.0.0                   # 增强的Python shell
+jupyter>=1.0.0                   # Jupyter notebook
+pdbpp>=0.10.0                    # 增强的调试器
+coverage>=7.0.0                  # 代码覆盖率
+tox>=4.0.0                       # 多环境测试
+
+# 监控和性能工具
+memory-profiler>=0.60.0          # 内存分析
+line-profiler>=4.0.0             # 行级性能分析
+py-spy>=0.3.0                    # 采样分析器
+
+# 版本控制工具
+gitpython>=3.1.0                 # Git操作库

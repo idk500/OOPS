@@ -1,0 +1,155 @@
+# OOPS 主配置文件
+# Open-source One-click Problem Solver - 开源一键问题排查器
+
+version: '1.0'
+
+# 项目配置
+projects:
+  zenless_zone_zero:
+    enabled: true
+    config: 'configs/zenless_zone_zero.yaml'
+    description: '绝区零一条龙项目'
+    
+  maa_assistant_arknights:
+    enabled: true
+    config: 'configs/maa_assistant_arknights.yaml'
+    description: 'MAA明日方舟助手'
+    
+  ok_wuthering_waves:
+    enabled: true
+    config: 'configs/ok_wuthering_waves.yaml'
+    description: 'OK鸣潮脚本'
+    
+  generic_python:
+    enabled: true
+    config: 'configs/generic_python.yaml'
+    description: '通用Python项目'
+
+# 全局设置
+settings:
+  # 默认报告格式
+  default_report_format: 'html'
+  
+  # 是否启用自动修复功能
+  enable_auto_fix: false
+  
+  # 日志级别
+  log_level: 'INFO'
+  
+  # 最大并发检测数
+  max_concurrent_checks: 5
+  
+  # 网络检测超时时间（秒）
+  network_timeout: 10
+  
+  # 报告输出目录
+  report_output_dir: 'reports'
+  
+  # 是否包含时间戳
+  include_timestamp: true
+  
+  # 是否启用详细输出
+  verbose_output: false
+
+# 网络代理设置（可选）
+proxy:
+  enabled: false
+  http_proxy: ''
+  https_proxy: ''
+  no_proxy: 'localhost,127.0.0.1'
+
+# 镜像源配置
+mirrors:
+  pypi:
+    - 'https://pypi.org/simple/'
+    - 'https://pypi.tuna.tsinghua.edu.cn/simple/'
+    - 'https://mirrors.aliyun.com/pypi/simple/'
+  
+  git:
+    - 'https://github.com/'
+    - 'https://gitee.com/'
+  
+  github_proxy:
+    - 'https://github.moeyy.xyz/'
+    - 'https://ghfast.top/'
+    - 'https://ghfile.geekertao.top/'
+
+# 检测规则配置
+detection_rules:
+  # 网络检测规则
+  network:
+    timeout: 10
+    retry_count: 3
+    check_git_repos: true
+    check_pypi_sources: true
+    check_mirror_sites: true
+    check_project_websites: true
+  
+  # 环境检测规则
+  environment:
+    check_python_version: true
+    check_virtual_environment: true
+    check_system_libraries: true
+    check_project_dependencies: true
+  
+  # 路径检测规则
+  paths:
+    check_chinese_paths: true
+    check_permissions: true
+    check_path_length: true
+    check_special_characters: true
+    check_spaces: true
+  
+  # 硬件检测规则（高级功能）
+  hardware:
+    enabled: false
+    check_ram: true
+    check_disk: true
+    check_gpu: false
+    check_temperature: false
+
+# 报告配置
+report:
+  # 报告格式选项
+  formats:
+    html:
+      enabled: true
+      include_summary: true
+      include_details: true
+      include_fix_suggestions: true
+      theme: 'light'
+    
+    json:
+      enabled: true
+      include_timestamp: true
+      pretty_print: true
+    
+    markdown:
+      enabled: true
+      include_timestamp: true
+  
+  # 报告内容配置
+  content:
+    show_critical_issues: true
+    show_error_issues: true
+    show_warning_issues: true
+    show_info_issues: false
+    group_by_severity: true
+    include_execution_time: true
+
+# 知识库配置（未来功能）
+knowledge_base:
+  enabled: false
+  local_path: 'knowledge_base/'
+  online_sync: false
+  update_frequency: 'weekly'
+
+# 自动修复配置（未来功能）
+auto_fix:
+  enabled: false
+  backup_before_fix: true
+  confirm_before_fix: true
+  fix_categories:
+    - 'network'
+    - 'environment'
+    - 'paths'

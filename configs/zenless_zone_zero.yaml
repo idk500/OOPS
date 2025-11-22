@@ -1,0 +1,230 @@
+# 绝区零一条龙项目配置
+# Zenless Zone Zero OneDragon Configuration
+
+project:
+  name: '绝区零一条龙'
+  type: 'game_script'
+  description: '绝区零自动化脚本 - 基于YOLO的游戏自动化解决方案'
+  version: '1.0.0'
+  
+  # 项目路径配置
+  paths:
+    # 项目安装路径（自动检测，如果检测失败会提示建议路径）
+    # 留空表示使用自动检测
+    install_path: ''
+    
+    # 配置文件路径
+    config_path: '${install_path}/config'
+    
+    # 资源文件路径
+    assets_path: '${install_path}/assets'
+    
+    # 日志文件路径
+    log_path: '${install_path}/.log'
+    
+    # 虚拟环境路径
+    virtualenv_path: '${install_path}/.env'
+
+  # 项目仓库信息
+  repositories:
+    primary:
+      type: 'git'
+      url: 'https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git'
+      branch: 'main'
+    
+    mirror:
+      type: 'git'
+      url: 'https://gitee.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git'
+      branch: 'main'
+
+  # 项目文档链接
+  documentation:
+    user_guide: 'https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5'
+    quick_start: 'https://one-dragon.com/zzz/zh/docs/quick_start.html'
+    issue_tracker: 'https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon/issues'
+
+# 检测配置
+checks:
+  # 系统信息检测
+  system_info:
+    enabled: true
+  
+  # 网络连通性检测
+  network:
+    enabled: true
+    timeout: 10
+    
+    # Git仓库检测
+    git_repos:
+      - 'https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git'
+      - 'https://gitee.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git'
+    
+    # PyPI源检测
+    pypi_sources:
+      - 'https://pypi.org/simple/'
+      - 'https://pypi.tuna.tsinghua.edu.cn/simple/'
+      - 'https://mirrors.aliyun.com/pypi/simple/'
+    
+    # 镜像站点检测
+    mirror_sites:
+      - 'https://github.moeyy.xyz/'
+      - 'https://ghfast.top/'
+      - 'https://ghfile.geekertao.top/'
+    
+    # 项目官网检测
+    project_websites:
+      - 'https://one-dragon.com/zzz/zh/home.html'
+      - 'https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5'
+    
+    # 米哈游API检测
+    mihoyo_apis:
+      - 'https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getGames?launcher_id=jGHBHlcOq1&language=zh-cn'
+      - 'https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getAllGameBasicInfo?launcher_id=jGHBHlcOq1&language=zh-cn'
+    
+    # GitHub代理检测
+    github_proxies:
+      - 'https://github.moeyy.xyz/'
+      - 'https://ghfast.top/'
+      - 'https://ghfile.geekertao.top/'
+
+  # 环境依赖检测
+  environment:
+    enabled: true
+    
+    # Python版本要求
+    python_version: '>=3.8'
+    
+    # 虚拟环境要求
+    virtual_env: true
+    
+    # 系统运行库检测
+    system_libraries:
+      - 'msvc'      # Microsoft Visual C++ Build Tools
+      - 'directx'   # DirectX Runtime
+      - 'net_framework'  # .NET Framework
+    
+    # 项目特定依赖检测
+    project_dependencies:
+      - 'onnxruntime==1.18.0'
+      - 'opencv-python>=4.5.0'
+      - 'pyside6>=6.5.0'
+      - 'pyautogui>=0.9.0'
+      - 'requests>=2.25.0'
+
+  # 路径规范检测
+  paths:
+    enabled: true
+    
+    # 检查中文路径
+    check_chinese_paths: true
+    
+    # 检查权限
+    check_permissions: true
+    
+    # 检查路径长度
+    check_path_length: true
+    
+    # 检查特殊字符
+    check_special_characters: true
+    
+    # 检查空格
+    check_spaces: true
+
+  # 硬件检测（可选）
+  hardware:
+    enabled: false
+    
+    # 内存检测
+    check_ram: true
+    min_ram_gb: 8
+    
+    # 磁盘空间检测
+    check_disk: true
+    min_disk_gb: 5
+    
+    # GPU检测
+    check_gpu: false
+    min_gpu_memory_gb: 2
+    
+    # 温度检测
+    check_temperature: false
+
+  # 游戏设置检测（未来功能）
+  game_settings:
+    enabled: false
+    
+    # 分辨率设置
+    resolution:
+      check: true
+      recommended: '1920x1080'
+      aspect_ratio: '16:9'
+    
+    # 显示模式
+    display_mode:
+      check: true
+      recommended: 'windowed'
+    
+    # 图形设置
+    graphics:
+      check: false
+      quality_preset: 'medium'
+
+# 修复建议配置
+fix_suggestions:
+  # 网络问题修复
+  network:
+    - '检查网络连接状态'
+    - '关闭个人代理/VPN/加速器'
+    - '尝试更换网络环境（如使用手机热点）'
+    - '使用Gitee镜像源替代GitHub'
+  
+  # 环境问题修复
+  environment:
+    - '确保Python版本 >= 3.8'
+    - '使用虚拟环境隔离依赖'
+    - '安装必要的系统运行库（MSVC、DirectX等）'
+    - '使用镜像源加速依赖安装'
+  
+  # 路径问题修复
+  paths:
+    - '使用纯英文路径安装项目'
+    - '避免路径中包含空格和特殊字符'
+    - '确保路径权限充足'
+    - '使用较短的路径避免Windows限制'
+
+# 报告配置
+report:
+  # 报告格式
+  format: 'html'
+  
+  # 输出目录
+  output_dir: 'reports'
+  
+  # 包含时间戳
+  include_timestamp: true
+  
+  # 包含摘要
+  include_summary: true
+  
+  # 包含详细信息
+  include_details: true
+  
+  # 包含修复建议
+  include_fix_suggestions: true
+
+# 高级配置（可选）
+advanced:
+  # 调试模式
+  debug: false
+  
+  # 详细日志
+  verbose: false
+  
+  # 并行检测数
+  max_concurrent_checks: 3
+  
+  # 自定义检测规则
+  custom_rules: []
+  
+  # 排除的检测项
+  exclude_checks: []
