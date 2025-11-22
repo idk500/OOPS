@@ -53,7 +53,7 @@ jobs:
   release:
     name: Create Release
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     if: startsWith(github.ref, 'refs/tags/')
     
     steps:
@@ -64,10 +64,10 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: oops-windows
-        path: artifacts
+        path: .
     
     - name: Display structure
-      run: ls -R artifacts
+      run: dir
     
     - name: Create Release
       uses: softprops/action-gh-release@v1
@@ -106,6 +106,6 @@ jobs:
           - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
           - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
         files: |
-          artifacts/oops-windows-x64.zip
+          oops-windows-x64.zip
         draft: false
         prerelease: false
