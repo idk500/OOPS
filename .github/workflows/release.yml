@@ -6,6 +6,9 @@ on:
       - 'v*.*.*'  # 触发条件：推送版本标签，如 v1.0.0
   workflow_dispatch:  # 允许手动触发
 
+permissions:
+  contents: write  # 允许创建 Release 和上传文件
+
 jobs:
   build:
     name: Build Executable
