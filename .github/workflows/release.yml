@@ -1,0 +1,156 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # 触发条件：推送版本标签，如 v1.0.0
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  build:
+    name: Build Executable
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        python-version: ['3.11']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pyinstaller
+    
+    - name: Build with PyInstaller (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        pyinstaller --clean --noconfirm build/config/build.spec
+        
+    - name: Build with PyInstaller (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        pyinstaller --clean --noconfirm build/config/build.spec
+        
+    - name: Build with PyInstaller (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        pyinstaller --clean --noconfirm build/config/build.spec
+    
+    - name: Rename artifacts (Windows)
+      if: matrix.os == 'windows-latest'
+      run: |
+        mv dist/oops.exe dist/oops-windows-x64.exe
+    
+    - name: Rename artifacts (Linux)
+      if: matrix.os == 'ubuntu-latest'
+      run: |
+        mv dist/oops dist/oops-linux-x64
+        chmod +x dist/oops-linux-x64
+    
+    - name: Rename artifacts (macOS)
+      if: matrix.os == 'macos-latest'
+      run: |
+        mv dist/oops dist/oops-macos-x64
+        chmod +x dist/oops-macos-x64
+    
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: oops-${{ matrix.os }}
+        path: dist/oops-*
+        retention-days: 7
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    
+    - name: Display structure
+      run: ls -R artifacts
+    
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref_name }}
+        release_name: OOPS ${{ github.ref_name }}
+        body: |
+          ## OOPS - One-click Operating Pre-check System
+          
+          让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+          
+          ### 下载说明
+          
+          - **Windows用户**: 下载 `oops-windows-x64.exe`
+          - **Linux用户**: 下载 `oops-linux-x64`
+          - **macOS用户**: 下载 `oops-macos-x64`
+          
+          ### 使用方法
+          
+          1. 下载对应平台的可执行文件
+          2. Windows: 双击运行；Linux/macOS: 在终端运行 `./oops-*`
+          3. 选择要检测的项目
+          4. 查看生成的HTML报告
+          
+          ### 更新内容
+          
+          查看 [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) 了解详细更新内容。
+          
+          ### 文档
+          
+          - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
+          - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
+          - [使用说明](https://github.com/${{ github.repository }}/blob/main/USAGE.md)
+        draft: false
+        prerelease: false
+    
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/oops-windows-latest/oops-windows-x64.exe
+        asset_name: oops-windows-x64.exe
+        asset_content_type: application/octet-stream
+    
+    - name: Upload Linux Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/oops-ubuntu-latest/oops-linux-x64
+        asset_name: oops-linux-x64
+        asset_content_type: application/octet-stream
+    
+    - name: Upload macOS Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: artifacts/oops-macos-latest/oops-macos-x64
+        asset_name: oops-macos-x64
+        asset_content_type: application/octet-stream
