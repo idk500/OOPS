@@ -1,5 +1,9 @@
 # OOPS 使用说明
 
+**OOPS - One-click Operating Pre-check System (一键运行预检系统)**
+
+> 让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+
 ## 🚀 快速开始
 
 ### 最简单的使用方式

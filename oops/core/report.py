@@ -210,7 +210,7 @@ class ReportGenerator:
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OOPS 诊断报告</title>
+    <title>OOPS 运行预检报告</title>
     <style>
         :root {
             --primary-color: #2563eb;
@@ -578,7 +578,8 @@ class ReportGenerator:
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         return f"""
         <div class="header">
-            <h1>🚀 OOPS 诊断报告</h1>
+            <h1>🚀 OOPS 运行预检报告</h1>
+            <p style="color: #6b7280; margin: 5px 0;">让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly</p>
             <h2>项目: {html.escape(project_name)}</h2>
             <div class="timestamp">生成时间: {timestamp}</div>
         </div>"""

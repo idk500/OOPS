@@ -1,5 +1,9 @@
 # OOPS 用户指南
 
+**OOPS - One-click Operating Pre-check System (一键运行预检系统)**
+
+> 让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+
 ## 🚀 两种使用方式
 
 ### 方式1: 放到项目根目录（推荐）⭐

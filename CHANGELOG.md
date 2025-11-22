@@ -1,5 +1,7 @@
 # 更新日志
 
+**OOPS - One-click Operating Pre-check System (一键运行预检系统)**
+
 ## 2025-11-22 (更新7)
 
 ### ✨ 新功能

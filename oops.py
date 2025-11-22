@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 OOPS 主程序入口
-开源一键问题排查器 - Open-source One-click Problem Solver
+一键运行预检系统 - One-click Operating Pre-check System
+
+让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
 """
 
 import argparse
@@ -50,7 +52,7 @@ def setup_logging(verbose: bool = False):
 def parse_arguments():
     """解析命令行参数"""
     parser = argparse.ArgumentParser(
-        description='OOPS - 开源一键问题排查器',
+        description='OOPS - 一键运行预检系统 | 让游戏脚本运行更顺畅',
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 使用示例:
@@ -147,8 +149,11 @@ def parse_arguments():
 def show_version():
     """显示版本信息"""
     from oops import __version__
-    print(f"OOPS - 开源一键问题排查器 v{__version__}")
-    print("Open-source One-click Problem Solver")
+    print(f"OOPS - 一键运行预检系统 v{__version__}")
+    print("One-click Operating Pre-check System")
+    print()
+    print("让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly")
+    print()
     print("https://github.com/your-username/OOPS")
     sys.exit(0)
 

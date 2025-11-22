@@ -1,14 +1,15 @@
 # OOPS  
-*Open-source One-click Problem Solver*  
-*开源一键问题排查器*
+*One-click Operating Pre-check System*  
+*一键运行预检系统*
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  
 [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)
 
-> "OOPS, something went wrong?"  
-> 「哎呦，出错了？」  
-> Run one click, get a full report before your Scripts even starts.  
-> 一键点击，游戏启动前就能拿到完整体检报告。
+> 让游戏脚本运行更顺畅  
+> Run Your Game Scripts Smoothly  
+> 
+> 一键检测，运行前发现问题  
+> One-click check, find issues before running
 
 ---
 
@@ -18,10 +19,10 @@
 1. **下载 OOPS** - 从 [Release页面](https://github.com/idk500/OOPS/releases) 下载 `oops.exe`
 2. **双击运行** - 直接双击 `oops.exe` 文件
 3. **选择项目** - 在弹出的窗口中选择你要检测的项目：
-   - 🐉 OneDragon (绝区零一条龙)
-   - ⚔️ MAA (明日方舟助手)  
-   - 🌊 OK-WW (鸣潮脚本)
-   - 🔧 其他项目...
+   - 🎮 绝区零自动化脚本
+   - [TBD]⚔️ 明日方舟助手  
+   - [TBD]🌊 鸣潮自动化脚本
+   - [TBD]🔧 其他游戏脚本项目...
 4. **查看报告** - 等待检测完成，查看生成的HTML报告
 
 ### 使用预置配置模板
@@ -30,8 +31,8 @@ OOPS 提供了多个预置配置模板，开箱即用：
 | 项目 | 配置文件 | 检测内容 |
 |------|----------|----------|
 | 绝区零一条龙 | `configs/zenless_zone_zero.yaml` | 网络、环境、路径、游戏设置 |
-| MAA明日方舟助手 | `configs/maa_assistant_arknights.yaml` | 网络、环境、路径、游戏设置 |
-| OK鸣潮脚本 | `configs/ok_wuthering_waves.yaml` | 网络、环境、路径 |
+| [TBD]MAA明日方舟助手 | `configs/maa_assistant_arknights.yaml` | 网络、环境、路径、游戏设置 |
+| [TBD]OK鸣潮脚本 | `configs/ok_wuthering_waves.yaml` | 网络、环境、路径 |
 | 通用Python项目 | `configs/generic_python.yaml` | 网络、环境、虚拟环境 |
 
 ### 命令行使用 (高级用户)

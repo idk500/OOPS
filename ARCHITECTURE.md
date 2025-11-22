@@ -1,5 +1,9 @@
 # OOPS 架构文档
 
+**OOPS - One-click Operating Pre-check System (一键运行预检系统)**
+
+> 让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+
 ## 架构概览
 
 OOPS 采用了**执行器-报告器解耦**的架构设计，确保检测逻辑和报告生成相互独立。
