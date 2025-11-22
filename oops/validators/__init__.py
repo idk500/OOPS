@@ -6,11 +6,11 @@
 from oops.validators.path_validator import (
     PathValidator,
     HardwareValidator,
-    GameSettingsValidator
+    GameSettingsValidator,
 )
 
 __all__ = [
-    'PathValidator',
-    'HardwareValidator',
-    'GameSettingsValidator',
+    "PathValidator",
+    "HardwareValidator",
+    "GameSettingsValidator",
 ]

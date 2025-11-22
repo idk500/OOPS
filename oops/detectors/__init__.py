@@ -9,6 +9,6 @@ from oops.detectors.paths import PathValidationDetector
 
 __all__ = [
     "NetworkConnectivityDetector",
-    "EnvironmentDependencyDetector", 
+    "EnvironmentDependencyDetector",
     "PathValidationDetector",
 ]

@@ -15,6 +15,6 @@ from oops.core.report import ReportGenerator
 
 __all__ = [
     "DiagnosticSuite",
-    "ConfigManager", 
+    "ConfigManager",
     "ReportGenerator",
 ]

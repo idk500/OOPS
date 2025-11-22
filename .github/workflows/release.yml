@@ -33,15 +33,21 @@ jobs:
       run: |
         pyinstaller --onefile --name oops --icon oops.ico oops.py
     
-    - name: Rename artifact
+    - name: Prepare release package
       run: |
-        mv dist/oops.exe dist/oops-windows-x64.exe
+        mkdir release-package
+        mv dist/oops.exe release-package/oops-windows-x64.exe
+        cp -r configs release-package/
+    
+    - name: Create ZIP archive
+      run: |
+        Compress-Archive -Path release-package/* -DestinationPath oops-windows-x64.zip
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: oops-windows
-        path: dist/oops-windows-x64.exe
+        path: oops-windows-x64.zip
         retention-days: 7
 
   release:
@@ -74,14 +80,17 @@ jobs:
           
           ### 📦 下载
           
-          下载 `oops-windows-x64.exe` 并双击运行
+          下载 `oops-windows-x64.zip`，解压后双击运行 `oops-windows-x64.exe`
           
           ### 🚀 使用方法
           
-          1. 双击运行 `oops-windows-x64.exe`
-          2. 选择要检测的游戏脚本项目
-          3. 等待检测完成
-          4. 查看自动打开的HTML报告
+          1. 解压 `oops-windows-x64.zip`
+          2. 双击运行 `oops-windows-x64.exe`
+          3. 选择要检测的游戏脚本项目
+          4. 等待检测完成
+          5. 查看自动打开的HTML报告
+          
+          **注意**: configs 文件夹包含了预配置的游戏检测规则，请保持在同一目录下
           
           ### ✨ 主要功能
           
@@ -97,6 +106,6 @@ jobs:
           - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
           - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
         files: |
-          artifacts/oops-windows-x64.exe
+          artifacts/oops-windows-x64.zip
         draft: false
         prerelease: false
