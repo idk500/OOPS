@@ -69,43 +69,41 @@ jobs:
     - name: Display structure
       run: dir
     
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        name: OOPS ${{ github.ref_name }}
-        body: |
-          ## OOPS - One-click Operating Pre-check System
-          
-          让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
-          
-          ### 📦 下载
-          
-          下载 `oops-windows-x64.zip`，解压后双击运行 `oops-windows-x64.exe`
-          
-          ### 🚀 使用方法
-          
-          1. 解压 `oops-windows-x64.zip`
-          2. 双击运行 `oops-windows-x64.exe`
-          3. 选择要检测的游戏脚本项目
-          4. 等待检测完成
-          5. 查看自动打开的HTML报告
-          
-          **注意**: configs 文件夹包含了预配置的游戏检测规则，请保持在同一目录下
-          
-          ### ✨ 主要功能
-          
-          - 系统信息检测（CPU、内存、磁盘、GPU、显示设置）
-          - 硬件适配检测（内存、磁盘类型、分辨率验证）
-          - 网络连通性检测（Git仓库、PyPI源）
-          - 环境依赖检测（Python版本、系统库）
-          - 路径规范检测（中文路径、特殊字符）
-          
-          ### 📚 文档
-          
-          - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
-          - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
-          - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-        files: |
-          oops-windows-x64.zip
-        draft: false
-        prerelease: false
+    - name: Create Release with GitHub CLI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ github.ref_name }} `
+          oops-windows-x64.zip `
+          --title "OOPS ${{ github.ref_name }}" `
+          --notes "## OOPS - One-click Operating Pre-check System
+
+        让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+
+        ### 📦 下载
+
+        下载 \`oops-windows-x64.zip\`，解压后双击运行 \`oops-windows-x64.exe\`
+
+        ### 🚀 使用方法
+
+        1. 解压 \`oops-windows-x64.zip\`
+        2. 双击运行 \`oops-windows-x64.exe\`
+        3. 选择要检测的游戏脚本项目
+        4. 等待检测完成
+        5. 查看自动打开的HTML报告
+
+        **注意**: configs 文件夹包含了预配置的游戏检测规则，请保持在同一目录下
+
+        ### ✨ 主要功能
+
+        - 系统信息检测（CPU、内存、磁盘、GPU、显示设置）
+        - 硬件适配检测（内存、磁盘类型、分辨率验证）
+        - 网络连通性检测（Git仓库、PyPI源）
+        - 环境依赖检测（Python版本、系统库）
+        - 路径规范检测（中文路径、特殊字符）
+
+        ### 📚 文档
+
+        - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
+        - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
+        - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)"
