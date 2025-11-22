@@ -1,8 +1,6 @@
 # OOPS 生产环境依赖
-# 开源一键问题排查器 - 核心运行依赖
-
-# 核心依赖
-python>=3.8                      # Python版本要求
+# 一键运行预检系统 - 核心运行依赖
+# Python版本要求: >=3.8
 
 # 异步网络请求
 aiohttp>=3.8.0                   # 异步HTTP客户端
@@ -26,7 +24,6 @@ rich>=13.0.0                     # 丰富的终端输出
 
 # 路径和文件操作
 pathlib2>=2.3.0; python_version < '3.10'  # 路径操作（Python 3.10以下）
-pathlib>=1.0.0; python_version >= '3.10'   # 路径操作（Python 3.10+）
 
 # 数据序列化
 ujson>=5.0.0                     # 快速JSON处理
