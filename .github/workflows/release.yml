@@ -63,7 +63,7 @@ jobs:
         chmod +x dist/oops-macos-x64
     
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: oops-${{ matrix.os }}
         path: dist/oops-*
@@ -80,7 +80,7 @@ jobs:
       uses: actions/checkout@v4
     
     - name: Download all artifacts
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         path: artifacts
     
@@ -88,13 +88,9 @@ jobs:
       run: ls -R artifacts
     
     - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ github.ref_name }}
-        release_name: OOPS ${{ github.ref_name }}
+        name: OOPS ${{ github.ref_name }}
         body: |
           ## OOPS - One-click Operating Pre-check System
           
@@ -122,35 +118,9 @@ jobs:
           - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
           - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
           - [使用说明](https://github.com/${{ github.repository }}/blob/main/USAGE.md)
+        files: |
+          artifacts/oops-windows-latest/oops-windows-x64.exe
+          artifacts/oops-ubuntu-latest/oops-linux-x64
+          artifacts/oops-macos-latest/oops-macos-x64
         draft: false
         prerelease: false
-    
-    - name: Upload Windows Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/oops-windows-latest/oops-windows-x64.exe
-        asset_name: oops-windows-x64.exe
-        asset_content_type: application/octet-stream
-    
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/oops-ubuntu-latest/oops-linux-x64
-        asset_name: oops-linux-x64
-        asset_content_type: application/octet-stream
-    
-    - name: Upload macOS Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: artifacts/oops-macos-latest/oops-macos-x64
-        asset_name: oops-macos-x64
-        asset_content_type: application/octet-stream
