@@ -36,20 +36,26 @@ class HardwareDetector(DetectionRule):
                 "storage": self._get_storage_info(),
                 "display": self._get_display_info(),
             }
-            
+
             # 进行硬件要求验证
             issues = []
             warnings = []
-            
+
             # 验证分辨率（从项目配置中获取最低要求）
-            min_resolution = config.get("hardware_requirements", {}).get("min_resolution", "1920x1080")
+            min_resolution = config.get("hardware_requirements", {}).get(
+                "min_resolution", "1920x1080"
+            )
             display_info = hardware_info.get("display", {})
             current_resolution = display_info.get("primary_resolution", "")
-            
+
             if current_resolution and min_resolution:
-                if not self._check_resolution_requirement(current_resolution, min_resolution):
-                    issues.append(f"主显示器分辨率 {current_resolution} 低于最低要求 {min_resolution}")
-            
+                if not self._check_resolution_requirement(
+                    current_resolution, min_resolution
+                ):
+                    issues.append(
+                        f"主显示器分辨率 {current_resolution} 低于最低要求 {min_resolution}"
+                    )
+
             # 确定状态
             if issues:
                 status = "error"
@@ -63,10 +69,10 @@ class HardwareDetector(DetectionRule):
                 status = "success"
                 message = "硬件检测完成，所有硬件符合要求"
                 severity = "info"
-            
+
             # 更新severity
             self.severity = severity
-            
+
             return {
                 "status": status,
                 "message": message,
@@ -262,7 +268,7 @@ class HardwareDetector(DetectionRule):
         except Exception as e:
             logger.debug(f"获取显示器信息失败: {e}")
         return {}
-    
+
     def _check_resolution_requirement(self, current: str, required: str) -> bool:
         """检查分辨率是否满足要求"""
         try:
@@ -272,14 +278,14 @@ class HardwareDetector(DetectionRule):
                 return True  # 无法解析，跳过检查
             current_width = int(current_parts[0])
             current_height = int(current_parts[1])
-            
+
             # 解析要求分辨率
             required_parts = required.replace(" ", "").split("x")
             if len(required_parts) != 2:
                 return True  # 无法解析，跳过检查
             required_width = int(required_parts[0])
             required_height = int(required_parts[1])
-            
+
             # 检查是否满足要求
             return current_width >= required_width and current_height >= required_height
         except Exception as e:
@@ -290,7 +296,7 @@ class HardwareDetector(DetectionRule):
         """获取修复建议"""
         details = result.get("details", {})
         issues = details.get("issues", [])
-        
+
         if issues:
             suggestions = []
             for issue in issues:

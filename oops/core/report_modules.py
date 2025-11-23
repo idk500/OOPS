@@ -143,7 +143,11 @@ class SystemInfoModule(ReportModule):
                         """
                     else:
                         # 其他显示设置只显示状态，不显示判断性图标
-                        status_text = "启用" if value is True else "禁用" if value is False else str(value)
+                        status_text = (
+                            "启用"
+                            if value is True
+                            else "禁用" if value is False else str(value)
+                        )
                         html_content += f"""
                             <div class="info-item">
                                 <span class="info-label">{display_name}:</span>
@@ -313,6 +317,7 @@ class CheckResultsModule(ReportModule):
         super().__init__("check_results", "🔍 检测结果")
         # 导入统一渲染器
         from oops.core.unified_renderer import UnifiedDetectionRenderer
+
         self.unified_renderer = UnifiedDetectionRenderer()
 
     def generate_html(self, results: List[CheckResult]) -> str:
@@ -337,11 +342,10 @@ class CheckResultsModule(ReportModule):
             "path_validation": 7,
             "game_settings": 8,  # 游戏内设置（待开发）
         }
-        
+
         # 按照指定顺序排序，未指定的放在最后
         sorted_results = sorted(
-            results, 
-            key=lambda r: check_order.get(r.check_name, 999)
+            results, key=lambda r: check_order.get(r.check_name, 999)
         )
 
         # 使用统一渲染器渲染每个检测结果
@@ -349,7 +353,7 @@ class CheckResultsModule(ReportModule):
             rendered_result = self.unified_renderer.render_detection_result(result)
             if rendered_result:  # 统一渲染器会跳过系统信息等
                 html_content += rendered_result
-        
+
         # 添加游戏内设置占位项
         html_content += """
         <div class="detection-result info">
@@ -389,7 +393,8 @@ class CheckResultsModule(ReportModule):
                     "fix_suggestion": result.fix_suggestion,
                 }
                 for result in results
-                if result.check_name not in ["system_info", "hardware_info", "system_info_new"]
+                if result.check_name
+                not in ["system_info", "hardware_info", "system_info_new"]
             ],
         }
 

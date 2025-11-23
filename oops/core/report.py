@@ -1042,12 +1042,18 @@ class ReportGenerator:
                 if not system_info.get("basic"):
                     system_info["basic"] = {}
                 # 将系统设置添加到 basic 中
-                system_info["basic"].update({
-                    "hdr_enabled": settings_data.get("hdr_enabled", False),
-                    "night_light_enabled": settings_data.get("night_light_enabled", False),
-                    "color_filter_enabled": settings_data.get("color_filter_enabled", False),
-                    "primary_resolution": settings_data.get("primary_resolution"),
-                })
+                system_info["basic"].update(
+                    {
+                        "hdr_enabled": settings_data.get("hdr_enabled", False),
+                        "night_light_enabled": settings_data.get(
+                            "night_light_enabled", False
+                        ),
+                        "color_filter_enabled": settings_data.get(
+                            "color_filter_enabled", False
+                        ),
+                        "primary_resolution": settings_data.get("primary_resolution"),
+                    }
+                )
 
         # 如果新检测器没有数据，尝试从旧检测器获取
         if not system_info:
@@ -1161,15 +1167,15 @@ class ReportGenerator:
                 issues = result.details.get("issues", [])
                 warnings = result.details.get("warnings", [])
                 settings = result.details.get("settings", {})
-                
+
                 # 添加错误项
                 for issue in issues:
                     failed_items.append(f"<li>{html.escape(issue)}</li>")
-                
+
                 # 添加警告项
                 for warning in warnings:
                     warning_items.append(f"<li>{html.escape(warning)}</li>")
-                
+
                 # 显示检测的设置项
                 if settings:
                     settings_info = []
@@ -1185,9 +1191,11 @@ class ReportGenerator:
                             settings_info.append(f"颜色滤镜: {status}")
                         elif setting_key == "primary_resolution":
                             settings_info.append(f"主显示器分辨率: {setting_value}")
-                    
+
                     if settings_info:
-                        success_items.extend([f"<li>{info}</li>" for info in settings_info])
+                        success_items.extend(
+                            [f"<li>{info}</li>" for info in settings_info]
+                        )
             else:
                 # 处理其他检测器的标准数据结构
                 for key, value in result.details.items():

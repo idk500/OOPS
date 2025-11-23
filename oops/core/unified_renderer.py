@@ -14,22 +14,22 @@ class UnifiedDetectionRenderer:
     def __init__(self):
         self.severity_icons = {
             SeverityLevel.INFO: "ℹ️",
-            SeverityLevel.WARNING: "⚠️", 
+            SeverityLevel.WARNING: "⚠️",
             SeverityLevel.ERROR: "❌",
-            SeverityLevel.CRITICAL: "🔴"
+            SeverityLevel.CRITICAL: "🔴",
         }
-        
+
         self.severity_colors = {
             SeverityLevel.INFO: "var(--info-color)",
             SeverityLevel.WARNING: "var(--warning-color)",
-            SeverityLevel.ERROR: "var(--error-color)", 
-            SeverityLevel.CRITICAL: "var(--critical-color)"
+            SeverityLevel.ERROR: "var(--error-color)",
+            SeverityLevel.CRITICAL: "var(--critical-color)",
         }
 
     def render_detection_result(self, result: CheckResult) -> str:
         """
         渲染单个检测结果
-        
+
         格式要求：
         - 折叠显示，但显示所有通过项
         - 默认显示所有警告/错误项
@@ -38,13 +38,17 @@ class UnifiedDetectionRenderer:
         # hardware_info 现在会在检测结果中显示（用于硬件验证）
         if result.check_name in ["system_info", "system_info_new"]:
             return ""
-        
+
         # 提取检测项详情
-        success_items, warning_items, error_items = self._extract_detection_items(result)
-        
+        success_items, warning_items, error_items = self._extract_detection_items(
+            result
+        )
+
         # 生成摘要信息
-        summary = self._generate_summary(result, success_items, warning_items, error_items)
-        
+        summary = self._generate_summary(
+            result, success_items, warning_items, error_items
+        )
+
         # 生成HTML
         html_content = f"""
         <div class="detection-result {result.severity.value}">
@@ -62,11 +66,11 @@ class UnifiedDetectionRenderer:
                 {html.escape(result.message)}
             </div>
         """
-        
+
         # 默认显示错误和警告项（不通过的部分）
         if error_items or warning_items:
             html_content += '<div class="detection-issues">'
-            
+
             # 错误项
             if error_items:
                 html_content += f"""
@@ -78,12 +82,14 @@ class UnifiedDetectionRenderer:
                     # 处理缩进项
                     if item.startswith("INDENT:"):
                         actual_item = item[7:]
-                        html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                        html_content += (
+                            f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                        )
                     else:
                         html_content += f"<li>{html.escape(item)}</li>"
                 html_content += "</ul></div>"
-            
-            # 警告项  
+
+            # 警告项
             if warning_items:
                 html_content += f"""
                 <div class="issue-group warning">
@@ -94,19 +100,21 @@ class UnifiedDetectionRenderer:
                     # 处理缩进项
                     if item.startswith("INDENT:"):
                         actual_item = item[7:]
-                        html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                        html_content += (
+                            f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                        )
                     else:
                         html_content += f"<li>{html.escape(item)}</li>"
                 html_content += "</ul></div>"
-                
-            html_content += '</div>'
-        
+
+            html_content += "</div>"
+
         # 折叠的详细信息 - 包含通过项、详细数据、修复建议
         html_content += f"""
             <div id="{result.check_name}-details" class="collapsible-content" style="display: none;">
                 <div class="detection-details">
         """
-        
+
         # 通过项（在详细信息中显示）
         if success_items:
             html_content += f"""
@@ -118,15 +126,17 @@ class UnifiedDetectionRenderer:
                 # 处理缩进项（用于网络检测的子项）
                 if item.startswith("INDENT:"):
                     actual_item = item[7:]  # 移除INDENT:前缀
-                    html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                    html_content += (
+                        f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                    )
                 else:
                     html_content += f"<li>{html.escape(item)}</li>"
             html_content += "</ul></div>"
-        
+
         # 显示原始详细信息（如果有）
         if result.details and result.check_name != "network_connectivity":
             html_content += self._render_raw_details(result.details, result.check_name)
-        
+
         # 修复建议
         if result.fix_suggestion:
             html_content += f"""
@@ -135,65 +145,69 @@ class UnifiedDetectionRenderer:
                     <p>{html.escape(result.fix_suggestion)}</p>
                 </div>
             """
-        
+
         html_content += """
                 </div>
             </div>
         </div>
         """
-        
+
         return html_content
 
-    def _extract_detection_items(self, result: CheckResult) -> tuple[List[str], List[str], List[str]]:
+    def _extract_detection_items(
+        self, result: CheckResult
+    ) -> tuple[List[str], List[str], List[str]]:
         """从检测结果中提取成功、警告、错误项"""
         success_items = []
         warning_items = []
         error_items = []
-        
+
         if not result.details:
             return success_items, warning_items, error_items
-        
+
         # 处理不同检测器的数据结构
         if result.check_name == "hardware_info":
             # hardware_info 有特殊结构
             issues = result.details.get("issues", [])
             warnings = result.details.get("warnings", [])
-            
+
             error_items.extend(issues)
             warning_items.extend(warnings)
-            
+
             # 将硬件信息作为通过项显示
             cpu_info = result.details.get("cpu", {})
             if cpu_info.get("model"):
                 success_items.append(f"CPU: {cpu_info['model']}")
-            
+
             memory_info = result.details.get("memory", {})
             if memory_info.get("total"):
                 success_items.append(f"内存: {memory_info['total']}")
-            
+
             gpu_info = result.details.get("gpu")
             if gpu_info:
                 success_items.append(f"GPU: {gpu_info}")
-            
+
             storage_info = result.details.get("storage", {})
             if storage_info.get("type"):
                 success_items.append(f"磁盘类型: {storage_info['type']}")
-            
+
             display_info = result.details.get("display", {})
             if display_info.get("primary_resolution"):
                 # 如果分辨率有问题，它会在error_items中，这里只在没有问题时显示
                 if not any("分辨率" in item for item in error_items):
-                    success_items.append(f"主显示器分辨率: {display_info['primary_resolution']}")
-                    
+                    success_items.append(
+                        f"主显示器分辨率: {display_info['primary_resolution']}"
+                    )
+
         elif result.check_name == "system_settings":
             # system_settings 有特殊结构
             issues = result.details.get("issues", [])
             warnings = result.details.get("warnings", [])
             settings = result.details.get("settings", {})
-            
+
             error_items.extend(issues)
             warning_items.extend(warnings)
-            
+
             # 将设置信息作为通过项显示
             for key, value in settings.items():
                 if key == "hdr_enabled":
@@ -207,7 +221,7 @@ class UnifiedDetectionRenderer:
                     success_items.append(f"颜色滤镜: {status}")
                 elif key == "primary_resolution":
                     success_items.append(f"主显示器分辨率: {value}")
-                    
+
         elif result.check_name == "network_connectivity":
             # 网络检测的特殊处理 - 按类型分组
             type_groups = {
@@ -218,7 +232,7 @@ class UnifiedDetectionRenderer:
                 "project_website": {"name": "项目官网", "success": [], "failed": []},
                 "mihoyo_api": {"name": "米哈游API", "success": [], "failed": []},
             }
-            
+
             # 分类收集网络检测结果
             for url, detail in result.details.items():
                 if isinstance(detail, dict):
@@ -226,33 +240,43 @@ class UnifiedDetectionRenderer:
                     item_status = detail.get("status", "unknown")
                     response_time = detail.get("response_time_ms", 0)
                     error_msg = detail.get("error", "")
-                    
+
                     url_display = url.replace("https://", "").replace("http://", "")
                     if len(url_display) > 40:
                         url_display = url_display[:37] + "..."
-                    
+
                     if item_type in type_groups:
                         if item_status == "success":
-                            type_groups[item_type]["success"].append(f"{url_display} ({response_time:.0f}ms)")
+                            type_groups[item_type]["success"].append(
+                                f"{url_display} ({response_time:.0f}ms)"
+                            )
                         elif item_status in ["error", "timeout", "failure"]:
-                            error_display = error_msg[:30] + "..." if len(error_msg) > 30 else error_msg
-                            type_groups[item_type]["failed"].append(f"{url_display}: {error_display}")
-            
+                            error_display = (
+                                error_msg[:30] + "..."
+                                if len(error_msg) > 30
+                                else error_msg
+                            )
+                            type_groups[item_type]["failed"].append(
+                                f"{url_display}: {error_display}"
+                            )
+
             # 生成分类摘要 - 使用HTML友好的格式
             for type_key, group_data in type_groups.items():
                 success_count = len(group_data["success"])
                 failed_count = len(group_data["failed"])
                 total_count = success_count + failed_count
-                
+
                 if total_count > 0:
                     type_name = group_data["name"]
                     if success_count > 0:
                         # 主分类项
-                        success_items.append(f"【{type_name}】{success_count}/{total_count} 可用")
+                        success_items.append(
+                            f"【{type_name}】{success_count}/{total_count} 可用"
+                        )
                         # 添加具体的成功项（使用特殊标记，后续渲染时处理）
                         for item in group_data["success"]:
                             success_items.append(f"INDENT:{item}")
-                    
+
                     if failed_count > 0:
                         # 主分类项
                         error_items.append(f"【{type_name}】{failed_count} 项不可用")
@@ -261,14 +285,14 @@ class UnifiedDetectionRenderer:
                             error_items.append(f"INDENT:{item}")
                         if failed_count > 3:
                             error_items.append(f"INDENT:... 还有 {failed_count - 3} 项")
-                        
+
         else:
             # 通用处理：遍历details中的所有项
             for key, value in result.details.items():
                 if isinstance(value, dict):
                     status = value.get("status", "unknown")
                     message = value.get("message", value.get("error", str(value)))
-                    
+
                     if status == "success":
                         success_items.append(f"{key}: {message}")
                     elif status in ["error", "failure", "timeout"]:
@@ -283,22 +307,33 @@ class UnifiedDetectionRenderer:
                         warning_items.extend(value)
                     elif key in ["success", "passed"]:
                         success_items.extend(value)
-        
+
         return success_items, warning_items, error_items
 
-    def _generate_summary(self, result: CheckResult, success_items: List[str], 
-                         warning_items: List[str], error_items: List[str]) -> str:
+    def _generate_summary(
+        self,
+        result: CheckResult,
+        success_items: List[str],
+        warning_items: List[str],
+        error_items: List[str],
+    ) -> str:
         """生成检测结果摘要"""
         # 排除INDENT项的计数（这些是子项，不应该计入总数）
-        success_count = len([item for item in success_items if not item.startswith("INDENT:")])
-        warning_count = len([item for item in warning_items if not item.startswith("INDENT:")])
-        error_count = len([item for item in error_items if not item.startswith("INDENT:")])
-        
+        success_count = len(
+            [item for item in success_items if not item.startswith("INDENT:")]
+        )
+        warning_count = len(
+            [item for item in warning_items if not item.startswith("INDENT:")]
+        )
+        error_count = len(
+            [item for item in error_items if not item.startswith("INDENT:")]
+        )
+
         total_items = success_count + warning_count + error_count
-        
+
         if total_items == 0:
             return "无详细项目"
-        
+
         summary_parts = []
         if success_count > 0:
             summary_parts.append(f"✅ {success_count}项通过")
@@ -306,7 +341,7 @@ class UnifiedDetectionRenderer:
             summary_parts.append(f"⚠️ {warning_count}项警告")
         if error_count > 0:
             summary_parts.append(f"❌ {error_count}项错误")
-            
+
         return " | ".join(summary_parts)
 
     def _render_raw_details(self, details: Dict[str, Any], check_name: str = "") -> str:
@@ -316,11 +351,11 @@ class UnifiedDetectionRenderer:
             <h4>📋 详细数据</h4>
             <div class="details-grid">
         """
-        
+
         for key, value in details.items():
             if key in ["issues", "warnings", "settings"]:
                 continue  # 这些已经在上面处理过了
-                
+
             display_key = self._get_display_name(key)
             if isinstance(value, dict):
                 # 嵌套字典
@@ -350,12 +385,12 @@ class UnifiedDetectionRenderer:
                     <span class="detail-value">{html.escape(str(value))}</span>
                 </div>
                 """
-        
+
         html_content += """
             </div>
         </div>
         """
-        
+
         return html_content
 
     def _get_display_name(self, key: str) -> str:
@@ -363,14 +398,13 @@ class UnifiedDetectionRenderer:
         display_names = {
             # 检测器名称
             "hardware_info": "硬件信息",
-            "system_info_new": "系统信息", 
+            "system_info_new": "系统信息",
             "system_settings": "系统设置",
             "network_connectivity": "网络连通性",
             "python_environment": "Python环境",
             "environment_dependencies": "环境依赖",
             "path_validation": "路径规范",
             "system_info": "系统信息",
-            
             # 通用字段名
             "status": "状态",
             "message": "消息",
@@ -382,17 +416,15 @@ class UnifiedDetectionRenderer:
             "issues": "问题",
             "warnings": "警告",
             "recommendations": "建议",
-            
             # 系统相关
             "hdr_enabled": "HDR状态",
             "night_light_enabled": "夜间模式",
             "color_filter_enabled": "颜色滤镜",
             "primary_resolution": "主显示器分辨率",
-            
             # 网络相关
             "response_time_ms": "响应时间",
             "status_code": "状态码",
             "content_length": "内容长度",
         }
-        
+
         return display_names.get(key, key.replace("_", " ").title())

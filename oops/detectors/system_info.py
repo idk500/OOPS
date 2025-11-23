@@ -38,40 +38,55 @@ class SystemInfoDetector(DetectionRule):
 
             # 合并结果
             combined_details = {}
-            
+
             # 添加硬件信息
             if hardware_result.get("status") == "success":
                 hardware_details = hardware_result.get("details", {})
-                combined_details.update({
-                    "hardware": hardware_details.get("cpu", {}),
-                    "memory": hardware_details.get("memory", {}),
-                    "gpu": hardware_details.get("gpu"),
-                    "storage": hardware_details.get("storage", {}),
-                })
+                combined_details.update(
+                    {
+                        "hardware": hardware_details.get("cpu", {}),
+                        "memory": hardware_details.get("memory", {}),
+                        "gpu": hardware_details.get("gpu"),
+                        "storage": hardware_details.get("storage", {}),
+                    }
+                )
 
             # 添加系统信息
             if system_result.get("status") == "success":
                 system_details = system_result.get("details", {})
-                combined_details.update({
-                    "basic": system_details.get("os", {}),
-                    "python": system_details.get("python", {}),
-                    "paths": system_details.get("paths", {}),
-                })
+                combined_details.update(
+                    {
+                        "basic": system_details.get("os", {}),
+                        "python": system_details.get("python", {}),
+                        "paths": system_details.get("paths", {}),
+                    }
+                )
 
             # 添加系统设置信息
             if settings_result.get("status") == "success":
                 settings_details = settings_result.get("details", {})
                 settings_data = settings_details.get("settings", {})
                 if combined_details.get("basic"):
-                    combined_details["basic"].update({
-                        "hdr_enabled": settings_data.get("hdr_enabled", False),
-                        "night_light_enabled": settings_data.get("night_light_enabled", False),
-                        "color_filter_enabled": settings_data.get("color_filter_enabled", False),
-                        "primary_resolution": settings_data.get("primary_resolution"),
-                    })
+                    combined_details["basic"].update(
+                        {
+                            "hdr_enabled": settings_data.get("hdr_enabled", False),
+                            "night_light_enabled": settings_data.get(
+                                "night_light_enabled", False
+                            ),
+                            "color_filter_enabled": settings_data.get(
+                                "color_filter_enabled", False
+                            ),
+                            "primary_resolution": settings_data.get(
+                                "primary_resolution"
+                            ),
+                        }
+                    )
 
             # 确定整体状态 - 系统信息只关注数据收集，不关注验证结果
-            if any(result.get("status") == "error" for result in [hardware_result, system_result]):
+            if any(
+                result.get("status") == "error"
+                for result in [hardware_result, system_result]
+            ):
                 status = "error"
                 message = "系统信息收集部分失败"
             else:

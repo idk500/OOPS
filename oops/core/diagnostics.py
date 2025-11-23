@@ -260,7 +260,7 @@ class DiagnosticSuite:
 
             # 更新检测结果
             check_status = check_result.get("status", "success")
-            
+
             # 设置检测状态
             if check_status == "error":
                 result.status = CheckStatus.FAILED
@@ -274,7 +274,7 @@ class DiagnosticSuite:
             else:
                 result.status = CheckStatus.COMPLETED
                 result.severity = SeverityLevel.INFO
-            
+
             result.message = check_result.get("message", "检测完成")
             result.details = check_result.get("details", {})
             result.fix_suggestion = rule.get_fix_suggestion(check_result)
