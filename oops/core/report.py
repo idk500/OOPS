@@ -973,32 +973,21 @@ class ReportGenerator:
 </head>
 <body>
     <div class="container">
-        <div class="report-notice" style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
-            <h3 style="margin: 0 0 10px 0; color: #f59e0b;">📋 报告提交说明</h3>
-            <p style="margin: 0 0 10px 0;">
-                <strong>⚠️ 请勿拍照或截图！</strong>请直接提交 YAML 格式的报告文件。
+        <div class="report-info" style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 12px 15px; margin-bottom: 20px; font-size: 14px;">
+            <p style="margin: 0 0 8px 0; color: #1e40af;">
+                💡 <strong>提示</strong>：提交问题时请附带 YAML 格式的报告文件（而非截图），以便开发者准确分析。
             </p>
-            <p style="margin: 0 0 10px 0;">
-                YAML 报告包含完整的检测数据，便于开发者分析问题。
-            </p>
-            <button onclick="openReportFolder()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+            <button onclick="openReportFolder()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
                 📁 打开报告文件夹
             </button>
-            <span id="yaml-path" style="margin-left: 15px; color: #6b7280; font-size: 14px;"></span>
+            <span id="yaml-path" style="margin-left: 10px; color: #6b7280; font-size: 13px;"></span>
         </div>
         <script>
             function openReportFolder() {
-                // 获取当前 HTML 文件的路径
                 const htmlPath = window.location.pathname;
-                const reportDir = htmlPath.substring(0, htmlPath.lastIndexOf('/'));
-                
-                // 尝试打开文件夹（仅在本地文件系统有效）
                 if (window.location.protocol === 'file:') {
-                    // 显示路径信息
                     const yamlPath = htmlPath.replace('.html', '.yaml');
                     document.getElementById('yaml-path').textContent = 'YAML 报告: ' + yamlPath.split('/').pop();
-                    
-                    // 提示用户
                     alert('YAML 报告位于同一目录下\\n\\n文件名: ' + yamlPath.split('/').pop() + '\\n\\n请在文件管理器中找到该文件并提交。');
                 } else {
                     alert('请在本地打开此报告以访问 YAML 文件。');
@@ -1010,6 +999,26 @@ class ReportGenerator:
     def _get_html_footer(self) -> str:
         """获取HTML底部模板"""
         return """
+        <div class="about-section" style="margin-top: 40px; padding: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+            <h3 style="margin: 0 0 15px 0; color: #374151; font-size: 18px;">ℹ️ 关于 OOPS</h3>
+            <p style="margin: 0 0 10px 0; color: #6b7280; line-height: 1.6;">
+                <strong>OOPS</strong> (One-click Operating Pre-check System) - 一键运行预检系统
+            </p>
+            <p style="margin: 0 0 10px 0; color: #6b7280; line-height: 1.6;">
+                让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+            </p>
+            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
+                <p style="margin: 0 0 8px 0; color: #6b7280;">
+                    🔗 <strong>项目地址</strong>: <a href="https://github.com/idk500/OOPS" target="_blank" style="color: #3b82f6; text-decoration: none;">https://github.com/idk500/OOPS</a>
+                </p>
+                <p style="margin: 0 0 8px 0; color: #6b7280;">
+                    🐛 <strong>问题反馈</strong>: <a href="https://github.com/idk500/OOPS/issues" target="_blank" style="color: #3b82f6; text-decoration: none;">提交 Issue</a>
+                </p>
+                <p style="margin: 0; color: #9ca3af; font-size: 13px;">
+                    如有问题或建议，欢迎在 GitHub 上提交 Issue
+                </p>
+            </div>
+        </div>
     </div>
 </body>
 </html>"""

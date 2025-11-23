@@ -33,21 +33,34 @@ jobs:
       run: |
         pyinstaller --onefile --name oops --icon oops.ico oops.py
     
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        $version = "${{ github.ref_name }}"
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+    
     - name: Prepare release package
       run: |
         mkdir release-package
         mv dist/oops.exe release-package/oops-windows-x64.exe
         cp -r configs release-package/
+        cp README.md release-package/
+        cp QUICKSTART.md release-package/
+        cp CHANGELOG.md release-package/
     
-    - name: Create ZIP archive
+    - name: Create ZIP archive with version
       run: |
-        Compress-Archive -Path release-package/* -DestinationPath oops-windows-x64.zip
+        $version = "${{ steps.get_version.outputs.version }}"
+        $zipName = "oops-windows-x64_$version.zip"
+        Compress-Archive -Path release-package/* -DestinationPath $zipName
+        echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
     
     - name: Upload artifact
       uses: actions/upload-artifact@v4
       with:
         name: oops-windows
-        path: oops-windows-x64.zip
+        path: ${{ env.ZIP_NAME }}
         retention-days: 7
 
   release:
@@ -145,12 +158,18 @@ jobs:
         Get-Content release-notes.md -Encoding UTF8
         echo "==========================="
     
+    - name: Get ZIP filename
+      run: |
+        $zipFile = Get-ChildItem -Filter "oops-windows-x64_*.zip" | Select-Object -First 1 -ExpandProperty Name
+        echo "ZIP_FILE=$zipFile" >> $env:GITHUB_ENV
+        echo "Found ZIP file: $zipFile"
+    
     - name: Create Release with GitHub CLI
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh release create ${{ github.ref_name }} `
-          oops-windows-x64.zip `
+          ${{ env.ZIP_FILE }} `
           --title "OOPS ${{ github.ref_name }}" `
           --notes-file release-notes.md `
           --verify-tag
