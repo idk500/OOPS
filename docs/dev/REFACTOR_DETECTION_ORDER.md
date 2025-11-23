@@ -36,9 +36,9 @@
 - [ ] 移动相关逻辑从 `environment_detector.py`
 
 #### 1.3 更新 DiagnosticSuite
-- [ ] 修改检测器注册顺序
-- [ ] 更新检测规则映射
-- [ ] 确保向后兼容
+- [x] 修改检测器注册顺序
+- [x] 更新检测规则映射
+- [x] 确保向后兼容（保留旧的 system_info）
 
 ### 阶段 2：优化系统信息展示 ⏳
 
@@ -109,6 +109,19 @@
   - 包管理器类型识别（pip/conda/uv/poetry/pipenv）
   - 虚拟环境检测（支持任意命名）
   - 依赖完整性检查（缺失包、版本不匹配）
+
+### 2025-11-23 11:35
+- ✅ 更新 `DiagnosticSuite` - 集成新检测器
+- 新的检测顺序：
+  1. hardware_info (硬件信息)
+  2. system_info_new (系统信息)
+  3. system_settings (系统设置)
+  4. network_connectivity (网络连通性)
+  5. python_environment (Python环境)
+  6. environment_dependencies (组件依赖)
+  7. path_validation (路径规范)
+  8. system_info (旧版，向后兼容)
+- 保持向后兼容性
 
 ---
 

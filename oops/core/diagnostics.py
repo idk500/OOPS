@@ -61,17 +61,30 @@ class DiagnosticSuite:
         self._register_default_rules()
 
     def _register_default_rules(self):
-        """注册默认检测规则"""
+        """注册默认检测规则 - 按照新的检测顺序"""
         from oops.detectors.environment import EnvironmentDependencyDetector
+        from oops.detectors.hardware import HardwareDetector
         from oops.detectors.network import NetworkConnectivityDetector
         from oops.detectors.paths import PathValidationDetector
+        from oops.detectors.python_environment import PythonEnvironmentDetector
+        from oops.detectors.system import SystemDetector
         from oops.detectors.system_info import SystemInfoDetector
+        from oops.detectors.system_settings import SystemSettingsDetector
 
+        # 新的检测顺序：
+        # 1. 硬件信息 -> 2. 系统信息 -> 3. 系统设置 -> 4. 网络连通性
+        # 5. Python环境 -> 6. 组件依赖 -> 7. 路径规范
         self.detection_rules = {
-            "system_info": SystemInfoDetector(),
+            # 新检测器（按顺序）
+            "hardware_info": HardwareDetector(),
+            "system_info_new": SystemDetector(),
+            "system_settings": SystemSettingsDetector(),
             "network_connectivity": NetworkConnectivityDetector(),
+            "python_environment": PythonEnvironmentDetector(),
             "environment_dependencies": EnvironmentDependencyDetector(),
             "path_validation": PathValidationDetector(),
+            # 保留旧的 system_info 用于向后兼容
+            "system_info": SystemInfoDetector(),
         }
 
     async def run_diagnostics(
@@ -182,13 +195,24 @@ class DiagnosticSuite:
 
         for check_category, category_config in checks_config.items():
             if category_config.get("enabled", False):
-                # 将分类映射到具体的检测规则
+                # 将分类映射到具体的检测规则（按新顺序）
                 if check_category == "system_info":
-                    enabled_checks.append("system_info")
+                    # 新架构：分别添加硬件、系统、系统设置检测
+                    enabled_checks.extend(
+                        [
+                            "hardware_info",
+                            "system_info_new",
+                            "system_settings",
+                            "system_info",  # 保留旧的用于向后兼容
+                        ]
+                    )
                 elif check_category == "network":
                     enabled_checks.append("network_connectivity")
                 elif check_category == "environment":
-                    enabled_checks.append("environment_dependencies")
+                    # 新架构：添加 Python 环境检测
+                    enabled_checks.extend(
+                        ["python_environment", "environment_dependencies"]
+                    )
                 elif check_category == "paths":
                     enabled_checks.append("path_validation")
                 # 可以继续添加其他分类映射
