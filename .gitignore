@@ -55,6 +55,7 @@ oops.log
 
 # Reports
 reports/*.html
+reports/*.yaml
 reports/*.json
 reports/*.markdown
 !reports/.gitkeep

@@ -154,7 +154,7 @@ def show_version():
     print()
     print("让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly")
     print()
-    print("https://github.com/your-username/OOPS")
+    print("https://github.com/idk500/OOPS")
     sys.exit(0)
 
 
@@ -215,13 +215,16 @@ def create_default_configs(config_dir: str):
             'config_path': 'D:/ZZZ-OD/config'
         }
     }
+    # 项目特定的Git仓库（会添加到默认列表）
     zzz_config['checks']['network']['git_repos'] = [
         'https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git'
     ]
-    zzz_config['checks']['network']['pypi_sources'] = [
-        'https://pypi.org/simple/',
-        'https://pypi.tuna.tsinghua.edu.cn/simple/'
-    ]
+    # PyPI源使用默认配置（在 defaults.yaml 中定义）
+    # 如需自定义，取消下面的注释：
+    # zzz_config['checks']['network']['pypi_sources'] = [
+    #     'https://pypi.org/simple/',
+    #     'https://pypi.tuna.tsinghua.edu.cn/simple/'
+    # ]
     
     zzz_config_path = config_path / "zenless_zone_zero.yaml"
     with open(zzz_config_path, 'w', encoding='utf-8') as f:
