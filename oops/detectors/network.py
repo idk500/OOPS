@@ -38,7 +38,7 @@ class NetworkConnectivityDetector(DetectionRule):
 
         # 合并默认配置和项目配置
         merged_config = self.default_loader.merge_network_config(config)
-        
+
         if not merged_config:
             return {"status": "skipped", "message": "网络检测配置为空"}
 
@@ -48,28 +48,38 @@ class NetworkConnectivityDetector(DetectionRule):
         # Git仓库检测
         git_repos = merged_config.get("git_repos", [])
         for repo_item in git_repos:
-            repo_url = repo_item.get("url") if isinstance(repo_item, dict) else repo_item
+            repo_url = (
+                repo_item.get("url") if isinstance(repo_item, dict) else repo_item
+            )
             task = self._check_git_repo(repo_url)
             tasks.append(task)
 
         # PyPI源检测
         pypi_sources = merged_config.get("pypi_sources", [])
         for source_item in pypi_sources:
-            source_url = source_item.get("url") if isinstance(source_item, dict) else source_item
+            source_url = (
+                source_item.get("url") if isinstance(source_item, dict) else source_item
+            )
             task = self._check_pypi_source(source_url)
             tasks.append(task)
 
         # 镜像源检测
         mirror_sites = merged_config.get("mirror_sites", [])
         for mirror_item in mirror_sites:
-            mirror_url = mirror_item.get("url") if isinstance(mirror_item, dict) else mirror_item
+            mirror_url = (
+                mirror_item.get("url") if isinstance(mirror_item, dict) else mirror_item
+            )
             task = self._check_mirror_site(mirror_url)
             tasks.append(task)
 
         # 项目官网检测
         project_websites = merged_config.get("project_websites", [])
         for website_item in project_websites:
-            website_url = website_item.get("url") if isinstance(website_item, dict) else website_item
+            website_url = (
+                website_item.get("url")
+                if isinstance(website_item, dict)
+                else website_item
+            )
             task = self._check_website(website_url)
             tasks.append(task)
 
@@ -83,7 +93,9 @@ class NetworkConnectivityDetector(DetectionRule):
         # GitHub代理检测
         github_proxies = merged_config.get("github_proxies", [])
         for proxy_item in github_proxies:
-            proxy_url = proxy_item.get("url") if isinstance(proxy_item, dict) else proxy_item
+            proxy_url = (
+                proxy_item.get("url") if isinstance(proxy_item, dict) else proxy_item
+            )
             task = self._check_github_proxy(proxy_url)
             tasks.append(task)
 

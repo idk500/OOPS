@@ -125,7 +125,12 @@ class DefaultConfigLoader:
             )
 
         # 其他配置项：项目配置优先，否则使用默认
-        for key in ["mirror_sites", "github_proxies", "project_websites", "mihoyo_apis"]:
+        for key in [
+            "mirror_sites",
+            "github_proxies",
+            "project_websites",
+            "mihoyo_apis",
+        ]:
             if key not in disable_list:
                 project_value = project_network.get(key)
                 if project_value is not None:
