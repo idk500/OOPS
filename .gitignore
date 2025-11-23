@@ -60,6 +60,9 @@ reports/*.json
 reports/*.markdown
 !reports/.gitkeep
 
+# Local documentation archive (not for GitHub)
+docs_archive/
+
 # Temporary files
 *.tmp
 *.bak
