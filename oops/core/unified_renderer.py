@@ -289,18 +289,23 @@ class UnifiedDetectionRenderer:
     def _generate_summary(self, result: CheckResult, success_items: List[str], 
                          warning_items: List[str], error_items: List[str]) -> str:
         """生成检测结果摘要"""
-        total_items = len(success_items) + len(warning_items) + len(error_items)
+        # 排除INDENT项的计数（这些是子项，不应该计入总数）
+        success_count = len([item for item in success_items if not item.startswith("INDENT:")])
+        warning_count = len([item for item in warning_items if not item.startswith("INDENT:")])
+        error_count = len([item for item in error_items if not item.startswith("INDENT:")])
+        
+        total_items = success_count + warning_count + error_count
         
         if total_items == 0:
             return "无详细项目"
         
         summary_parts = []
-        if success_items:
-            summary_parts.append(f"✅ {len(success_items)}项通过")
-        if warning_items:
-            summary_parts.append(f"⚠️ {len(warning_items)}项警告")
-        if error_items:
-            summary_parts.append(f"❌ {len(error_items)}项错误")
+        if success_count > 0:
+            summary_parts.append(f"✅ {success_count}项通过")
+        if warning_count > 0:
+            summary_parts.append(f"⚠️ {warning_count}项警告")
+        if error_count > 0:
+            summary_parts.append(f"❌ {error_count}项错误")
             
         return " | ".join(summary_parts)
 
