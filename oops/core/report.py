@@ -861,14 +861,14 @@ class ReportGenerator:
         
         .issue-group ul {
             margin: 0;
-            padding-left: 20px;
+            padding-left: 25px;
             list-style-type: none;
         }
         
         .issue-group li {
             margin-bottom: 6px;
             line-height: 1.5;
-            padding-left: 0;
+            padding-left: 5px;
             position: relative;
         }
         
@@ -877,7 +877,7 @@ class ReportGenerator:
             color: var(--error-color);
             font-weight: bold;
             position: absolute;
-            left: -15px;
+            left: -20px;
         }
         
         .issue-group.warning li::before {
@@ -885,7 +885,7 @@ class ReportGenerator:
             color: var(--warning-color);
             font-weight: bold;
             position: absolute;
-            left: -15px;
+            left: -20px;
         }
         
         .issue-group.success li::before {
@@ -893,7 +893,7 @@ class ReportGenerator:
             color: var(--success-color);
             font-weight: bold;
             position: absolute;
-            left: -15px;
+            left: -20px;
         }
         
         /* 响应式优化 */
