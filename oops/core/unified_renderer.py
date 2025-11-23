@@ -62,7 +62,7 @@ class UnifiedDetectionRenderer:
             </div>
         """
         
-        # 默认显示错误和警告项
+        # 默认显示错误和警告项（不通过的部分）
         if error_items or warning_items:
             html_content += '<div class="detection-issues">'
             
@@ -90,22 +90,32 @@ class UnifiedDetectionRenderer:
                 
             html_content += '</div>'
         
+        # 通过项默认折叠显示
+        if success_items:
+            success_collapse_id = f"{result.check_name}-success"
+            html_content += f"""
+            <div class="success-items-section">
+                <button class="collapse-button success-toggle" onclick="toggleCollapse('{success_collapse_id}')">
+                    ▶ 显示通过项 ({len(success_items)})
+                </button>
+                <div id="{success_collapse_id}" class="collapsible-content" style="display: none;">
+                    <div class="issue-group success">
+                        <ul>
+            """
+            for item in success_items:
+                html_content += f"<li>{html.escape(item)}</li>"
+            html_content += """
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            """
+        
         # 折叠的详细信息
         html_content += f"""
             <div id="{result.check_name}-details" class="collapsible-content">
                 <div class="detection-details">
         """
-        
-        # 显示所有通过项（折叠但可见）
-        if success_items:
-            html_content += f"""
-                <div class="issue-group success">
-                    <h4>✅ 通过项 ({len(success_items)})</h4>
-                    <ul>
-            """
-            for item in success_items:
-                html_content += f"<li>{html.escape(item)}</li>"
-            html_content += "</ul></div>"
         
         # 显示原始详细信息（如果有）
         if result.details and result.check_name != "network_connectivity":

@@ -703,12 +703,172 @@ class ReportGenerator:
             font-weight: 500;
             color: #374151;
             min-width: 100px;
+            flex-shrink: 0;
         }
         
         .detail-value {
             color: #6b7280;
             text-align: right;
             word-break: break-word;
+            margin-left: 10px;
+        }
+        
+        /* 通过项折叠样式 */
+        .success-items-section {
+            margin: 15px 0;
+        }
+        
+        .success-toggle {
+            background: #f0f9ff;
+            border: 1px solid var(--success-color);
+            color: var(--success-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .success-toggle:hover {
+            background: var(--success-color);
+            color: white;
+        }
+        
+        .success-items-section .collapsible-content {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border: 1px solid #e0f2fe;
+        }
+        
+        .success-items-section .issue-group {
+            margin-bottom: 0;
+        }
+        
+        .success-items-section .issue-group ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .success-items-section .issue-group li {
+            color: var(--success-color);
+            margin-bottom: 4px;
+            line-height: 1.4;
+        }
+        
+        /* 优化间距和布局 */
+        .detection-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            gap: 15px;
+        }
+        
+        .detection-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--primary-color);
+            flex: 1;
+        }
+        
+        .detection-summary {
+            color: var(--info-color);
+            font-size: 0.9em;
+            flex-shrink: 0;
+            text-align: right;
+        }
+        
+        .detection-header .collapse-button {
+            margin-left: 0;
+            flex-shrink: 0;
+        }
+        
+        /* 修复文字重叠问题 */
+        .detection-message {
+            margin-bottom: 15px;
+            font-weight: 500;
+            line-height: 1.5;
+            padding: 5px 0;
+        }
+        
+        .detection-issues {
+            margin-bottom: 15px;
+            clear: both;
+        }
+        
+        .issue-group {
+            margin-bottom: 15px;
+            padding: 10px 0;
+        }
+        
+        .issue-group h4 {
+            margin: 0 0 10px 0;
+            font-size: 1em;
+            line-height: 1.3;
+        }
+        
+        .issue-group ul {
+            margin: 0;
+            padding-left: 20px;
+            list-style-type: none;
+        }
+        
+        .issue-group li {
+            margin-bottom: 6px;
+            line-height: 1.5;
+            padding-left: 0;
+            position: relative;
+        }
+        
+        .issue-group.error li::before {
+            content: "•";
+            color: var(--error-color);
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+        
+        .issue-group.warning li::before {
+            content: "•";
+            color: var(--warning-color);
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+        
+        .issue-group.success li::before {
+            content: "•";
+            color: var(--success-color);
+            font-weight: bold;
+            position: absolute;
+            left: -15px;
+        }
+        
+        /* 响应式优化 */
+        @media (max-width: 768px) {
+            .detection-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .detection-summary {
+                text-align: left;
+            }
+            
+            .detection-header .collapse-button {
+                align-self: flex-end;
+            }
+            
+            .details-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .system-info-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
     <script>
