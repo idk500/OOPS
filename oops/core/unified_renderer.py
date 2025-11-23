@@ -75,7 +75,12 @@ class UnifiedDetectionRenderer:
                     <ul>
                 """
                 for item in error_items:
-                    html_content += f"<li>{html.escape(item)}</li>"
+                    # 处理缩进项
+                    if item.startswith("INDENT:"):
+                        actual_item = item[7:]
+                        html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                    else:
+                        html_content += f"<li>{html.escape(item)}</li>"
                 html_content += "</ul></div>"
             
             # 警告项  
@@ -86,7 +91,12 @@ class UnifiedDetectionRenderer:
                     <ul>
                 """
                 for item in warning_items:
-                    html_content += f"<li>{html.escape(item)}</li>"
+                    # 处理缩进项
+                    if item.startswith("INDENT:"):
+                        actual_item = item[7:]
+                        html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                    else:
+                        html_content += f"<li>{html.escape(item)}</li>"
                 html_content += "</ul></div>"
                 
             html_content += '</div>'
@@ -105,7 +115,12 @@ class UnifiedDetectionRenderer:
                     <ul>
             """
             for item in success_items:
-                html_content += f"<li>{html.escape(item)}</li>"
+                # 处理缩进项（用于网络检测的子项）
+                if item.startswith("INDENT:"):
+                    actual_item = item[7:]  # 移除INDENT:前缀
+                    html_content += f'<li class="indent-item">{html.escape(actual_item)}</li>'
+                else:
+                    html_content += f"<li>{html.escape(item)}</li>"
             html_content += "</ul></div>"
         
         # 显示原始详细信息（如果有）
@@ -223,7 +238,7 @@ class UnifiedDetectionRenderer:
                             error_display = error_msg[:30] + "..." if len(error_msg) > 30 else error_msg
                             type_groups[item_type]["failed"].append(f"{url_display}: {error_display}")
             
-            # 生成分类摘要
+            # 生成分类摘要 - 使用HTML友好的格式
             for type_key, group_data in type_groups.items():
                 success_count = len(group_data["success"])
                 failed_count = len(group_data["failed"])
@@ -232,18 +247,20 @@ class UnifiedDetectionRenderer:
                 if total_count > 0:
                     type_name = group_data["name"]
                     if success_count > 0:
-                        success_items.append(f"{type_name}: {success_count}/{total_count} 可用")
-                        # 添加具体的成功项到详细列表
+                        # 主分类项
+                        success_items.append(f"【{type_name}】{success_count}/{total_count} 可用")
+                        # 添加具体的成功项（使用特殊标记，后续渲染时处理）
                         for item in group_data["success"]:
-                            success_items.append(f"  └─ {item}")
+                            success_items.append(f"INDENT:{item}")
                     
                     if failed_count > 0:
-                        error_items.append(f"{type_name}: {failed_count} 项不可用")
+                        # 主分类项
+                        error_items.append(f"【{type_name}】{failed_count} 项不可用")
                         # 只添加前3个失败项到错误列表，避免过长
                         for item in group_data["failed"][:3]:
-                            error_items.append(f"  └─ {item}")
+                            error_items.append(f"INDENT:{item}")
                         if failed_count > 3:
-                            error_items.append(f"  └─ ... 还有 {failed_count - 3} 项")
+                            error_items.append(f"INDENT:... 还有 {failed_count - 3} 项")
                         
         else:
             # 通用处理：遍历details中的所有项

@@ -909,6 +909,19 @@ class ReportGenerator:
             left: -20px;
         }
         
+        /* 缩进项样式（用于网络检测的子项） */
+        .issue-group li.indent-item {
+            margin-left: 20px;
+            font-size: 0.95em;
+            color: #6b7280;
+        }
+        
+        .issue-group li.indent-item::before {
+            content: "└─";
+            left: -25px;
+            font-weight: normal;
+        }
+        
         /* 响应式优化 */
         @media (max-width: 768px) {
             .detection-header {
