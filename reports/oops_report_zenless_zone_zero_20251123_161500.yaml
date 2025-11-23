@@ -1,0 +1,206 @@
+version: '1.0'
+project_name: zenless_zone_zero
+project_path: ''
+current_path: E:\Codes\OOPS
+timestamp: '2025-11-23 16:15:00'
+summary:
+  total_checks: 7
+  completed: 6
+  failed: 1
+  critical_issues: 0
+  error_issues: 1
+  warning_issues: 1
+  success_rate: 85.71428571428571
+system_info:
+  hardware:
+    cores_physical: 6
+    cores_logical: 12
+    freq_current: 3501 MHz
+    freq_max: 3501 MHz
+    model: AMD Ryzen 5 5600 6-Core Processor
+  memory:
+    total: 15.9 GB
+    available: 2.4 GB
+    used: 13.6 GB
+    percent: 85.1%
+  gpu: NVIDIA GeForce GTX 1060 6GB
+  storage:
+    current_drive: E:\
+    total: 1863.0 GB
+    used: 1186.2 GB
+    free: 676.8 GB
+    percent: 63.7%
+    type: HDD
+  basic:
+    name: Windows
+    version: 10.0.19045
+    release: '10'
+    architecture: 64bit
+    machine: AMD64
+    processor: AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD
+  python:
+    version: 3.11.9
+    executable: C:\Users\[USER]\AppData\Local\Programs\Python\Python311\python.exe
+    implementation: CPython
+    compiler: MSC v.1938 64 bit (AMD64)
+  paths:
+    current: E:\Codes\OOPS
+    home: C:\Users\[USER]
+check_results:
+  python_environment:
+    status: completed
+    severity: warning
+    message: Python 环境存在 1 个警告
+    details:
+      environment:
+        python_version:
+          current: 3.11.9
+          major: 3
+          minor: 11
+          micro: 9
+        package_manager:
+          type: pip
+          version: pip 24.0 from C:\Users\FuC\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip
+            (python 3.11)
+        virtual_env:
+          in_venv: false
+          venv_exists: false
+          venv_path: null
+      issues: []
+      warnings:
+      - 未检测到虚拟环境
+      recommendations:
+      - 建议创建Python虚拟环境以隔离项目依赖
+    fix_suggestion: 建议创建Python虚拟环境以隔离项目依赖
+  environment_dependencies:
+    status: completed
+    severity: info
+    message: 环境检测完成，共执行 4 项检查
+    details:
+      python_version:
+        status: success
+        current_version: 3.11.9
+        required_version: '>=3.8'
+        message: 'Python版本兼容: 3.11.9'
+      virtual_environment:
+        status: success
+        in_virtual_env: false
+        venv_exists: true
+        venv_path: E:\ZZZ-1D\.venv
+        message: '项目已配置虚拟环境: E:\ZZZ-1D\.venv'
+      system_libraries:
+        status: success
+        message: '系统库检测完成: 0 个库'
+        details: {}
+      project_dependencies:
+        status: info
+        message: 项目依赖检测待实现
+        project_path: E:/ZZZ-1D
+    fix_suggestion: ''
+  network_connectivity:
+    status: completed
+    severity: info
+    message: 网络检测完成，共检测 3 个目标
+    details:
+      https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git:
+        status: success
+        response_time_ms: 1902.998924255371
+        type: git_repo
+      https://pypi.org/simple/:
+        status: success
+        response_time_ms: 241.99891090393066
+        status_code: 200
+        content_length: 31126
+        type: pypi_source
+      https://pypi.tuna.tsinghua.edu.cn/simple/:
+        status: success
+        response_time_ms: 157.99975395202637
+        status_code: 200
+        content_length: 0
+        type: pypi_source
+    fix_suggestion: ''
+  path_validation:
+    status: completed
+    severity: info
+    message: 路径检测完成，共执行 6 项检查
+    details:
+      path_exists:
+        status: success
+        message: '路径存在: E:/ZZZ-1D'
+        absolute_path: E:\ZZZ-1D
+      chinese_paths:
+        status: success
+        message: 路径不包含中文字符
+      permissions:
+        status: success
+        message: 路径权限正常
+      path_length:
+        status: success
+        message: '路径长度正常: 9 字符'
+      special_characters:
+        status: success
+        message: 路径不包含问题特殊字符
+      spaces:
+        status: success
+        message: 路径不包含空格
+    fix_suggestion: ''
+  hardware_info:
+    status: completed
+    severity: info
+    message: 硬件检测完成，所有硬件符合要求
+    details:
+      cpu:
+        cores_physical: 6
+        cores_logical: 12
+        freq_current: 3501 MHz
+        freq_max: 3501 MHz
+        model: AMD Ryzen 5 5600 6-Core Processor
+      memory:
+        total: 15.9 GB
+        available: 2.4 GB
+        used: 13.6 GB
+        percent: 85.1%
+      gpu: NVIDIA GeForce GTX 1060 6GB
+      storage:
+        current_drive: E:\
+        total: 1863.0 GB
+        used: 1186.2 GB
+        free: 676.8 GB
+        percent: 63.7%
+        type: HDD
+      display:
+        primary_resolution: 2560 x 1440
+      issues: []
+      warnings: []
+    fix_suggestion: ''
+  system_settings:
+    status: failed
+    severity: error
+    message: 检测到 1 个可能影响识别的系统设置问题
+    details:
+      settings:
+        hdr_enabled: true
+        night_light_enabled: true
+        color_filter_enabled: false
+        primary_resolution: 2560 x 1440
+      issues:
+      - HDR已启用
+      warnings:
+      - 夜间模式/护眼模式已启用
+      recommendations:
+      - 关闭HDR以避免影响游戏脚本的图像识别
+      - 关闭夜间模式以避免色温变化影响识别
+    fix_suggestion: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别
+issues:
+  critical: []
+  errors:
+  - check: system_settings
+    message: 检测到 1 个可能影响识别的系统设置问题
+    suggestion: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别
+  warnings:
+  - check: python_environment
+    message: Python 环境存在 1 个警告
+    suggestion: 建议创建Python虚拟环境以隔离项目依赖
+fix_suggestions:
+- 'python_environment: 建议创建Python虚拟环境以隔离项目依赖'
+- 'system_settings: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别'

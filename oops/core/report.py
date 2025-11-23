@@ -416,6 +416,9 @@ class ReportGenerator:
             padding: 10px 15px;
             margin-top: 10px;
             border-radius: 4px;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .section {
@@ -658,11 +661,22 @@ class ReportGenerator:
             padding: 15px;
             border-radius: 6px;
             margin-top: 15px;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .fix-suggestion h4 {
             margin: 0 0 10px 0;
             color: var(--warning-color);
+        }
+        
+        .fix-suggestion p {
+            margin: 0;
+            line-height: 1.6;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .raw-details {
@@ -824,6 +838,9 @@ class ReportGenerator:
             font-weight: 500;
             line-height: 1.5;
             padding: 5px 0;
+            word-wrap: break-word;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         
         .detection-issues {
