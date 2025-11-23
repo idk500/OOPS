@@ -13,13 +13,17 @@ checks:
     min_resolution: '1920x1080'
   network:
     enabled: true
+    # 项目特定的Git仓库（会添加到默认列表）
     git_repos:
     - https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git
-    mirror_sites: []
-    project_websites: []
-    pypi_sources:
-    - https://pypi.org/simple/
-    - https://pypi.tuna.tsinghua.edu.cn/simple/
+    # PyPI源使用默认配置（清华、阿里云等镜像）
+    # 如需自定义，取消注释并修改：
+    # pypi_sources:
+    #   - https://pypi.org/simple/
+    # 可选：禁用某些默认检测
+    # disable_defaults:
+    #   - mirror_sites
+    #   - github_proxies
   paths:
     check_chinese_paths: true
     check_path_length: true

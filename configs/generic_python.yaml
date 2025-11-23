@@ -11,13 +11,11 @@ checks:
     enabled: false
   network:
     enabled: true
-    git_repos:
-    - https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git
-    mirror_sites: []
-    project_websites: []
-    pypi_sources:
-    - https://pypi.org/simple/
-    - https://pypi.tuna.tsinghua.edu.cn/simple/
+    # 通用Python项目使用默认配置
+    # 默认会检测：GitHub、Gitee、PyPI官方源、清华镜像、阿里云镜像等
+    # 如需添加项目特定的Git仓库，取消注释并修改：
+    # git_repos:
+    #   - https://github.com/your-org/your-project.git
   paths:
     check_chinese_paths: true
     check_path_length: true

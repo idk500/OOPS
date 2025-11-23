@@ -1,0 +1,49 @@
+# OOPS 默认配置
+# 此文件包含所有检测器的默认配置，可被项目配置覆盖
+
+# 网络检测默认配置
+network_defaults:
+  # Git仓库连通性测试（使用测试仓库）
+  git_repos:
+    - url: https://github.com/git/git.git
+      name: GitHub (git/git)
+      type: git_repo
+    - url: https://gitee.com/mirrors/git.git
+      name: Gitee (mirrors/git)
+      type: git_repo
+  
+  # PyPI源测试
+  pypi_sources:
+    - url: https://pypi.org/simple/
+      name: PyPI官方源
+      type: pypi_source
+    - url: https://pypi.tuna.tsinghua.edu.cn/simple/
+      name: 清华大学镜像
+      type: pypi_source
+    - url: https://mirrors.aliyun.com/pypi/simple/
+      name: 阿里云镜像
+      type: pypi_source
+    - url: https://mirrors.cloud.tencent.com/pypi/simple/
+      name: 腾讯云镜像
+      type: pypi_source
+  
+  # 镜像站点测试
+  mirror_sites:
+    - url: https://mirrors.tuna.tsinghua.edu.cn
+      name: 清华大学开源镜像站
+      type: mirror_site
+    - url: https://mirrors.aliyun.com
+      name: 阿里云镜像站
+      type: mirror_site
+    - url: https://mirrors.cloud.tencent.com
+      name: 腾讯云镜像站
+      type: mirror_site
+  
+  # GitHub代理测试
+  github_proxies:
+    - url: https://ghproxy.com
+      name: ghproxy.com
+      type: github_proxy
+    - url: https://mirror.ghproxy.com
+      name: mirror.ghproxy.com
+      type: github_proxy
