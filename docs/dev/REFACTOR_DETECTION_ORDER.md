@@ -24,8 +24,8 @@
 
 #### 1.1 拆分 system_info 检测器
 - [x] 创建 `hardware_detector.py` - 硬件信息收集
-- [ ] 创建 `system_detector.py` - 系统信息收集
-- [ ] 创建 `system_settings_detector.py` - 系统设置检测
+- [x] 创建 `system_detector.py` - 系统信息收集
+- [x] 创建 `system_settings_detector.py` - 系统设置检测
 - [ ] 保留 `system_info_detector.py` 作为协调器（向后兼容）
 
 #### 1.2 创建 python_environment 检测器
@@ -95,6 +95,11 @@
 ### 2025-11-23 11:20
 - ✅ 创建 `hardware.py` - 纯硬件信息收集（CPU、内存、GPU、存储）
 - 特点：只收集数据，不做验证，不显示警告
+
+### 2025-11-23 11:25
+- ✅ 创建 `system.py` - 系统基本信息（OS、Python环境、路径）
+- ✅ 创建 `system_settings.py` - 系统设置检测（HDR、夜间模式、分辨率）
+- 特点：system_settings 会进行验证并给出警告/错误
 
 ---
 
