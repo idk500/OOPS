@@ -1,8 +1,20 @@
-# OOPS 使用说明
+# OOPS 命令行手册
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
 > 让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
+
+---
+
+## 📖 文档说明
+
+本文档面向**高级用户和开发者**，详细介绍命令行参数和配置选项。
+
+**如果你是新手用户**，建议先阅读：
+- 🚀 **[快速开始](QUICKSTART.md)** - 一分钟上手
+- 📖 **[用户指南](USER_GUIDE.md)** - 详细使用说明和常见问题
+
+---
 
 ## 🚀 快速开始
 
@@ -296,7 +308,15 @@ python oops.py --version
 
 ---
 
-**更多信息请参考**：
-- [README.md](README.md) - 项目简介
-- [DEVELOPER_GUIDE.md](docs/dev/DEVELOPER_GUIDE.md) - 开发者指南
-- [FEATURE_LIST.md](docs/dev/FEATURE_LIST.md) - 功能清单
+## 📖 相关文档
+
+### 用户文档
+- 🏠 **[返回主页](README.md)** - 项目介绍
+- 🚀 **[快速开始](QUICKSTART.md)** - 一分钟上手
+- 📖 **[用户指南](USER_GUIDE.md)** - 详细使用说明（推荐新手）
+- 📝 **[更新日志](CHANGELOG.md)** - 版本历史
+
+### 开发者文档
+- 🔧 **[开发者指南](docs/dev/DEVELOPER_GUIDE.md)** - 参与开发
+- 📋 **[发布指南](docs/dev/RELEASE_GUIDE.md)** - 版本发布
+- 📚 **[文档索引](docs/README.md)** - 完整文档列表

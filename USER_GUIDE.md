@@ -307,6 +307,24 @@ oops.exe --version
 
 ---
 
-**祝你使用愉快！** 🎉
+---
 
-如有问题，请查看 [完整文档](README.md) 或 [开发者指南](docs/dev/DEVELOPER_GUIDE.md)。
+## 📖 相关文档
+
+### 用户文档
+- 🏠 **[返回主页](README.md)** - 项目介绍
+- 🚀 **[快速开始](QUICKSTART.md)** - 一分钟上手
+- ⚙️ **[命令行手册](USAGE.md)** - 高级用法和参数说明
+- 📝 **[更新日志](CHANGELOG.md)** - 版本历史
+
+### 开发者文档
+- 🔧 **[开发者指南](docs/dev/DEVELOPER_GUIDE.md)** - 参与开发
+- 📚 **[文档索引](docs/README.md)** - 完整文档列表
+
+### 获取帮助
+- 🐛 **[报告问题](https://github.com/idk500/OOPS/issues)** - GitHub Issues
+- 💬 **[讨论交流](https://github.com/idk500/OOPS/discussions)** - GitHub Discussions
+
+---
+
+**祝你使用愉快！** 🎉

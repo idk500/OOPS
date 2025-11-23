@@ -56,11 +56,19 @@ python oops.py
 
 ---
 
-## 📖 使用文档
+## 📖 文档导航
 
-- **[快速开始](QUICKSTART.md)** - 一分钟上手指南
-- **[用户指南](USER_GUIDE.md)** - 详细使用说明
-- **[使用手册](USAGE.md)** - 命令行参数说明
+### 用户文档
+- 🚀 **[快速开始](QUICKSTART.md)** - 一分钟上手指南
+- 📖 **[用户指南](USER_GUIDE.md)** - 详细使用说明（推荐新手阅读）
+- ⚙️ **[命令行手册](USAGE.md)** - 命令行参数和高级用法
+- 📝 **[更新日志](CHANGELOG.md)** - 版本更新历史
+
+### 开发者文档
+- 🔧 **[开发者指南](docs/dev/DEVELOPER_GUIDE.md)** - 如何参与开发
+- 📋 **[发布指南](docs/dev/RELEASE_GUIDE.md)** - 版本发布流程
+- 🤖 **[CI/CD 文档](docs/dev/GITHUB_ACTIONS.md)** - 自动化构建说明
+- 📚 **[文档索引](docs/README.md)** - 完整文档列表
 
 ---
 
@@ -91,26 +99,13 @@ A: 不会。OOPS只进行检测，不会修改任何系统设置。后续也许�
 
 ---
 
-## 🔧 开发者
+## 🤝 参与贡献
 
-如果你是开发者，想要：
-- 添加新的检测项
-- 支持新的游戏项目
-- 贡献代码或文档
+欢迎贡献代码、文档或提出建议！
 
-请查看 **[开发者文档](docs/dev/README_DEV.md)**
-
----
-
-## 📝 更新日志
-
-查看 [CHANGELOG.md](CHANGELOG.md) 了解版本更新历史。
-
----
-
-## 🗺️ 路线图
-
-查看 [ROADMAP.md](ROADMAP.md) 了解未来计划。
+- 🐛 **报告问题**：[GitHub Issues](https://github.com/idk500/OOPS/issues)
+- 💡 **功能建议**：[GitHub Discussions](https://github.com/idk500/OOPS/discussions)
+- 🔧 **贡献代码**：查看 [开发者指南](docs/dev/DEVELOPER_GUIDE.md)
 
 ---
 
