@@ -26,12 +26,9 @@ checks:
   system_info:
     enabled: true
 project:
-  description: 绝区零自动化脚本
-  name: 绝区零一条龙
-  paths:
-    config_path: D:/ZZZ-OD/config
-    install_path: D:/ZZZ-OD
-  type: game_script
+  description: 通用Python项目检测模板
+  name: 通用Python项目
+  type: generic
 report:
   format: html
   include_timestamp: true

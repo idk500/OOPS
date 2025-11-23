@@ -26,7 +26,7 @@
 - [x] 创建 `hardware_detector.py` - 硬件信息收集
 - [x] 创建 `system_detector.py` - 系统信息收集
 - [x] 创建 `system_settings_detector.py` - 系统设置检测
-- [ ] 保留 `system_info_detector.py` 作为协调器（向后兼容）
+- [x] 保留 `system_info_detector.py` 作为协调器（向后兼容）
 
 #### 1.2 创建 python_environment 检测器
 - [x] 创建 `python_environment_detector.py`
@@ -148,7 +148,47 @@
 - ✅ 集成到 DiagnosticSuite
 - ✅ 测试通过
 
-下一步：阶段 2 - 优化系统信息展示
+### 2025-11-23 14:20
+- ✅ 修复配置问题和system_info协调器
+- 发现并解决配置文件中缺少system_info配置的问题
+- 完成system_info检测器的协调器改造，调用新的子检测器
+- 修复默认配置模板，添加system_info配置项
+- 测试确认：现在检测到2个问题（包含system_settings的错误）
+
+---
+
+## 阶段 1&2 完成总结 ✅
+
+### 已完成的工作：
+1. **新检测器创建** ✅
+   - `hardware.py` - 硬件信息收集
+   - `system.py` - 系统基本信息
+   - `system_settings.py` - 系统设置检测
+   - `python_environment.py` - Python环境完整检测
+
+2. **Python环境检测增强** ✅
+   - 多包管理器识别（pip/conda/uv/poetry/pipenv）
+   - 智能虚拟环境检测（支持任意命名）
+   - 完整依赖检查（缺失包、版本不匹配）
+
+3. **架构重构** ✅
+   - 按新顺序集成检测器到DiagnosticSuite
+   - system_info改造为协调器（向后兼容）
+   - 数据渲染分离（系统信息只显示纯数据）
+   - 统一检测规则（网络检测显示完整结果）
+
+4. **问题修复** ✅
+   - 修复系统信息显示问题（数据结构映射）
+   - 修复配置加载问题（添加system_info配置）
+   - 修复检测器状态处理逻辑
+
+### 测试结果：
+- ✅ 检测到2个问题（python_environment + system_settings）
+- ✅ 所有新检测器正常工作
+- ✅ 向后兼容性保持
+
+**当前状态**: 基础架构重构完成，准备发布v0.2.0
+**下一步**: 可选择继续阶段3（增强Python环境检测）或阶段4（完善检测分类）
 
 ---
 

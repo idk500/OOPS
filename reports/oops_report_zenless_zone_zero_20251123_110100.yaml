@@ -1,0 +1,219 @@
+version: '1.0'
+project_name: zenless_zone_zero
+project_path: ''
+current_path: E:\Codes\OOPS
+timestamp: '2025-11-23 11:01:00'
+summary:
+  total_checks: 5
+  completed: 5
+  failed: 0
+  critical_issues: 0
+  error_issues: 0
+  warning_issues: 2
+  success_rate: 100.0
+system_info:
+  basic:
+    os: Windows
+    os_version: 10.0.19045
+    os_release: '10'
+    architecture: 64bit
+    machine: AMD64
+    processor: AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD
+    python_version: 3.11.9
+    python_executable: C:\Users\[USER]\AppData\Local\Programs\Python\Python311\python.exe
+    current_path: E:\Codes\OOPS
+    hdr_enabled: false
+    night_light_enabled: false
+    color_filter_enabled: false
+    primary_resolution: 2560 x 1440
+  hardware:
+    cpu_cores_physical: 6
+    cpu_cores_logical: 12
+    cpu_freq_current: 3501 MHz
+    cpu_freq_max: 3501 MHz
+    cpu_model: AMD Ryzen 5 5600 6-Core Processor
+    memory_total: 15.9 GB
+    memory_available: 5.4 GB
+    memory_used: 10.6 GB
+    memory_percent: 66.3%
+    gpu_info: NVIDIA GeForce GTX 1060 6GB
+  storage:
+    current_drive: E:\
+    disk_total: 1863.0 GB
+    disk_used: 1186.3 GB
+    disk_free: 676.7 GB
+    disk_usage_percent: 63.7%
+    disk_type: HDD
+  validation:
+    memory:
+      valid: true
+      message: '内存充足: 15.9GB'
+      recommendation: null
+    disk_type:
+      valid: true
+      warning: true
+      message: 使用机械硬盘(HDD)可能会发生运行异常
+      recommendation: 强烈建议使用固态硬盘(SSD)
+check_results:
+  network_connectivity:
+    status: completed
+    severity: info
+    message: '网络检测完成，共检测 12 个目标
+
+      GitHub代理: 1/3 可用 (建议避免使用失败的2个)'
+    details:
+      https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git:
+        status: success
+        response_time_ms: 756.9990158081055
+        type: git_repo
+      https://gitee.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git:
+        status: success
+        response_time_ms: 571.0010528564453
+        type: git_repo
+      https://pypi.org/simple/:
+        status: success
+        response_time_ms: 246.99783325195312
+        status_code: 200
+        content_length: 31126
+        type: pypi_source
+      https://pypi.tuna.tsinghua.edu.cn/simple/:
+        status: success
+        response_time_ms: 149.99890327453613
+        status_code: 200
+        content_length: 0
+        type: pypi_source
+      https://mirrors.aliyun.com/pypi/simple/:
+        status: success
+        response_time_ms: 85.99853515625
+        status_code: 200
+        content_length: 25518
+        type: pypi_source
+      https://github.moeyy.xyz/:
+        status: error
+        error: Cannot connect to host github.moeyy.xyz:443 ssl:default [指定的网络名不再可用。]
+        response_time_ms: 917.9987907409668
+        type: github_proxy
+      https://ghfast.top/:
+        status: success
+        response_time_ms: 715.9979343414307
+        status_code: 200
+        type: github_proxy
+      https://ghfile.geekertao.top/:
+        status: error
+        error: Cannot connect to host ghfile.geekertao.top:443 ssl:default [指定的网络名不再可用。]
+        response_time_ms: 998.9979267120361
+        type: github_proxy
+      https://one-dragon.com/zzz/zh/home.html:
+        status: success
+        response_time_ms: 1255.9986114501953
+        status_code: 200
+        content_length: 9582
+        type: project_website
+      https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5:
+        status: success
+        response_time_ms: 436.0008239746094
+        status_code: 200
+        content_length: 60770
+        type: project_website
+      https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getGames?launcher_id=jGHBHlcOq1&language=zh-cn:
+        status: success
+        response_time_ms: 68.99857521057129
+        status_code: 200
+        has_data: true
+        type: mihoyo_api
+      https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getAllGameBasicInfo?launcher_id=jGHBHlcOq1&language=zh-cn:
+        status: success
+        response_time_ms: 103.99937629699707
+        status_code: 200
+        has_data: true
+        type: mihoyo_api
+    fix_suggestion: ''
+  environment_dependencies:
+    status: completed
+    severity: warning
+    message: 环境检测完成，共执行 4 项检查
+    details:
+      python_version:
+        status: success
+        current_version: 3.11.9
+        required_version: '>=3.8'
+        message: 'Python版本兼容: 3.11.9'
+      virtual_environment:
+        status: warning
+        in_virtual_env: false
+        venv_exists: false
+        message: 未检测到虚拟环境，建议使用虚拟环境隔离依赖
+      system_libraries:
+        status: success
+        message: '系统库检测完成: 3 个库'
+        details:
+          msvc:
+            status: success
+            message: Microsoft Visual C++ Build Tools 已安装
+          directx:
+            status: success
+            message: DirectX Runtime 已安装
+          net_framework:
+            status: success
+            message: .NET Framework 已安装
+      project_dependencies:
+        status: skipped
+        message: 未指定项目安装路径，跳过项目依赖检测
+    fix_suggestion: 建议使用虚拟环境隔离项目依赖
+  path_validation:
+    status: completed
+    severity: info
+    message: 路径检测完成，共执行 6 项检查
+    details:
+      path_exists:
+        status: success
+        message: '路径存在: E:\Codes\OOPS'
+        absolute_path: E:\Codes\OOPS
+      chinese_paths:
+        status: success
+        message: 路径不包含中文字符
+      permissions:
+        status: success
+        message: 路径权限正常
+      path_length:
+        status: success
+        message: '路径长度正常: 13 字符'
+      special_characters:
+        status: success
+        message: 路径不包含问题特殊字符
+      spaces:
+        status: success
+        message: 路径不包含空格
+    fix_suggestion: ''
+  hardware_compatibility:
+    status: completed
+    severity: warning
+    message: 硬件适配检测发现 1 个警告
+    details:
+      issues: []
+      warnings:
+      - '磁盘类型: 使用机械硬盘(HDD)可能会发生运行异常'
+      validation:
+        memory:
+          valid: true
+          message: '内存充足: 15.9GB'
+          recommendation: null
+        disk_type:
+          valid: true
+          warning: true
+          message: 使用机械硬盘(HDD)可能会发生运行异常
+          recommendation: 强烈建议使用固态硬盘(SSD)
+    fix_suggestion: 强烈建议使用固态硬盘(SSD)
+issues:
+  critical: []
+  errors: []
+  warnings:
+  - check: environment_dependencies
+    message: 环境检测完成，共执行 4 项检查
+    suggestion: 建议使用虚拟环境隔离项目依赖
+  - check: hardware_compatibility
+    message: 硬件适配检测发现 1 个警告
+    suggestion: 强烈建议使用固态硬盘(SSD)
+fix_suggestions:
+- 'environment_dependencies: 建议使用虚拟环境隔离项目依赖'
+- 'hardware_compatibility: 强烈建议使用固态硬盘(SSD)'

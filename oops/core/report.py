@@ -645,6 +645,18 @@ class ReportGenerator:
                     "python_executable": sys_data.get("python", {}).get("executable"),
                     "current_path": sys_data.get("paths", {}).get("current"),
                 }
+            elif result.check_name == "system_settings":
+                # 新的系统设置检测器
+                settings_data = result.details.get("settings", {})
+                if not system_info.get("basic"):
+                    system_info["basic"] = {}
+                # 将系统设置添加到 basic 中
+                system_info["basic"].update({
+                    "hdr_enabled": settings_data.get("hdr_enabled", False),
+                    "night_light_enabled": settings_data.get("night_light_enabled", False),
+                    "color_filter_enabled": settings_data.get("color_filter_enabled", False),
+                    "primary_resolution": settings_data.get("primary_resolution"),
+                })
 
         # 如果新检测器没有数据，尝试从旧检测器获取
         if not system_info:
@@ -752,23 +764,58 @@ class ReportGenerator:
             warning_items = []
             success_items = []
 
-            for key, value in result.details.items():
-                if isinstance(value, dict):
-                    item_status = value.get("status", "unknown")
-                    item_message = value.get("message", value.get("error", ""))
+            # 处理特殊的检测器数据结构
+            if result.check_name == "system_settings":
+                # system_settings 有特殊的数据结构
+                issues = result.details.get("issues", [])
+                warnings = result.details.get("warnings", [])
+                settings = result.details.get("settings", {})
+                
+                # 添加错误项
+                for issue in issues:
+                    failed_items.append(f"<li>{html.escape(issue)}</li>")
+                
+                # 添加警告项
+                for warning in warnings:
+                    warning_items.append(f"<li>{html.escape(warning)}</li>")
+                
+                # 显示检测的设置项
+                if settings:
+                    settings_info = []
+                    for setting_key, setting_value in settings.items():
+                        if setting_key == "hdr_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"HDR: {status}")
+                        elif setting_key == "night_light_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"夜间模式: {status}")
+                        elif setting_key == "color_filter_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"颜色滤镜: {status}")
+                        elif setting_key == "primary_resolution":
+                            settings_info.append(f"主显示器分辨率: {setting_value}")
+                    
+                    if settings_info:
+                        success_items.extend([f"<li>{info}</li>" for info in settings_info])
+            else:
+                # 处理其他检测器的标准数据结构
+                for key, value in result.details.items():
+                    if isinstance(value, dict):
+                        item_status = value.get("status", "unknown")
+                        item_message = value.get("message", value.get("error", ""))
 
-                    if item_status in ["error", "failure", "timeout"]:
-                        failed_items.append(
-                            f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                        )
-                    elif item_status == "warning":
-                        warning_items.append(
-                            f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                        )
-                    elif item_status == "success":
-                        success_items.append(
-                            f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
-                        )
+                        if item_status in ["error", "failure", "timeout"]:
+                            failed_items.append(
+                                f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
+                            )
+                        elif item_status == "warning":
+                            warning_items.append(
+                                f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
+                            )
+                        elif item_status == "success":
+                            success_items.append(
+                                f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
+                            )
 
             if failed_items or warning_items:
                 details_html = "<div class='check-details-list'>"

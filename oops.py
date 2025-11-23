@@ -251,7 +251,8 @@ async def display_diagnostic_results(results, summary, diagnostic_suite, args, p
     print(f"\n[*] 检测完成!")
     print(f"   [+] 成功: {summary['completed']} 项")
     print(f"   [-] 失败: {summary['failed']} 项")
-    print(f"   [!] 问题: {summary['critical_issues'] + summary['error_issues'] + summary['warning_issues']} 个")
+    total_issues = summary['critical_issues'] + summary['error_issues'] + summary['warning_issues']
+    print(f"   [!] 问题: {total_issues} 个")
     print(f"   [%] 成功率: {summary['success_rate']:.1f}%")
     
     # 合并显示所有问题（按严重程度排序）

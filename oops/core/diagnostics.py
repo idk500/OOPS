@@ -97,6 +97,9 @@ class DiagnosticSuite:
         logger.info(f"开始为项目 {project_name} 运行诊断检测")
 
         # 加载项目配置
+        # 强制清除缓存并重新加载
+        if project_name in self.config_manager.project_configs:
+            del self.config_manager.project_configs[project_name]
         project_config = self.config_manager.get_project_config(project_name)
         if not project_config:
             error_result = CheckResult(
@@ -186,6 +189,7 @@ class DiagnosticSuite:
         self, project_config: Dict[str, Any], selected_checks: Optional[List[str]]
     ) -> List[str]:
         """确定需要运行的检测项目"""
+
         if selected_checks:
             return [check for check in selected_checks if check in self.detection_rules]
 
@@ -256,21 +260,26 @@ class DiagnosticSuite:
             )
 
             # 更新检测结果
-            result.status = CheckStatus.COMPLETED
+            check_status = check_result.get("status", "success")
+            
+            # 设置检测状态
+            if check_status == "error":
+                result.status = CheckStatus.FAILED
+                result.severity = SeverityLevel.ERROR
+            elif check_status == "warning":
+                result.status = CheckStatus.COMPLETED
+                result.severity = SeverityLevel.WARNING
+            elif check_status == "critical":
+                result.status = CheckStatus.FAILED
+                result.severity = SeverityLevel.CRITICAL
+            else:
+                result.status = CheckStatus.COMPLETED
+                result.severity = SeverityLevel.INFO
+            
             result.message = check_result.get("message", "检测完成")
             result.details = check_result.get("details", {})
             result.fix_suggestion = rule.get_fix_suggestion(check_result)
             result.execution_time = (datetime.now() - start_time).total_seconds()
-
-            # 根据检测结果设置严重程度
-            if check_result.get("status") == "error":
-                result.severity = SeverityLevel.ERROR
-            elif check_result.get("status") == "warning":
-                result.severity = SeverityLevel.WARNING
-            elif check_result.get("status") == "critical":
-                result.severity = SeverityLevel.CRITICAL
-            else:
-                result.severity = SeverityLevel.INFO
 
             # 特殊处理：从system_info中提取硬件适配信息作为独立检测项
             if check_name == "system_info":

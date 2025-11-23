@@ -116,6 +116,9 @@ class ConfigManager:
                 },
             },
             "checks": {
+                "system_info": {
+                    "enabled": True,
+                },
                 "network": {
                     "enabled": True,
                     "git_repos": [],
