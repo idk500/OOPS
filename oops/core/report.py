@@ -972,7 +972,40 @@ class ReportGenerator:
     </script>
 </head>
 <body>
-    <div class="container">"""
+    <div class="container">
+        <div class="report-notice" style="background: #fef3c7; border: 2px solid #f59e0b; border-radius: 8px; padding: 15px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 10px 0; color: #f59e0b;">📋 报告提交说明</h3>
+            <p style="margin: 0 0 10px 0;">
+                <strong>⚠️ 请勿拍照或截图！</strong>请直接提交 YAML 格式的报告文件。
+            </p>
+            <p style="margin: 0 0 10px 0;">
+                YAML 报告包含完整的检测数据，便于开发者分析问题。
+            </p>
+            <button onclick="openReportFolder()" style="background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 600;">
+                📁 打开报告文件夹
+            </button>
+            <span id="yaml-path" style="margin-left: 15px; color: #6b7280; font-size: 14px;"></span>
+        </div>
+        <script>
+            function openReportFolder() {
+                // 获取当前 HTML 文件的路径
+                const htmlPath = window.location.pathname;
+                const reportDir = htmlPath.substring(0, htmlPath.lastIndexOf('/'));
+                
+                // 尝试打开文件夹（仅在本地文件系统有效）
+                if (window.location.protocol === 'file:') {
+                    // 显示路径信息
+                    const yamlPath = htmlPath.replace('.html', '.yaml');
+                    document.getElementById('yaml-path').textContent = 'YAML 报告: ' + yamlPath.split('/').pop();
+                    
+                    // 提示用户
+                    alert('YAML 报告位于同一目录下\\n\\n文件名: ' + yamlPath.split('/').pop() + '\\n\\n请在文件管理器中找到该文件并提交。');
+                } else {
+                    alert('请在本地打开此报告以访问 YAML 文件。');
+                }
+            }
+        </script>
+"""
 
     def _get_html_footer(self) -> str:
         """获取HTML底部模板"""
