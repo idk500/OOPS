@@ -701,6 +701,19 @@ class ReportGenerator:
             padding: 12px;
         }
         
+        .detail-group ul {
+            margin: 5px 0;
+            padding-left: 20px;
+            list-style-type: disc;
+            list-style-position: inside;
+        }
+        
+        .detail-group li {
+            margin-bottom: 3px;
+            line-height: 1.4;
+            padding-left: 0;
+        }
+        
         .detail-item {
             display: flex;
             justify-content: space-between;
