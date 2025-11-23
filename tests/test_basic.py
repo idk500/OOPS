@@ -74,8 +74,10 @@ def test_network_defaults():
 def test_diagnostic_suite_init():
     """测试诊断套件初始化"""
     from oops.core.diagnostics import DiagnosticSuite
+    from oops.core.config import ConfigManager
 
-    suite = DiagnosticSuite()
+    config_manager = ConfigManager()
+    suite = DiagnosticSuite(config_manager)
     assert suite is not None
     assert hasattr(suite, "detectors")
 
