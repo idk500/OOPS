@@ -97,6 +97,36 @@ class EnvironmentDependencyDetector(DetectionRule):
             logger.error(f"Python版本检测失败: {e}")
             return {"status": "error", "message": f"Python版本检测失败: {str(e)}"}
 
+    def _is_valid_venv(self, venv_path: Path) -> bool:
+        """验证目录是否是有效的虚拟环境
+        
+        Args:
+            venv_path: 虚拟环境路径
+            
+        Returns:
+            是否是有效的虚拟环境
+        """
+        try:
+            system = platform.system().lower()
+            
+            if system == "windows":
+                # Windows: 检查 Scripts/activate.bat 或 Scripts/Activate.ps1
+                activate_bat = venv_path / "Scripts" / "activate.bat"
+                activate_ps1 = venv_path / "Scripts" / "Activate.ps1"
+                python_exe = venv_path / "Scripts" / "python.exe"
+                
+                return (activate_bat.exists() or activate_ps1.exists()) and python_exe.exists()
+            else:
+                # Linux/macOS: 检查 bin/activate
+                activate_sh = venv_path / "bin" / "activate"
+                python_bin = venv_path / "bin" / "python"
+                
+                return activate_sh.exists() and python_bin.exists()
+                
+        except Exception as e:
+            logger.debug(f"验证虚拟环境失败: {e}")
+            return False
+
     def _check_virtual_environment(self, env_config: Dict[str, Any]) -> Dict[str, Any]:
         """检测虚拟环境"""
         try:
@@ -119,14 +149,27 @@ class EnvironmentDependencyDetector(DetectionRule):
             venv_path = None
 
             if project_path:
-                # 检查常见的虚拟环境目录
-                common_venv_names = [".venv", "venv", "env"]
+                # 方法1: 检查常见的虚拟环境目录名
+                common_venv_names = [".venv", "venv", "env", ".env"]
                 for venv_name in common_venv_names:
                     potential_venv = Path(project_path) / venv_name
                     if potential_venv.exists() and potential_venv.is_dir():
-                        venv_exists = True
-                        venv_path = str(potential_venv)
-                        break
+                        # 验证是否真的是虚拟环境（检查activate脚本）
+                        if self._is_valid_venv(potential_venv):
+                            venv_exists = True
+                            venv_path = str(potential_venv)
+                            break
+
+                # 方法2: 如果方法1没找到，扫描项目根目录查找任何包含activate脚本的目录
+                if not venv_exists:
+                    try:
+                        for item in Path(project_path).iterdir():
+                            if item.is_dir() and self._is_valid_venv(item):
+                                venv_exists = True
+                                venv_path = str(item)
+                                break
+                    except (PermissionError, OSError):
+                        pass
 
             # 如果项目目录存在虚拟环境，认为配置正确
             if venv_exists:
