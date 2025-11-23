@@ -4,8 +4,8 @@ block_cipher = None
 
 # 收集所有需要的数据文件
 datas = [
-    ('configs', 'configs'),
-    ('docs/knowledge_base', 'docs/knowledge_base'),
+    (os.path.join(spec_root, 'configs'), 'configs'),
+    (os.path.join(spec_root, 'docs', 'knowledge_base'), 'docs/knowledge_base'),
 ]
 
 # 收集所有隐藏导入
@@ -32,9 +32,16 @@ hiddenimports = [
     'click',
 ]
 
+import os
+import sys
+
+# 获取项目根目录（spec 文件在 build/config/ 下）
+spec_root = os.path.abspath(os.path.join(SPECPATH, '..', '..'))
+sys.path.insert(0, spec_root)
+
 a = Analysis(
-    ['oops.py'],
-    pathex=[],
+    [os.path.join(spec_root, 'oops.py')],
+    pathex=[spec_root],
     binaries=[],
     datas=datas,
     hiddenimports=hiddenimports,
@@ -79,6 +86,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='oops.ico',  # OOPS 图标
+    icon=os.path.join(spec_root, 'oops.ico'),  # OOPS 图标
     version_file=None,
 )
