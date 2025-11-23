@@ -2,6 +2,38 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.1.7 - 2025-11-24 🚀
+
+### ✨ 新功能
+
+1. **HTML 报告优化**
+   - 将报告提示从警告样式改为简洁的 info 样式
+   - 添加页尾 About 区域，包含项目信息和链接
+   - 项目地址：https://github.com/idk500/OOPS
+   - 问题反馈：GitHub Issues
+
+2. **发布包改进**
+   - ZIP 文件名包含版本号（如：oops-windows-x64_v0.1.7.zip）
+   - 打包文件包含完整文档（README.md, QUICKSTART.md, CHANGELOG.md）
+   - 更专业的发布包结构
+
+### 🎨 用户体验改进
+
+- 更简洁的报告提示样式（蓝色 info 框代替黄色警告框）
+- 清晰的项目信息展示
+- 便于识别的版本化文件名
+- 完整的文档随包发布
+
+### 📦 发布包内容
+
+- oops-windows-x64.exe - 主程序
+- configs/ - 配置文件
+- README.md - 项目介绍
+- QUICKSTART.md - 快速开始
+- CHANGELOG.md - 更新日志
+
+---
+
 ## v0.1.6 - 2025-11-24 🚀
 
 ### ✨ 新功能
