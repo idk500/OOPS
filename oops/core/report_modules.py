@@ -64,8 +64,7 @@ class SystemInfoModule(ReportModule):
         if hardware.get("memory_total"):
             summary_parts.append(f"内存: {hardware['memory_total']}")
         if storage.get("disk_type"):
-            disk_icon = "⚠️" if storage["disk_type"] == "HDD" else "✅"
-            summary_parts.append(f"磁盘: {storage['disk_type']} {disk_icon}")
+            summary_parts.append(f"磁盘: {storage['disk_type']}")
         if basic.get("os"):
             summary_parts.append(f"系统: {basic['os']}")
 
@@ -143,23 +142,12 @@ class SystemInfoModule(ReportModule):
                             </div>
                         """
                     else:
-                        # 其他显示设置根据布尔值显示图标
-                        if value is True:
-                            icon = "⚠️"
-                            color = "var(--warning-color)"
-                        elif value is False:
-                            icon = "✅"
-                            color = "var(--success-color)"
-                        else:
-                            icon = "❓"
-                            color = "var(--info-color)"
-
+                        # 其他显示设置只显示状态，不显示判断性图标
+                        status_text = "启用" if value is True else "禁用" if value is False else str(value)
                         html_content += f"""
                             <div class="info-item">
                                 <span class="info-label">{display_name}:</span>
-                                <span class="info-value" style="color: {color};">
-                                    {html.escape(str(value))} {icon}
-                                </span>
+                                <span class="info-value">{html.escape(status_text)}</span>
                             </div>
                         """
                 html_content += """
@@ -198,233 +186,20 @@ class SystemInfoModule(ReportModule):
             """
             for key, value in storage_info.items():
                 display_name = self._get_display_name(key)
-                # 磁盘类型特殊处理，如果是HDD显示警告
-                if key == "disk_type" and value == "HDD":
-                    html_content += f"""
-                        <div class="info-item">
-                            <span class="info-label">{display_name}:</span>
-                            <span class="info-value" style="color: var(--warning-color);">
-                                {html.escape(str(value))} ⚠️
-                            </span>
-                        </div>
-                    """
-                else:
-                    html_content += f"""
+                # 所有存储信息统一处理，不显示警告
+                html_content += f"""
                         <div class="info-item">
                             <span class="info-label">{display_name}:</span>
                             <span class="info-value">{html.escape(str(value))}</span>
                         </div>
-                    """
+                """
             html_content += """
                     </div>
                 </div>
             """
 
-        # 硬件适配结果
-        validation = system_info.get("validation", {})
-        if validation:
-            # 分类收集验证项
-            error_items = []
-            warning_items = []
-            success_items = []
-
-            # 内存验证
-            if "memory" in validation:
-                mem_val = validation["memory"]
-                item_html = f"""
-                        <div class="info-item">
-                            <span class="info-label">内存验证:</span>
-                            <span class="info-value">{{icon}} {html.escape(mem_val.get('message', ''))}</span>
-                        </div>
-                """
-                if mem_val.get("recommendation"):
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--info-color); font-size: 0.9em;">
-                                💡 {html.escape(mem_val.get('recommendation'))}
-                            </span>
-                        </div>
-                    """
-
-                if mem_val.get("valid"):
-                    success_items.append(item_html.format(icon="✅"))
-                else:
-                    error_items.append(item_html.format(icon="❌"))
-
-            # 磁盘类型验证
-            if "disk_type" in validation:
-                disk_val = validation["disk_type"]
-                if disk_val.get("warning"):
-                    status_icon = "⚠️"
-                    color = "var(--warning-color)"
-                else:
-                    status_icon = "✅"
-                    color = "var(--success-color)"
-
-                item_html = f"""
-                        <div class="info-item">
-                            <span class="info-label">磁盘类型:</span>
-                            <span class="info-value" style="color: {color};">
-                                {status_icon} {html.escape(disk_val.get('message', ''))}
-                            </span>
-                        </div>
-                """
-                if disk_val.get("recommendation"):
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--warning-color); font-size: 0.9em;">
-                                💡 {html.escape(disk_val.get('recommendation'))}
-                            </span>
-                        </div>
-                    """
-
-                if disk_val.get("warning"):
-                    warning_items.append(item_html)
-                else:
-                    success_items.append(item_html)
-
-            # 用户名验证（只在有问题时显示）
-            if "username" in validation:
-                user_val = validation["username"]
-                status_icon = "❌" if not user_val.get("valid") else "⚠️"
-                color = (
-                    "var(--error-color)"
-                    if not user_val.get("valid")
-                    else "var(--warning-color)"
-                )
-
-                item_html = f"""
-                        <div class="info-item">
-                            <span class="info-label">用户名规范:</span>
-                            <span class="info-value" style="color: {color};">
-                                {status_icon} {html.escape(user_val.get('message', ''))}
-                            </span>
-                        </div>
-                """
-
-                # 显示具体问题
-                issues = user_val.get("issues", [])
-                warnings = user_val.get("warnings", [])
-                if issues or warnings:
-                    problems = issues + warnings
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--info-color); font-size: 0.9em;">
-                                问题: {html.escape('; '.join(problems))}
-                            </span>
-                        </div>
-                    """
-
-                # 显示建议
-                recommendations = user_val.get("recommendations", [])
-                if recommendations:
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--warning-color); font-size: 0.9em;">
-                                💡 {html.escape('; '.join(recommendations))}
-                            </span>
-                        </div>
-                    """
-
-                if not user_val.get("valid"):
-                    error_items.append(item_html)
-                else:
-                    warning_items.append(item_html)
-
-            # 显示设置验证（HDR、夜间模式等）
-            if "display_settings" in validation:
-                display_val = validation["display_settings"]
-                if not display_val.get("valid"):
-                    status_icon = "❌"
-                    color = "var(--error-color)"
-                elif display_val.get("warning"):
-                    status_icon = "⚠️"
-                    color = "var(--warning-color)"
-                else:
-                    status_icon = "✅"
-                    color = "var(--success-color)"
-
-                item_html = f"""
-                        <div class="info-item">
-                            <span class="info-label">显示设置:</span>
-                            <span class="info-value" style="color: {color};">
-                                {status_icon} {html.escape(display_val.get('message', ''))}
-                            </span>
-                        </div>
-                """
-
-                # 显示具体问题
-                issues = display_val.get("issues", [])
-                warnings = display_val.get("warnings", [])
-                if issues or warnings:
-                    problems = issues + warnings
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--info-color); font-size: 0.9em;">
-                                问题: {html.escape('; '.join(problems))}
-                            </span>
-                        </div>
-                    """
-
-                # 显示建议
-                recommendations = display_val.get("recommendations", [])
-                if recommendations:
-                    item_html += f"""
-                        <div class="info-item">
-                            <span class="info-label"></span>
-                            <span class="info-value" style="color: var(--warning-color); font-size: 0.9em;">
-                                💡 {html.escape('; '.join(recommendations))}
-                            </span>
-                        </div>
-                    """
-
-                if not display_val.get("valid"):
-                    error_items.append(item_html)
-                elif display_val.get("warning"):
-                    warning_items.append(item_html)
-                else:
-                    success_items.append(item_html)
-
-            # 生成HTML
-            html_content += """
-                <div class="info-group">
-                    <h3>硬件适配</h3>
-                    <div class="info-items">
-            """
-
-            # 错误项直接显示
-            if error_items:
-                html_content += "".join(error_items)
-
-            # 警告项直接显示
-            if warning_items:
-                html_content += "".join(warning_items)
-
-            # 成功项折叠显示
-            if success_items:
-                collapse_id = "hardware-success-items"
-                html_content += f"""
-                    <div style="margin-top: 10px;">
-                        <button class="collapse-button" onclick="toggleCollapse('{collapse_id}')">
-                            ▶ 显示通过项 ({len(success_items)})
-                        </button>
-                        <div id="{collapse_id}" style="display: none; margin-top: 5px;">
-                """
-                html_content += "".join(success_items)
-                html_content += """
-                        </div>
-                    </div>
-                """
-
-            html_content += """
-                    </div>
-                </div>
-            """
+        # 移除所有硬件适配验证逻辑 - 这些应该在独立的检测器中处理
+        # 系统信息模块只负责展示纯数据，不做任何验证或判断
 
         html_content += """
                 </div>

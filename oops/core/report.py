@@ -555,6 +555,161 @@ class ReportGenerator:
             align-items: center;
             justify-content: space-between;
         }
+        
+        /* 统一检测结果样式 */
+        .detection-results {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        .detection-result {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        
+        .detection-result.warning {
+            border-left: 4px solid var(--warning-color);
+        }
+        
+        .detection-result.error {
+            border-left: 4px solid var(--error-color);
+        }
+        
+        .detection-result.critical {
+            border-left: 4px solid var(--critical-color);
+        }
+        
+        .detection-result.info {
+            border-left: 4px solid var(--info-color);
+        }
+        
+        .detection-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        
+        .detection-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .detection-summary {
+            color: var(--info-color);
+            font-size: 0.9em;
+        }
+        
+        .detection-message {
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        
+        .detection-issues {
+            margin-bottom: 15px;
+        }
+        
+        .issue-group {
+            margin-bottom: 15px;
+        }
+        
+        .issue-group h4 {
+            margin: 0 0 8px 0;
+            font-size: 1em;
+        }
+        
+        .issue-group.error h4 {
+            color: var(--error-color);
+        }
+        
+        .issue-group.warning h4 {
+            color: var(--warning-color);
+        }
+        
+        .issue-group.success h4 {
+            color: var(--success-color);
+        }
+        
+        .issue-group ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+        
+        .issue-group li {
+            margin-bottom: 5px;
+            line-height: 1.4;
+        }
+        
+        .detection-details {
+            background: #f9fafb;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .fix-suggestion {
+            background: #fef3c7;
+            border-left: 4px solid var(--warning-color);
+            padding: 15px;
+            border-radius: 6px;
+            margin-top: 15px;
+        }
+        
+        .fix-suggestion h4 {
+            margin: 0 0 10px 0;
+            color: var(--warning-color);
+        }
+        
+        .raw-details {
+            margin-top: 15px;
+        }
+        
+        .raw-details h4 {
+            margin: 0 0 10px 0;
+            color: var(--primary-color);
+        }
+        
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        
+        .detail-group {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 12px;
+        }
+        
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .detail-item:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 500;
+            color: #374151;
+            min-width: 100px;
+        }
+        
+        .detail-value {
+            color: #6b7280;
+            text-align: right;
+            word-break: break-word;
+        }
     </style>
     <script>
         // 折叠/展开功能
@@ -726,13 +881,18 @@ class ReportGenerator:
         return content
 
     def _get_html_detailed_results_section(self, results: List[CheckResult]) -> str:
-        """获取HTML详细结果部分"""
+        """获取HTML详细结果部分 - 使用统一渲染器"""
+        from oops.core.unified_renderer import UnifiedDetectionRenderer
+        
+        renderer = UnifiedDetectionRenderer()
+        
         content = """
         <div class="section">
             <h2 class="section-title">🔍 详细检测结果</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">
-                以下是每个检测项的详细信息，包括具体的失败项和警告项。
-            </p>"""
+                以下是每个检测项的详细信息。错误和警告项默认显示，通过项可展开查看。
+            </p>
+            <div class="detection-results">"""
 
         # 按严重程度排序：critical > error > warning > info
         severity_order = {
@@ -747,9 +907,11 @@ class ReportGenerator:
         )
 
         for result in sorted_results:
-            content += self._get_html_check_item(result)
+            content += renderer.render_detection_result(result)
 
-        content += "\n        </div>"
+        content += """
+            </div>
+        </div>"""
         return content
 
     def _get_html_check_item(self, result: CheckResult) -> str:

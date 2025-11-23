@@ -1,0 +1,230 @@
+version: '1.0'
+project_name: zenless_zone_zero
+project_path: ''
+current_path: E:\Codes\OOPS
+timestamp: '2025-11-23 14:23:46'
+summary:
+  total_checks: 8
+  completed: 6
+  failed: 2
+  critical_issues: 0
+  error_issues: 2
+  warning_issues: 3
+  success_rate: 75.0
+system_info:
+  hardware:
+    cores_physical: 6
+    cores_logical: 12
+    freq_current: 3501 MHz
+    freq_max: 3501 MHz
+    model: AMD Ryzen 5 5600 6-Core Processor
+  memory:
+    total: 15.9 GB
+    available: 4.4 GB
+    used: 11.5 GB
+    percent: 72.4%
+  gpu: NVIDIA GeForce GTX 1060 6GB
+  storage:
+    current_drive: E:\
+    total: 1863.0 GB
+    used: 1186.2 GB
+    free: 676.8 GB
+    percent: 63.7%
+    type: HDD
+  basic:
+    name: Windows
+    version: 10.0.19045
+    release: '10'
+    architecture: 64bit
+    machine: AMD64
+    processor: AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD
+  python:
+    version: 3.11.9
+    executable: C:\Users\[USER]\AppData\Local\Programs\Python\Python311\python.exe
+    implementation: CPython
+    compiler: MSC v.1938 64 bit (AMD64)
+  paths:
+    current: E:\Codes\OOPS
+    home: C:\Users\[USER]
+check_results:
+  python_environment:
+    status: completed
+    severity: warning
+    message: Python 环境存在 1 个警告
+    details:
+      environment:
+        python_version:
+          current: 3.11.9
+          major: 3
+          minor: 11
+          micro: 9
+        package_manager:
+          type: pip
+          version: pip 24.0 from C:\Users\FuC\AppData\Local\Programs\Python\Python311\Lib\site-packages\pip
+            (python 3.11)
+        virtual_env:
+          in_venv: false
+          venv_exists: false
+          venv_path: null
+      issues: []
+      warnings:
+      - 未检测到虚拟环境
+      recommendations:
+      - 建议使用虚拟环境隔离项目依赖
+    fix_suggestion: 建议使用虚拟环境隔离项目依赖
+  environment_dependencies:
+    status: completed
+    severity: warning
+    message: 环境检测完成，共执行 4 项检查
+    details:
+      python_version:
+        status: success
+        current_version: 3.11.9
+        required_version: '>=3.8'
+        message: 'Python版本兼容: 3.11.9'
+      virtual_environment:
+        status: warning
+        in_virtual_env: false
+        venv_exists: false
+        message: 未检测到虚拟环境，建议使用虚拟环境隔离依赖
+      system_libraries:
+        status: success
+        message: '系统库检测完成: 0 个库'
+        details: {}
+      project_dependencies:
+        status: info
+        message: 项目依赖检测待实现
+        project_path: D:/ZZZ-OD
+    fix_suggestion: 建议使用虚拟环境隔离项目依赖
+  network_connectivity:
+    status: completed
+    severity: info
+    message: 网络检测完成，共检测 3 个目标
+    details:
+      https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git:
+        status: success
+        response_time_ms: 1205.6467533111572
+        type: git_repo
+      https://pypi.org/simple/:
+        status: success
+        response_time_ms: 239.99810218811035
+        status_code: 200
+        content_length: 31126
+        type: pypi_source
+      https://pypi.tuna.tsinghua.edu.cn/simple/:
+        status: success
+        response_time_ms: 148.99778366088867
+        status_code: 200
+        content_length: 0
+        type: pypi_source
+    fix_suggestion: ''
+  path_validation:
+    status: failed
+    severity: error
+    message: 路径检测完成，共执行 6 项检查
+    details:
+      path_exists:
+        status: error
+        message: '路径不存在: D:/ZZZ-OD'
+        fix_suggestion: 请检查安装路径是否正确，或重新安装项目
+      chinese_paths:
+        status: success
+        message: 路径不包含中文字符
+      permissions:
+        status: skipped
+        message: 路径不存在，跳过权限检查
+      path_length:
+        status: success
+        message: '路径长度正常: 9 字符'
+      special_characters:
+        status: success
+        message: 路径不包含问题特殊字符
+      spaces:
+        status: success
+        message: 路径不包含空格
+    fix_suggestion: 请确保项目安装路径存在且正确
+  hardware_info:
+    status: completed
+    severity: info
+    message: 硬件信息收集完成
+    details:
+      cpu:
+        cores_physical: 6
+        cores_logical: 12
+        freq_current: 3501 MHz
+        freq_max: 3501 MHz
+        model: AMD Ryzen 5 5600 6-Core Processor
+      memory:
+        total: 15.9 GB
+        available: 4.4 GB
+        used: 11.5 GB
+        percent: 72.4%
+      gpu: NVIDIA GeForce GTX 1060 6GB
+      storage:
+        current_drive: E:\
+        total: 1863.0 GB
+        used: 1186.2 GB
+        free: 676.8 GB
+        percent: 63.7%
+        type: HDD
+    fix_suggestion: ''
+  system_info_new:
+    status: completed
+    severity: info
+    message: 系统信息收集完成
+    details:
+      os:
+        name: Windows
+        version: 10.0.19045
+        release: '10'
+        architecture: 64bit
+        machine: AMD64
+        processor: AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD
+      python:
+        version: 3.11.9
+        executable: C:\Users\[USER]\AppData\Local\Programs\Python\Python311\python.exe
+        implementation: CPython
+        compiler: MSC v.1938 64 bit (AMD64)
+      paths:
+        current: E:\Codes\OOPS
+        home: C:\Users\[USER]
+    fix_suggestion: ''
+  system_settings:
+    status: failed
+    severity: error
+    message: 检测到 1 个可能影响识别的系统设置问题
+    details:
+      settings:
+        hdr_enabled: true
+        night_light_enabled: true
+        color_filter_enabled: false
+        primary_resolution: 2560 x 1440
+      issues:
+      - HDR已启用
+      warnings:
+      - 夜间模式/护眼模式已启用
+      recommendations:
+      - 关闭HDR以避免影响游戏脚本的图像识别
+      - 关闭夜间模式以避免色温变化影响识别
+    fix_suggestion: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别
+issues:
+  critical: []
+  errors:
+  - check: path_validation
+    message: 路径检测完成，共执行 6 项检查
+    suggestion: 请确保项目安装路径存在且正确
+  - check: system_settings
+    message: 检测到 1 个可能影响识别的系统设置问题
+    suggestion: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别
+  warnings:
+  - check: python_environment
+    message: Python 环境存在 1 个警告
+    suggestion: 建议使用虚拟环境隔离项目依赖
+  - check: environment_dependencies
+    message: 环境检测完成，共执行 4 项检查
+    suggestion: 建议使用虚拟环境隔离项目依赖
+fix_suggestions:
+- 'python_environment: 建议使用虚拟环境隔离项目依赖'
+- 'environment_dependencies: 建议使用虚拟环境隔离项目依赖'
+- 'path_validation: 请确保项目安装路径存在且正确'
+- 'system_settings: 关闭HDR以避免影响游戏脚本的图像识别; 关闭夜间模式以避免色温变化影响识别'
