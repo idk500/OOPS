@@ -186,6 +186,8 @@ class PythonEnvironmentDetector(DetectionRule):
         if project_path:
             # 检查常见的虚拟环境目录
             common_venv_names = [".venv", "venv", "env", ".env"]
+
+            # 首先在项目路径中查找
             for venv_name in common_venv_names:
                 potential_venv = Path(project_path) / venv_name
                 if potential_venv.exists() and potential_venv.is_dir():
@@ -194,7 +196,32 @@ class PythonEnvironmentDetector(DetectionRule):
                         venv_path = str(potential_venv)
                         break
 
-            # 如果没找到，扫描项目根目录
+            # 如果没找到，向上查找父目录（最多3层）
+            if not venv_exists:
+                current_path = Path(project_path)
+                for _ in range(3):
+                    try:
+                        parent = current_path.parent
+                        if parent == current_path:  # 已到根目录
+                            break
+
+                        for venv_name in common_venv_names:
+                            potential_venv = parent / venv_name
+                            if potential_venv.exists() and potential_venv.is_dir():
+                                if self._is_valid_venv(potential_venv):
+                                    venv_exists = True
+                                    venv_path = str(potential_venv)
+                                    logger.info(f"在父目录找到虚拟环境: {venv_path}")
+                                    break
+
+                        if venv_exists:
+                            break
+
+                        current_path = parent
+                    except (PermissionError, OSError):
+                        break
+
+            # 如果还没找到，扫描项目根目录中的所有目录
             if not venv_exists:
                 try:
                     for item in Path(project_path).iterdir():
