@@ -29,8 +29,8 @@ project:
   description: 绝区零自动化脚本
   name: 绝区零一条龙
   paths:
-    config_path: D:/ZZZ-OD/config
-    install_path: D:/ZZZ-OD
+    config_path: E:/ZZZ-1D/config
+    install_path: E:/ZZZ-1D
   type: game_script
 report:
   format: html

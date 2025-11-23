@@ -90,34 +90,24 @@ class UnifiedDetectionRenderer:
                 
             html_content += '</div>'
         
-        # 通过项默认折叠显示
-        if success_items:
-            success_collapse_id = f"{result.check_name}-success"
-            html_content += f"""
-            <div class="success-items-section">
-                <button class="collapse-button success-toggle" onclick="toggleCollapse('{success_collapse_id}')">
-                    ▶ 显示通过项 ({len(success_items)})
-                </button>
-                <div id="{success_collapse_id}" class="collapsible-content" style="display: none;">
-                    <div class="issue-group success">
-                        <ul>
-            """
-            for item in success_items:
-                html_content += f"<li>{html.escape(item)}</li>"
-            html_content += """
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            """
-        
-        # 折叠的详细信息
+        # 折叠的详细信息 - 包含通过项、详细数据、修复建议
         html_content += f"""
-            <div id="{result.check_name}-details" class="collapsible-content">
+            <div id="{result.check_name}-details" class="collapsible-content" style="display: none;">
                 <div class="detection-details">
         """
         
-        # 显示原始详细信息（如果有）- 默认折叠
+        # 通过项（在详细信息中显示）
+        if success_items:
+            html_content += f"""
+                <div class="issue-group success">
+                    <h4>✅ 通过项 ({len(success_items)})</h4>
+                    <ul>
+            """
+            for item in success_items:
+                html_content += f"<li>{html.escape(item)}</li>"
+            html_content += "</ul></div>"
+        
+        # 显示原始详细信息（如果有）
         if result.details and result.check_name != "network_connectivity":
             html_content += self._render_raw_details(result.details, result.check_name)
         
@@ -266,18 +256,11 @@ class UnifiedDetectionRenderer:
         return " | ".join(summary_parts)
 
     def _render_raw_details(self, details: Dict[str, Any], check_name: str = "") -> str:
-        """渲染原始详细信息 - 默认折叠"""
-        # 生成唯一的折叠ID
-        raw_details_id = f"{check_name}-raw-details" if check_name else "raw-details"
-        
-        html_content = f"""
-        <div class="raw-details-section">
-            <button class="collapse-button raw-details-toggle" onclick="toggleCollapse('{raw_details_id}')">
-                ▶ 显示详细数据
-            </button>
-            <div id="{raw_details_id}" class="collapsible-content" style="display: none;">
-                <div class="raw-details">
-                    <div class="details-grid">
+        """渲染原始详细信息 - 直接显示在详细信息区域"""
+        html_content = """
+        <div class="raw-details">
+            <h4>📋 详细数据</h4>
+            <div class="details-grid">
         """
         
         for key, value in details.items():
@@ -315,8 +298,6 @@ class UnifiedDetectionRenderer:
                 """
         
         html_content += """
-                    </div>
-                </div>
             </div>
         </div>
         """
