@@ -96,7 +96,7 @@ COLORS = {
 
 ## 🔗 相关资源
 - [项目文档](https://one-dragon.com)
-- [问题反馈](https://github.com/your-id/OOPS/issues)
+- [问题反馈](https://github.com/idk500/OOPS/issues)
 - [使用指南](https://one-dragon.com/docs)
 
 ---

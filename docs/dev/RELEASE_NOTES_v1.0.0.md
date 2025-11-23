@@ -150,6 +150,6 @@ cd build/scripts
 
 ---
 
-**下载**: [GitHub Releases](https://github.com/your-repo/OOPS/releases/tag/v1.0.0)
+**下载**: [GitHub Releases](https://github.com/idk500/OOPS/releases/tag/v1.0.0)
 
-**反馈**: [提交Issue](https://github.com/your-repo/OOPS/issues)
+**反馈**: [提交Issue](https://github.com/idk500/OOPS/issues)

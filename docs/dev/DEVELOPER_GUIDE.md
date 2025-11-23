@@ -5,7 +5,7 @@
 ### 环境准备
 ```bash
 # 1. 克隆项目
-git clone https://github.com/your-username/OOPS.git
+git clone https://github.com/idk500/OOPS.git
 cd OOPS
 
 # 2. 创建虚拟环境（推荐使用conda或venv）
@@ -486,4 +486,4 @@ python oops.py --project zenless_zone_zero
 
 **开始贡献吧！** 🎉
 
-如果有任何问题，请查看 [Issues](https://github.com/your-username/OOPS/issues) 或加入我们的讨论。
+如果有任何问题，请查看 [Issues](https://github.com/idk500/OOPS/issues) 或加入我们的讨论。

@@ -15,7 +15,7 @@ checks:
     # 默认会检测：GitHub、Gitee、PyPI官方源、清华镜像、阿里云镜像等
     # 如需添加项目特定的Git仓库，取消注释并修改：
     # git_repos:
-    #   - https://github.com/your-org/your-project.git
+    #   - https://github.com/idk500/your-project.git
   paths:
     check_chinese_paths: true
     check_path_length: true

@@ -349,7 +349,7 @@ checks:
   network:
     enabled: true
     git_repos:
-      - url: https://github.com/myuser/myproject.git
+      - url: https://github.com/idk500/your-project.git
         name: 我的项目仓库
 ```
 

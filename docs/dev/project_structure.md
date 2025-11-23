@@ -160,7 +160,7 @@ setup(
     description="Open-source One-click Problem Solver",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/your-username/OOPS",
+    url="https://github.com/idk500/OOPS",
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -466,7 +466,7 @@ repos:
 
 ### 开发模式安装
 ```bash
-git clone https://github.com/your-username/OOPS.git
+git clone https://github.com/idk500/OOPS.git
 cd OOPS
 python -m venv .venv
 source .venv/bin/activate  # Linux/macOS
