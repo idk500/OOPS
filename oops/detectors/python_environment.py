@@ -68,7 +68,7 @@ class PythonEnvironmentDetector(DetectionRule):
             venv_check = environment_info["virtual_env"]
             if not venv_check.get("venv_exists") and env_config.get("virtual_env"):
                 warnings.append("未检测到虚拟环境")
-                recommendations.append("建议使用虚拟环境隔离项目依赖")
+                recommendations.append("建议创建Python虚拟环境以隔离项目依赖")
 
             # 依赖检查
             if "dependencies" in environment_info:

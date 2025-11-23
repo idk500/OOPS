@@ -70,16 +70,14 @@ class SystemInfoDetector(DetectionRule):
                         "primary_resolution": settings_data.get("primary_resolution"),
                     })
 
-            # 确定整体状态
-            if settings_result.get("status") == "error":
-                status = "warning"  # 系统设置错误降级为警告
-                message = "系统信息收集完成，但发现系统设置问题"
-            elif any(result.get("status") == "error" for result in [hardware_result, system_result]):
+            # 确定整体状态 - 系统信息只关注数据收集，不关注验证结果
+            if any(result.get("status") == "error" for result in [hardware_result, system_result]):
                 status = "error"
                 message = "系统信息收集部分失败"
             else:
                 status = "success"
                 message = "系统信息收集完成"
+                # 注意：系统设置的验证结果不影响系统信息的状态，因为系统信息只负责数据展示
 
             return {
                 "status": status,
@@ -92,14 +90,6 @@ class SystemInfoDetector(DetectionRule):
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
         """获取修复建议"""
-        # 协调器模式：收集所有子检测器的修复建议
-        suggestions = []
-        
-        # 从系统设置检测器获取建议
-        if hasattr(self, 'system_settings_detector'):
-            settings_result = result  # 这里可以进一步优化，分别获取各检测器结果
-            settings_suggestion = self.system_settings_detector.get_fix_suggestion(settings_result)
-            if settings_suggestion:
-                suggestions.append(settings_suggestion)
-        
-        return "; ".join(filter(None, suggestions))
+        # 系统信息协调器不提供修复建议，因为它只负责数据收集
+        # 具体的验证和修复建议由独立的检测器（如system_settings）提供
+        return ""
