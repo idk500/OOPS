@@ -221,7 +221,9 @@ class DiagnosticSuite:
                 if install_path and "checks" in project_config:
                     if "environment" not in project_config["checks"]:
                         project_config["checks"]["environment"] = {}
-                    project_config["checks"]["environment"]["project_path"] = install_path
+                    project_config["checks"]["environment"][
+                        "project_path"
+                    ] = install_path
                     logger.debug(f"为环境检测设置项目路径: {install_path}")
 
             # 执行检测规则

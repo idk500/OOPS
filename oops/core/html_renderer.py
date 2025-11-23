@@ -10,11 +10,11 @@ import html
 
 class HTMLRenderer:
     """HTML 渲染器 - 从数据模型生成 HTML"""
-    
+
     def __init__(self):
         self.styles = self._get_styles()
         self.scripts = self._get_scripts()
-    
+
     def render(self, report: DiagnosticReport) -> str:
         """渲染完整的 HTML 报告"""
         return f"""<!DOCTYPE html>
@@ -36,7 +36,7 @@ class HTMLRenderer:
     <script>{self.scripts}</script>
 </body>
 </html>"""
-    
+
     def _render_header(self, report: DiagnosticReport) -> str:
         """渲染页头"""
         return f"""
@@ -50,7 +50,7 @@ class HTMLRenderer:
             </div>
         </div>
         """
-    
+
     def _render_summary(self, summary: Dict[str, Any]) -> str:
         """渲染摘要卡片"""
         return f"""
@@ -80,15 +80,15 @@ class HTMLRenderer:
             </div>
         </div>
         """
-    
+
     def _render_system_info(self, system_info: Dict[str, Any]) -> str:
         """渲染系统信息"""
         if not system_info:
             return ""
-        
+
         system_data = SystemInfoData(**system_info)
         summary = system_data.get_summary()
-        
+
         return f"""
         <div class="section">
             <div class="section-header">
@@ -103,66 +103,79 @@ class HTMLRenderer:
             </div>
         </div>
         """
-    
+
     def _render_system_details(self, system_data: SystemInfoData) -> str:
         """渲染系统详细信息"""
         html_parts = ['<div class="system-info-grid">']
-        
+
         # 基本信息
         if system_data.basic:
-            html_parts.append('<div class="info-group"><h3>基本信息</h3><div class="info-items">')
+            html_parts.append(
+                '<div class="info-group"><h3>基本信息</h3><div class="info-items">'
+            )
             for key, value in system_data.basic.items():
                 display_name = self._get_display_name(key)
-                html_parts.append(f'''
+                html_parts.append(
+                    f"""
                 <div class="info-item">
                     <span class="info-label">{display_name}:</span>
                     <span class="info-value">{html.escape(str(value))}</span>
                 </div>
-                ''')
-            html_parts.append('</div></div>')
-        
+                """
+                )
+            html_parts.append("</div></div>")
+
         # 硬件信息
         if system_data.hardware:
-            html_parts.append('<div class="info-group"><h3>硬件信息</h3><div class="info-items">')
+            html_parts.append(
+                '<div class="info-group"><h3>硬件信息</h3><div class="info-items">'
+            )
             for key, value in system_data.hardware.items():
                 display_name = self._get_display_name(key)
-                html_parts.append(f'''
+                html_parts.append(
+                    f"""
                 <div class="info-item">
                     <span class="info-label">{display_name}:</span>
                     <span class="info-value">{html.escape(str(value))}</span>
                 </div>
-                ''')
-            html_parts.append('</div></div>')
-        
+                """
+                )
+            html_parts.append("</div></div>")
+
         # 存储信息
         if system_data.storage:
-            html_parts.append('<div class="info-group"><h3>存储信息</h3><div class="info-items">')
+            html_parts.append(
+                '<div class="info-group"><h3>存储信息</h3><div class="info-items">'
+            )
             for key, value in system_data.storage.items():
                 display_name = self._get_display_name(key)
-                html_parts.append(f'''
+                html_parts.append(
+                    f"""
                 <div class="info-item">
                     <span class="info-label">{display_name}:</span>
                     <span class="info-value">{html.escape(str(value))}</span>
                 </div>
-                ''')
-            html_parts.append('</div></div>')
-        
-        html_parts.append('</div>')
-        return ''.join(html_parts)
-    
+                """
+                )
+            html_parts.append("</div></div>")
+
+        html_parts.append("</div>")
+        return "".join(html_parts)
+
     def _render_check_results(self, check_results: Dict[str, Any]) -> str:
         """渲染检测结果"""
         if not check_results:
             return ""
-        
+
         html_parts = ['<div class="section"><h2 class="section-title">🔍 检测结果</h2>']
-        
+
         for check_name, result in check_results.items():
-            severity = result.get('severity', 'info')
-            status = result.get('status', 'unknown')
-            message = result.get('message', '')
-            
-            html_parts.append(f'''
+            severity = result.get("severity", "info")
+            status = result.get("status", "unknown")
+            message = result.get("message", "")
+
+            html_parts.append(
+                f"""
             <div class="check-item {severity}">
                 <div class="check-header">
                     <div class="check-name">{html.escape(check_name)}</div>
@@ -170,56 +183,71 @@ class HTMLRenderer:
                 </div>
                 <div class="check-message">{html.escape(message)}</div>
             </div>
-            ''')
-        
-        html_parts.append('</div>')
-        return ''.join(html_parts)
-    
+            """
+            )
+
+        html_parts.append("</div>")
+        return "".join(html_parts)
+
     def _render_issues(self, issues: Dict[str, Any]) -> str:
         """渲染问题列表"""
-        total_issues = len(issues.get('critical', [])) + len(issues.get('errors', [])) + len(issues.get('warnings', []))
-        
+        total_issues = (
+            len(issues.get("critical", []))
+            + len(issues.get("errors", []))
+            + len(issues.get("warnings", []))
+        )
+
         if total_issues == 0:
             return ""
-        
-        html_parts = [f'<div class="section"><h2 class="section-title">⚠️ 发现的问题 ({total_issues})</h2>']
-        
+
+        html_parts = [
+            f'<div class="section"><h2 class="section-title">⚠️ 发现的问题 ({total_issues})</h2>'
+        ]
+
         # 关键问题
-        if issues.get('critical'):
-            html_parts.append('<h3 style="color: var(--critical-color);">🔴 关键问题</h3>')
-            for issue in issues['critical']:
-                html_parts.append(f'''
+        if issues.get("critical"):
+            html_parts.append(
+                '<h3 style="color: var(--critical-color);">🔴 关键问题</h3>'
+            )
+            for issue in issues["critical"]:
+                html_parts.append(
+                    f"""
                 <div class="issue-item critical">
                     <strong>{html.escape(issue['check'])}</strong>: {html.escape(issue['message'])}
                     {f'<div class="fix-suggestion">💡 {html.escape(issue["suggestion"])}</div>' if issue.get('suggestion') else ''}
                 </div>
-                ''')
-        
+                """
+                )
+
         # 错误
-        if issues.get('errors'):
+        if issues.get("errors"):
             html_parts.append('<h3 style="color: var(--error-color);">❌ 错误</h3>')
-            for issue in issues['errors']:
-                html_parts.append(f'''
+            for issue in issues["errors"]:
+                html_parts.append(
+                    f"""
                 <div class="issue-item error">
                     <strong>{html.escape(issue['check'])}</strong>: {html.escape(issue['message'])}
                     {f'<div class="fix-suggestion">💡 {html.escape(issue["suggestion"])}</div>' if issue.get('suggestion') else ''}
                 </div>
-                ''')
-        
+                """
+                )
+
         # 警告
-        if issues.get('warnings'):
+        if issues.get("warnings"):
             html_parts.append('<h3 style="color: var(--warning-color);">⚠️ 警告</h3>')
-            for issue in issues['warnings']:
-                html_parts.append(f'''
+            for issue in issues["warnings"]:
+                html_parts.append(
+                    f"""
                 <div class="issue-item warning">
                     <strong>{html.escape(issue['check'])}</strong>: {html.escape(issue['message'])}
                     {f'<div class="fix-suggestion">💡 {html.escape(issue["suggestion"])}</div>' if issue.get('suggestion') else ''}
                 </div>
-                ''')
-        
-        html_parts.append('</div>')
-        return ''.join(html_parts)
-    
+                """
+                )
+
+        html_parts.append("</div>")
+        return "".join(html_parts)
+
     def _get_display_name(self, key: str) -> str:
         """获取字段的显示名称"""
         name_map = {
@@ -250,7 +278,7 @@ class HTMLRenderer:
             "disk_type": "磁盘类型",
         }
         return name_map.get(key, key)
-    
+
     def _get_styles(self) -> str:
         """获取 CSS 样式"""
         return """
@@ -442,7 +470,7 @@ class HTMLRenderer:
             border-radius: 4px;
         }
         """
-    
+
     def _get_scripts(self) -> str:
         """获取 JavaScript 脚本"""
         return """

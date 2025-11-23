@@ -99,30 +99,32 @@ class EnvironmentDependencyDetector(DetectionRule):
 
     def _is_valid_venv(self, venv_path: Path) -> bool:
         """验证目录是否是有效的虚拟环境
-        
+
         Args:
             venv_path: 虚拟环境路径
-            
+
         Returns:
             是否是有效的虚拟环境
         """
         try:
             system = platform.system().lower()
-            
+
             if system == "windows":
                 # Windows: 检查 Scripts/activate.bat 或 Scripts/Activate.ps1
                 activate_bat = venv_path / "Scripts" / "activate.bat"
                 activate_ps1 = venv_path / "Scripts" / "Activate.ps1"
                 python_exe = venv_path / "Scripts" / "python.exe"
-                
-                return (activate_bat.exists() or activate_ps1.exists()) and python_exe.exists()
+
+                return (
+                    activate_bat.exists() or activate_ps1.exists()
+                ) and python_exe.exists()
             else:
                 # Linux/macOS: 检查 bin/activate
                 activate_sh = venv_path / "bin" / "activate"
                 python_bin = venv_path / "bin" / "python"
-                
+
                 return activate_sh.exists() and python_bin.exists()
-                
+
         except Exception as e:
             logger.debug(f"验证虚拟环境失败: {e}")
             return False
@@ -153,7 +155,9 @@ class EnvironmentDependencyDetector(DetectionRule):
                 common_venv_names = [".venv", "venv", "env", ".env"]
                 for venv_name in common_venv_names:
                     potential_venv = Path(project_path) / venv_name
-                    logger.debug(f"检查虚拟环境: {potential_venv}, 存在: {potential_venv.exists()}")
+                    logger.debug(
+                        f"检查虚拟环境: {potential_venv}, 存在: {potential_venv.exists()}"
+                    )
                     if potential_venv.exists() and potential_venv.is_dir():
                         # 验证是否真的是虚拟环境（检查activate脚本）
                         is_valid = self._is_valid_venv(potential_venv)

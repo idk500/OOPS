@@ -34,12 +34,12 @@ class SystemInfoModule(ReportModule):
         """生成系统信息HTML"""
         # 检查是否有实际数据
         has_data = bool(
-            system_info.get("basic") or 
-            system_info.get("hardware") or 
-            system_info.get("storage") or
-            system_info.get("validation")
+            system_info.get("basic")
+            or system_info.get("hardware")
+            or system_info.get("storage")
+            or system_info.get("validation")
         )
-        
+
         if not has_data:
             return f"""
             <div class="section">
@@ -51,7 +51,7 @@ class SystemInfoModule(ReportModule):
                 </p>
             </div>
             """
-        
+
         # 生成紧凑摘要
         summary_parts = []
         hardware = system_info.get("hardware", {})

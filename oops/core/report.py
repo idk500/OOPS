@@ -150,15 +150,15 @@ class ReportGenerator:
     ) -> str:
         """生成YAML报告 - 用于用户提交给项目开发者"""
         from oops.core.data_models import create_diagnostic_report_from_results
-        
+
         # 使用数据模型创建报告
         report = create_diagnostic_report_from_results(
             results=results,
             project_name=project_name,
             project_path="",  # 将在后续从配置中获取
-            summary=summary
+            summary=summary,
         )
-        
+
         # 转换为 YAML
         return report.to_yaml()
 
