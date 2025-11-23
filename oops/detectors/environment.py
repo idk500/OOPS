@@ -153,11 +153,15 @@ class EnvironmentDependencyDetector(DetectionRule):
                 common_venv_names = [".venv", "venv", "env", ".env"]
                 for venv_name in common_venv_names:
                     potential_venv = Path(project_path) / venv_name
+                    logger.debug(f"检查虚拟环境: {potential_venv}, 存在: {potential_venv.exists()}")
                     if potential_venv.exists() and potential_venv.is_dir():
                         # 验证是否真的是虚拟环境（检查activate脚本）
-                        if self._is_valid_venv(potential_venv):
+                        is_valid = self._is_valid_venv(potential_venv)
+                        logger.debug(f"虚拟环境验证结果: {is_valid}")
+                        if is_valid:
                             venv_exists = True
                             venv_path = str(potential_venv)
+                            logger.info(f"找到虚拟环境: {venv_path}")
                             break
 
                 # 方法2: 如果方法1没找到，扫描项目根目录查找任何包含activate脚本的目录

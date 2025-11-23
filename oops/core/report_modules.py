@@ -32,10 +32,31 @@ class SystemInfoModule(ReportModule):
 
     def generate_html(self, system_info: Dict[str, Any]) -> str:
         """生成系统信息HTML"""
+        # 检查是否有实际数据
+        has_data = bool(
+            system_info.get("basic") or 
+            system_info.get("hardware") or 
+            system_info.get("storage") or
+            system_info.get("validation")
+        )
+        
+        if not has_data:
+            return f"""
+            <div class="section">
+                <div class="section-header">
+                    <h2 class="section-title">{self.title}</h2>
+                </div>
+                <p style="color: #6b7280; margin: 10px 0;">
+                    系统信息收集失败或未执行
+                </p>
+            </div>
+            """
+        
         # 生成紧凑摘要
         summary_parts = []
         hardware = system_info.get("hardware", {})
         storage = system_info.get("storage", {})
+        basic = system_info.get("basic", {})
 
         if hardware.get("cpu_model"):
             summary_parts.append(f"CPU: {hardware['cpu_model']}")
@@ -44,8 +65,10 @@ class SystemInfoModule(ReportModule):
         if storage.get("disk_type"):
             disk_icon = "⚠️" if storage["disk_type"] == "HDD" else "✅"
             summary_parts.append(f"磁盘: {storage['disk_type']} {disk_icon}")
+        if basic.get("os"):
+            summary_parts.append(f"系统: {basic['os']}")
 
-        summary_text = " | ".join(summary_parts) if summary_parts else "系统信息已收集"
+        summary_text = " | ".join(summary_parts) if summary_parts else "查看详细信息"
 
         html_content = f"""
         <div class="section">

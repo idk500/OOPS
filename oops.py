@@ -335,48 +335,52 @@ async def display_diagnostic_results(results, summary, diagnostic_suite, args, p
         logger = logging.getLogger(__name__)
         logger.debug(f"解决方案推荐失败: {e}")
     
-    # 生成报告
+    # 生成报告 - 默认同时生成 HTML 和 YAML
     if not args.no_report:
-        report_manager = ReportManager(output_dir=args.output_dir)
+        from oops.core.report import ReportGenerator, ReportConfig
         
-        if args.report_format == 'all':
-            report_paths = report_manager.generate_comprehensive_report(
-                results, project_name, summary
-            )
-            print(f"\n📄 报告已生成:")
-            for format_name, path in report_paths.items():
-                print(f"   📁 {format_name.upper()}: {path}")
-            
-            # 自动打开HTML报告（除非用户禁用）
-            if 'html' in report_paths and not args.no_browser:
-                html_path = report_paths['html']
-                try:
-                    webbrowser.open(f'file://{Path(html_path).absolute()}')
-                    print(f"\n🌐 已在浏览器中打开报告")
-                except Exception as e:
-                    logger = logging.getLogger(__name__)
-                    logger.debug(f"无法自动打开浏览器: {e}")
-        else:
-            from oops.core.report import ReportGenerator, ReportConfig
-            
-            report_config = ReportConfig(
-                format=args.report_format,
+        # 生成 HTML 报告（用于用户查看）
+        html_config = ReportConfig(
+            format='html',
+            output_dir=args.output_dir,
+            include_timestamp=True
+        )
+        html_generator = ReportGenerator(html_config)
+        html_content = html_generator.generate_report(results, project_name, summary)
+        html_path = html_generator.save_report(html_content, project_name)
+        
+        # 生成 YAML 报告（用于提交给开发者）
+        try:
+            yaml_config = ReportConfig(
+                format='yaml',
                 output_dir=args.output_dir,
                 include_timestamp=True
             )
-            report_generator = ReportGenerator(report_config)
-            report_content = report_generator.generate_report(results, project_name, summary)
-            report_path = report_generator.save_report(report_content, project_name)
-            print(f"\n📄 {args.report_format.upper()}报告已生成: {report_path}")
-            
-            # 如果是HTML格式，自动在浏览器中打开（除非用户禁用）
-            if args.report_format == 'html' and not args.no_browser:
-                try:
-                    webbrowser.open(f'file://{Path(report_path).absolute()}')
-                    print(f"🌐 已在浏览器中打开报告")
-                except Exception as e:
-                    logger = logging.getLogger(__name__)
-                    logger.debug(f"无法自动打开浏览器: {e}")
+            yaml_generator = ReportGenerator(yaml_config)
+            yaml_content = yaml_generator.generate_report(results, project_name, summary)
+            yaml_path = yaml_generator.save_report(yaml_content, project_name)
+        except Exception as e:
+            logger = logging.getLogger(__name__)
+            logger.error(f"YAML 报告生成失败: {e}")
+            import traceback
+            traceback.print_exc()
+            yaml_path = None
+        
+        print(f"\n📄 HTML报告已生成: {html_path}")
+        if yaml_path:
+            print(f"📄 YAML报告已生成: {yaml_path}")
+            print(f"💡 提示: 将 YAML 报告提交给项目开发者以获取支持")
+        else:
+            print(f"⚠️  YAML报告生成失败，请查看日志")
+        
+        # 自动打开HTML报告（除非用户禁用）
+        if not args.no_browser:
+            try:
+                webbrowser.open(f'file://{Path(html_path).absolute()}')
+                print(f"🌐 已在浏览器中打开报告")
+            except Exception as e:
+                logger = logging.getLogger(__name__)
+                logger.debug(f"无法自动打开浏览器: {e}")
 
 
 async def run_diagnostic_for_project(project_name: str, args, config_manager: ConfigManager):
@@ -418,14 +422,27 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
         detected_project = detector.scan_parent_directories()
     
     if detected_project:
+        from pathlib import Path
         print(f"[*] 🎯 自动检测到项目: {detected_project['project_name']}")
         print(f"[*] 📁 项目路径: {detected_project['install_path']}")
-        
-        # 生成临时配置
-        temp_config = detector.generate_config_from_detection(detected_project)
+        print(f"[*] 📍 当前运行路径: {Path.cwd()}")
+        print()
         
         # 使用检测到的配置运行诊断
         print(f"[*] 🚀 开始自动诊断...")
+        
+        # 加载项目配置并注入检测到的路径
+        project_config = config_manager.get_project_config(detected_project['project_id'])
+        if project_config:
+            # 注入检测到的安装路径
+            if 'project' not in project_config:
+                project_config['project'] = {}
+            if 'paths' not in project_config['project']:
+                project_config['project']['paths'] = {}
+            project_config['project']['paths']['install_path'] = detected_project['install_path']
+            
+            # 更新配置管理器中的配置
+            config_manager.project_configs[detected_project['project_id']] = project_config
         
         # 创建临时配置管理器
         from oops.core.diagnostics import DiagnosticSuite
