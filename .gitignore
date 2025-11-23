@@ -23,6 +23,7 @@ MANIFEST
 # PyInstaller
 *.manifest
 *.spec
+!build/config/build.spec
 
 # Virtual Environment
 .env
