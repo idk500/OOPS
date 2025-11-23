@@ -734,6 +734,39 @@ class ReportGenerator:
             color: white;
         }
         
+        /* 详细数据折叠样式 */
+        .raw-details-section {
+            margin: 15px 0;
+        }
+        
+        .raw-details-toggle {
+            background: #fef3c7;
+            border: 1px solid var(--warning-color);
+            color: var(--warning-color);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .raw-details-toggle:hover {
+            background: var(--warning-color);
+            color: white;
+        }
+        
+        .raw-details-section .collapsible-content {
+            margin-top: 10px;
+            padding: 10px;
+            background: #fffbeb;
+            border-radius: 6px;
+            border: 1px solid #fef3c7;
+        }
+        
+        .raw-details-section .raw-details {
+            margin: 0;
+        }
+        
         .success-items-section .collapsible-content {
             margin-top: 10px;
             padding: 10px;

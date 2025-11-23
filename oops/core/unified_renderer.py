@@ -117,9 +117,9 @@ class UnifiedDetectionRenderer:
                 <div class="detection-details">
         """
         
-        # 显示原始详细信息（如果有）
+        # 显示原始详细信息（如果有）- 默认折叠
         if result.details and result.check_name != "network_connectivity":
-            html_content += self._render_raw_details(result.details)
+            html_content += self._render_raw_details(result.details, result.check_name)
         
         # 修复建议
         if result.fix_suggestion:
@@ -265,12 +265,19 @@ class UnifiedDetectionRenderer:
             
         return " | ".join(summary_parts)
 
-    def _render_raw_details(self, details: Dict[str, Any]) -> str:
-        """渲染原始详细信息"""
-        html_content = """
-        <div class="raw-details">
-            <h4>📋 详细数据</h4>
-            <div class="details-grid">
+    def _render_raw_details(self, details: Dict[str, Any], check_name: str = "") -> str:
+        """渲染原始详细信息 - 默认折叠"""
+        # 生成唯一的折叠ID
+        raw_details_id = f"{check_name}-raw-details" if check_name else "raw-details"
+        
+        html_content = f"""
+        <div class="raw-details-section">
+            <button class="collapse-button raw-details-toggle" onclick="toggleCollapse('{raw_details_id}')">
+                ▶ 显示详细数据
+            </button>
+            <div id="{raw_details_id}" class="collapsible-content" style="display: none;">
+                <div class="raw-details">
+                    <div class="details-grid">
         """
         
         for key, value in details.items():
@@ -308,6 +315,8 @@ class UnifiedDetectionRenderer:
                 """
         
         html_content += """
+                    </div>
+                </div>
             </div>
         </div>
         """

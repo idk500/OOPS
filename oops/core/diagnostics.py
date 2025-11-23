@@ -201,13 +201,12 @@ class DiagnosticSuite:
             if category_config.get("enabled", False):
                 # 将分类映射到具体的检测规则（按新顺序）
                 if check_category == "system_info":
-                    # 新架构：分别添加硬件、系统、系统设置检测
+                    # 系统信息检测：包含硬件、系统、系统设置
                     enabled_checks.extend(
                         [
                             "hardware_info",
-                            "system_info_new",
+                            "system_info",
                             "system_settings",
-                            "system_info",  # 保留旧的用于向后兼容
                         ]
                     )
                 elif check_category == "network":
