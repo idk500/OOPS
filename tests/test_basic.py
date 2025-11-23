@@ -79,7 +79,9 @@ def test_diagnostic_suite_init():
     config_manager = ConfigManager()
     suite = DiagnosticSuite(config_manager)
     assert suite is not None
-    assert hasattr(suite, "detectors")
+    assert hasattr(suite, "detection_rules")
+    assert hasattr(suite, "results")
+    assert len(suite.detection_rules) > 0
 
 
 def test_report_generator_init():
