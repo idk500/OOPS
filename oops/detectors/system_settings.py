@@ -146,12 +146,24 @@ class SystemSettingsDetector(DetectionRule):
     def _check_night_light_windows(self) -> Optional[bool]:
         """检测Windows夜间模式状态"""
         try:
+            # 正确的夜间模式检测：检查Data字段的第18个字节
             ps_command = """
             $path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CloudStore\\Store\\DefaultAccount\\Current\\default$windows.data.bluelightreduction.bluelightreductionstate\\windows.data.bluelightreduction.bluelightreductionstate'
             if (Test-Path $path) {
                 $value = Get-ItemProperty -Path $path -Name Data -ErrorAction SilentlyContinue
-                if ($value) { $true } else { $false }
-            } else { $false }
+                if ($value -and $value.Data -and $value.Data.Length -gt 18) {
+                    # 第18个字节为0x15表示启用，0x13表示禁用
+                    if ($value.Data[18] -eq 0x15) {
+                        $true
+                    } else {
+                        $false
+                    }
+                } else {
+                    $false
+                }
+            } else {
+                $false
+            }
             """
             result = subprocess.run(
                 ["powershell", "-Command", ps_command],
