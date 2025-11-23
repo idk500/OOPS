@@ -69,6 +69,39 @@ jobs:
     - name: Display structure
       run: dir
     
+    - name: Extract version from tag
+      id: get_version
+      run: |
+        $version = "${{ github.ref_name }}" -replace '^v', ''
+        echo "version=$version" >> $env:GITHUB_OUTPUT
+        echo "Version: $version"
+    
+    - name: Extract changelog for this version
+      id: changelog
+      run: |
+        $version = "${{ steps.get_version.outputs.version }}"
+        $content = Get-Content CHANGELOG.md -Raw -Encoding UTF8
+        
+        # 提取当前版本的更新内容
+        $pattern = "(?s)## v$version.*?(?=\n## v|\z)"
+        if ($content -match $pattern) {
+          $versionChangelog = $matches[0]
+          # 移除版本标题行
+          $versionChangelog = $versionChangelog -replace "^## v$version[^\n]*\n", ""
+          $versionChangelog = $versionChangelog.Trim()
+          
+          # 保存到文件
+          $versionChangelog | Out-File -FilePath version-changelog.md -Encoding utf8
+          echo "✅ Found changelog for version $version"
+        } else {
+          echo "⚠️ No changelog found for version $version, using default"
+          @"
+        ### 更新内容
+        
+        请查看 [完整更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+        "@ | Out-File -FilePath version-changelog.md -Encoding utf8
+        }
+    
     - name: Create release notes file
       run: |
         @"
@@ -80,30 +113,37 @@ jobs:
 
         下载 ``oops-windows-x64.zip``，解压后双击运行 ``oops-windows-x64.exe``
 
-        ### � 使用方法
+        ### 🚀 使用方法
 
         1. 解压 ``oops-windows-x64.zip``
         2. 双击运行 ``oops-windows-x64.exe``
-        3. 选择要检测的游戏脚本项目
-        4. 等待检测完成
-        5. 查看自动打开的HTML报告
+        3. 自动检测所有可用项目并生成报告
+        4. 查看自动打开的HTML报告
 
         **注意**: configs 文件夹包含了预配置的游戏检测规则，请保持在同一目录下
 
-        ### ✨ 主要功能
+        ---
 
-        - 系统信息检测（CPU、内存、磁盘、GPU、显示设置）
-        - 硬件适配检测（内存、磁盘类型、分辨率验证）
-        - 网络连通性检测（Git仓库、PyPI源）
-        - 环境依赖检测（Python版本、系统库）
-        - 路径规范检测（中文路径、特殊字符）
+        "@ | Out-File -FilePath release-notes.md -Encoding utf8
+        
+        # 追加版本更新内容
+        Get-Content version-changelog.md -Raw -Encoding UTF8 | Add-Content -Path release-notes.md -Encoding utf8
+        
+        # 追加文档链接
+        @"
+
+        ---
 
         ### 📚 文档
 
         - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
         - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
-        - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
-        "@ | Out-File -FilePath release-notes.md -Encoding utf8
+        - [完整更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+        "@ | Add-Content -Path release-notes.md -Encoding utf8
+        
+        echo "=== Release Notes Preview ==="
+        Get-Content release-notes.md -Encoding UTF8
+        echo "==========================="
     
     - name: Create Release with GitHub CLI
       env:
