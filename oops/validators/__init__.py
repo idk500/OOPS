@@ -3,11 +3,8 @@
 基于知识库的各种验证器
 """
 
-from oops.validators.path_validator import (
-    PathValidator,
-    HardwareValidator,
-    GameSettingsValidator,
-)
+from oops.validators.path_validator import (GameSettingsValidator,
+                                            HardwareValidator, PathValidator)
 
 __all__ = [
     "PathValidator",

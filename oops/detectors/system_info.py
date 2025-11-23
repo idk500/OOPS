@@ -3,14 +3,16 @@
 检测CPU、GPU、内存、存储等硬件信息
 """
 
+import logging
 import os
 import platform
-import sys
-import psutil
 import subprocess
-from typing import Dict, Any, Optional
-import logging
+import sys
 from pathlib import Path
+from typing import Any, Dict, Optional
+
+import psutil
+
 from oops.validators.path_validator import HardwareValidator
 
 logger = logging.getLogger(__name__)

@@ -9,8 +9,8 @@ __version__ = "0.1.0"
 __author__ = "OOPS Team"
 __email__ = "oops@example.com"
 
-from oops.core.diagnostics import DiagnosticSuite
 from oops.core.config import ConfigManager
+from oops.core.diagnostics import DiagnosticSuite
 from oops.core.report import ReportGenerator
 
 __all__ = [

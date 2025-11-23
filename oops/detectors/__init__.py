@@ -3,8 +3,8 @@
 包含各种检测规则的实现
 """
 
-from oops.detectors.network import NetworkConnectivityDetector
 from oops.detectors.environment import EnvironmentDependencyDetector
+from oops.detectors.network import NetworkConnectivityDetector
 from oops.detectors.paths import PathValidationDetector
 
 __all__ = [

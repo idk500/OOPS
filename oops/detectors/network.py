@@ -4,11 +4,12 @@
 """
 
 import asyncio
-import aiohttp
+import logging
 import subprocess
 import time
-from typing import Dict, List, Any, Optional
-import logging
+from typing import Any, Dict, List, Optional
+
+import aiohttp
 
 from oops.core.config import DetectionRule
 

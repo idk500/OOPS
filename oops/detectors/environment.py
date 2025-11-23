@@ -3,13 +3,13 @@
 检测Python环境、系统运行库、虚拟环境等依赖项
 """
 
-import sys
-import subprocess
-import platform
-import os
-from typing import Dict, List, Any, Optional
 import logging
+import os
+import platform
+import subprocess
+import sys
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from oops.core.config import DetectionRule
 

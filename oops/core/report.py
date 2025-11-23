@@ -3,13 +3,14 @@
 负责生成HTML、JSON等格式的诊断报告
 """
 
+import html
 import json
 import logging
-from typing import Dict, List, Any, Optional
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass, asdict
-import html
+from typing import Any, Dict, List, Optional
+
 import yaml
 
 from oops.core.diagnostics import CheckResult, SeverityLevel

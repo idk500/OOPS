@@ -3,12 +3,12 @@
 检测工程目录路径、权限、中文路径等问题
 """
 
+import logging
 import os
 import platform
 import stat
-from typing import Dict, List, Any, Optional
 from pathlib import Path
-import logging
+from typing import Any, Dict, List, Optional
 
 from oops.core.config import DetectionRule
 

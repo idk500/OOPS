@@ -3,10 +3,10 @@
 定义标准化的检测结果数据结构
 """
 
-from dataclasses import dataclass, field, asdict
-from typing import Dict, List, Any, Optional
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 
 class CheckStatus(Enum):

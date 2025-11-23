@@ -3,9 +3,10 @@ HTML 渲染器模块
 从数据模型生成 HTML 报告，实现数据和渲染的完全分离
 """
 
-from typing import Dict, Any
-from oops.core.data_models import DiagnosticReport, SystemInfoData
 import html
+from typing import Any, Dict
+
+from oops.core.data_models import DiagnosticReport, SystemInfoData
 
 
 class HTMLRenderer:

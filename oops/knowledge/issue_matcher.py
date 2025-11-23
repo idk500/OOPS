@@ -4,7 +4,7 @@
 """
 
 import re
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 
 class IssueMatcher:

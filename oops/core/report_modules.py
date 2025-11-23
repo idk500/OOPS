@@ -4,7 +4,8 @@
 """
 
 import html
-from typing import Dict, List, Any
+from typing import Any, Dict, List
+
 from oops.core.diagnostics import CheckResult, SeverityLevel
 
 

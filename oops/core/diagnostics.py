@@ -5,10 +5,10 @@
 
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List, Optional
 
 from oops.core.config import ConfigManager, DetectionRule
 
@@ -62,10 +62,10 @@ class DiagnosticSuite:
 
     def _register_default_rules(self):
         """注册默认检测规则"""
-        from oops.detectors.system_info import SystemInfoDetector
-        from oops.detectors.network import NetworkConnectivityDetector
         from oops.detectors.environment import EnvironmentDependencyDetector
+        from oops.detectors.network import NetworkConnectivityDetector
         from oops.detectors.paths import PathValidationDetector
+        from oops.detectors.system_info import SystemInfoDetector
 
         self.detection_rules = {
             "system_info": SystemInfoDetector(),

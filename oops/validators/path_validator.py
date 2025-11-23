@@ -4,8 +4,8 @@
 """
 
 import re
-from typing import Dict, List, Any
 from pathlib import Path
+from typing import Any, Dict, List
 
 
 class PathValidator:
