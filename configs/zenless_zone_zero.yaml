@@ -8,7 +8,9 @@ checks:
     check_disk: true
     check_gpu: false
     check_ram: true
-    enabled: false
+    enabled: true
+  hardware_requirements:
+    min_resolution: '1920x1080'
   network:
     enabled: true
     git_repos:

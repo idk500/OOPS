@@ -326,15 +326,22 @@ class CheckResultsModule(ReportModule):
             <div class="detection-results">
         """
 
-        # 按严重程度排序
-        severity_order = {
-            SeverityLevel.CRITICAL: 0,
-            SeverityLevel.ERROR: 1,
-            SeverityLevel.WARNING: 2,
-            SeverityLevel.INFO: 3,
+        # 按指定顺序排序检测结果
+        check_order = {
+            "hardware_info": 1,
+            "system_info_new": 2,
+            "system_settings": 3,
+            "network_connectivity": 4,
+            "python_environment": 5,
+            "environment_dependencies": 6,
+            "path_validation": 7,
+            "game_settings": 8,  # 游戏内设置（待开发）
         }
+        
+        # 按照指定顺序排序，未指定的放在最后
         sorted_results = sorted(
-            results, key=lambda r: severity_order.get(r.severity, 4)
+            results, 
+            key=lambda r: check_order.get(r.check_name, 999)
         )
 
         # 使用统一渲染器渲染每个检测结果
@@ -342,6 +349,22 @@ class CheckResultsModule(ReportModule):
             rendered_result = self.unified_renderer.render_detection_result(result)
             if rendered_result:  # 统一渲染器会跳过系统信息等
                 html_content += rendered_result
+        
+        # 添加游戏内设置占位项
+        html_content += """
+        <div class="detection-result info">
+            <div class="detection-header">
+                <div class="detection-title">
+                    🎮 游戏内设置
+                </div>
+                <div class="detection-summary">功能开发中</div>
+            </div>
+            
+            <div class="detection-message" style="color: var(--info-color);">
+                此功能正在开发中，敬请期待
+            </div>
+        </div>
+        """
 
         html_content += """
             </div>

@@ -35,7 +35,8 @@ class UnifiedDetectionRenderer:
         - 默认显示所有警告/错误项
         """
         # 跳过系统信息检测器（已在系统信息模块显示）
-        if result.check_name in ["system_info", "hardware_info", "system_info_new"]:
+        # hardware_info 现在会在检测结果中显示（用于硬件验证）
+        if result.check_name in ["system_info", "system_info_new"]:
             return ""
         
         # 提取检测项详情
@@ -138,7 +139,38 @@ class UnifiedDetectionRenderer:
             return success_items, warning_items, error_items
         
         # 处理不同检测器的数据结构
-        if result.check_name == "system_settings":
+        if result.check_name == "hardware_info":
+            # hardware_info 有特殊结构
+            issues = result.details.get("issues", [])
+            warnings = result.details.get("warnings", [])
+            
+            error_items.extend(issues)
+            warning_items.extend(warnings)
+            
+            # 将硬件信息作为通过项显示
+            cpu_info = result.details.get("cpu", {})
+            if cpu_info.get("model"):
+                success_items.append(f"CPU: {cpu_info['model']}")
+            
+            memory_info = result.details.get("memory", {})
+            if memory_info.get("total"):
+                success_items.append(f"内存: {memory_info['total']}")
+            
+            gpu_info = result.details.get("gpu")
+            if gpu_info:
+                success_items.append(f"GPU: {gpu_info}")
+            
+            storage_info = result.details.get("storage", {})
+            if storage_info.get("type"):
+                success_items.append(f"磁盘类型: {storage_info['type']}")
+            
+            display_info = result.details.get("display", {})
+            if display_info.get("primary_resolution"):
+                # 如果分辨率有问题，它会在error_items中，这里只在没有问题时显示
+                if not any("分辨率" in item for item in error_items):
+                    success_items.append(f"主显示器分辨率: {display_info['primary_resolution']}")
+                    
+        elif result.check_name == "system_settings":
             # system_settings 有特殊结构
             issues = result.details.get("issues", [])
             warnings = result.details.get("warnings", [])

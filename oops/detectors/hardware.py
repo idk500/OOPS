@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class HardwareDetector(DetectionRule):
-    """硬件信息检测器 - 只收集数据，不做验证"""
+    """硬件信息检测器 - 收集数据并进行硬件要求验证"""
 
     def __init__(self):
         super().__init__(
@@ -34,12 +34,47 @@ class HardwareDetector(DetectionRule):
                 "memory": self._get_memory_info(),
                 "gpu": self._get_gpu_info(),
                 "storage": self._get_storage_info(),
+                "display": self._get_display_info(),
             }
-
+            
+            # 进行硬件要求验证
+            issues = []
+            warnings = []
+            
+            # 验证分辨率（从项目配置中获取最低要求）
+            min_resolution = config.get("hardware_requirements", {}).get("min_resolution", "1920x1080")
+            display_info = hardware_info.get("display", {})
+            current_resolution = display_info.get("primary_resolution", "")
+            
+            if current_resolution and min_resolution:
+                if not self._check_resolution_requirement(current_resolution, min_resolution):
+                    issues.append(f"主显示器分辨率 {current_resolution} 低于最低要求 {min_resolution}")
+            
+            # 确定状态
+            if issues:
+                status = "error"
+                message = f"硬件检测完成，发现 {len(issues)} 个不符合要求的项"
+                severity = "error"
+            elif warnings:
+                status = "warning"
+                message = f"硬件检测完成，发现 {len(warnings)} 个警告"
+                severity = "warning"
+            else:
+                status = "success"
+                message = "硬件检测完成，所有硬件符合要求"
+                severity = "info"
+            
+            # 更新severity
+            self.severity = severity
+            
             return {
-                "status": "success",
-                "message": "硬件信息收集完成",
-                "details": hardware_info,
+                "status": status,
+                "message": message,
+                "details": {
+                    **hardware_info,
+                    "issues": issues,
+                    "warnings": warnings,
+                },
             }
         except Exception as e:
             logger.error(f"硬件信息检测失败: {e}")
@@ -202,6 +237,64 @@ class HardwareDetector(DetectionRule):
             logger.debug(f"检测磁盘类型失败: {e}")
         return "Unknown"
 
+    def _get_display_info(self) -> Dict[str, Any]:
+        """获取显示器信息"""
+        try:
+            if platform.system() == "Windows":
+                # 使用 PowerShell 获取主显示器分辨率
+                ps_command = """
+                Add-Type -AssemblyName System.Windows.Forms
+                $screen = [System.Windows.Forms.Screen]::PrimaryScreen
+                $width = $screen.Bounds.Width
+                $height = $screen.Bounds.Height
+                Write-Output "$width x $height"
+                """
+                result = subprocess.run(
+                    ["powershell", "-Command", ps_command],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    creationflags=subprocess.CREATE_NO_WINDOW,
+                )
+                if result.returncode == 0:
+                    resolution = result.stdout.strip()
+                    return {"primary_resolution": resolution}
+        except Exception as e:
+            logger.debug(f"获取显示器信息失败: {e}")
+        return {}
+    
+    def _check_resolution_requirement(self, current: str, required: str) -> bool:
+        """检查分辨率是否满足要求"""
+        try:
+            # 解析当前分辨率
+            current_parts = current.replace(" ", "").split("x")
+            if len(current_parts) != 2:
+                return True  # 无法解析，跳过检查
+            current_width = int(current_parts[0])
+            current_height = int(current_parts[1])
+            
+            # 解析要求分辨率
+            required_parts = required.replace(" ", "").split("x")
+            if len(required_parts) != 2:
+                return True  # 无法解析，跳过检查
+            required_width = int(required_parts[0])
+            required_height = int(required_parts[1])
+            
+            # 检查是否满足要求
+            return current_width >= required_width and current_height >= required_height
+        except Exception as e:
+            logger.debug(f"检查分辨率要求失败: {e}")
+            return True  # 出错时跳过检查
+
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
-        """获取修复建议 - 硬件信息不需要修复建议"""
+        """获取修复建议"""
+        details = result.get("details", {})
+        issues = details.get("issues", [])
+        
+        if issues:
+            suggestions = []
+            for issue in issues:
+                if "分辨率" in issue:
+                    suggestions.append("请调整显示器分辨率以满足游戏要求")
+            return "; ".join(suggestions) if suggestions else ""
         return ""
