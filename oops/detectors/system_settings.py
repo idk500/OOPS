@@ -116,10 +116,19 @@ class SystemSettingsDetector(DetectionRule):
     def _check_hdr_windows(self) -> Optional[bool]:
         """检测Windows HDR状态"""
         try:
+            # 正确的HDR检测方法：读取注册表
             ps_command = """
-            Add-Type -AssemblyName System.Windows.Forms
-            $screen = [System.Windows.Forms.Screen]::PrimaryScreen
-            $screen.BitsPerPixel -gt 24
+            $hdrKey = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\VideoSettings'
+            if (Test-Path $hdrKey) {
+                $hdrValue = Get-ItemProperty -Path $hdrKey -Name 'EnableHDR' -ErrorAction SilentlyContinue
+                if ($hdrValue -and $hdrValue.EnableHDR -eq 1) {
+                    $true
+                } else {
+                    $false
+                }
+            } else {
+                $false
+            }
             """
             result = subprocess.run(
                 ["powershell", "-Command", ps_command],
