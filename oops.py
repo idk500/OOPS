@@ -264,7 +264,7 @@ async def display_diagnostic_results(results, summary, diagnostic_suite, args, p
     
     if all_issues:
         print(f"\n{'='*60}")
-        print(f"发现 {len(all_issues)} 个需要关注的问题")
+        print(f"发现 {total_issues} 个需要关注的问题")
         print(f"{'='*60}")
         
         for i, result in enumerate(all_issues, 1):

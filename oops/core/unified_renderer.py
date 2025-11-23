@@ -34,6 +34,10 @@ class UnifiedDetectionRenderer:
         - 折叠显示，但显示所有通过项
         - 默认显示所有警告/错误项
         """
+        # 跳过系统信息检测器（已在系统信息模块显示）
+        if result.check_name in ["system_info", "hardware_info", "system_info_new"]:
+            return ""
+        
         # 提取检测项详情
         success_items, warning_items, error_items = self._extract_detection_items(result)
         
@@ -104,7 +108,7 @@ class UnifiedDetectionRenderer:
             html_content += "</ul></div>"
         
         # 显示原始详细信息（如果有）
-        if result.details:
+        if result.details and result.check_name != "network_connectivity":
             html_content += self._render_raw_details(result.details)
         
         # 修复建议
@@ -158,17 +162,56 @@ class UnifiedDetectionRenderer:
                     success_items.append(f"主显示器分辨率: {value}")
                     
         elif result.check_name == "network_connectivity":
-            # 网络检测的特殊处理
-            for key, value in result.details.items():
-                if isinstance(value, dict):
-                    status = value.get("status", "unknown")
-                    if status == "success":
-                        success_items.append(f"{key}: 连接成功")
-                    elif status in ["error", "timeout", "failure"]:
-                        error_msg = value.get("error", value.get("message", "连接失败"))
-                        error_items.append(f"{key}: {error_msg}")
-                    elif status == "warning":
-                        warning_items.append(f"{key}: {value.get('message', '警告')}")
+            # 网络检测的特殊处理 - 按类型分组
+            type_groups = {
+                "git_repo": {"name": "Git仓库", "success": [], "failed": []},
+                "pypi_source": {"name": "PyPI源", "success": [], "failed": []},
+                "mirror_site": {"name": "镜像站点", "success": [], "failed": []},
+                "github_proxy": {"name": "GitHub代理", "success": [], "failed": []},
+                "project_website": {"name": "项目官网", "success": [], "failed": []},
+                "mihoyo_api": {"name": "米哈游API", "success": [], "failed": []},
+            }
+            
+            # 分类收集网络检测结果
+            for url, detail in result.details.items():
+                if isinstance(detail, dict):
+                    item_type = detail.get("type", "unknown")
+                    item_status = detail.get("status", "unknown")
+                    response_time = detail.get("response_time_ms", 0)
+                    error_msg = detail.get("error", "")
+                    
+                    url_display = url.replace("https://", "").replace("http://", "")
+                    if len(url_display) > 40:
+                        url_display = url_display[:37] + "..."
+                    
+                    if item_type in type_groups:
+                        if item_status == "success":
+                            type_groups[item_type]["success"].append(f"{url_display} ({response_time:.0f}ms)")
+                        elif item_status in ["error", "timeout", "failure"]:
+                            error_display = error_msg[:30] + "..." if len(error_msg) > 30 else error_msg
+                            type_groups[item_type]["failed"].append(f"{url_display}: {error_display}")
+            
+            # 生成分类摘要
+            for type_key, group_data in type_groups.items():
+                success_count = len(group_data["success"])
+                failed_count = len(group_data["failed"])
+                total_count = success_count + failed_count
+                
+                if total_count > 0:
+                    type_name = group_data["name"]
+                    if success_count > 0:
+                        success_items.append(f"{type_name}: {success_count}/{total_count} 可用")
+                        # 添加具体的成功项到详细列表
+                        for item in group_data["success"]:
+                            success_items.append(f"  └─ {item}")
+                    
+                    if failed_count > 0:
+                        error_items.append(f"{type_name}: {failed_count} 项不可用")
+                        # 只添加前3个失败项到错误列表，避免过长
+                        for item in group_data["failed"][:3]:
+                            error_items.append(f"  └─ {item}")
+                        if failed_count > 3:
+                            error_items.append(f"  └─ ... 还有 {failed_count - 3} 项")
                         
         else:
             # 通用处理：遍历details中的所有项

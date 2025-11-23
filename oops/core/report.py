@@ -881,18 +881,13 @@ class ReportGenerator:
         return content
 
     def _get_html_detailed_results_section(self, results: List[CheckResult]) -> str:
-        """获取HTML详细结果部分 - 使用统一渲染器"""
-        from oops.core.unified_renderer import UnifiedDetectionRenderer
-        
-        renderer = UnifiedDetectionRenderer()
-        
+        """获取HTML详细结果部分"""
         content = """
         <div class="section">
             <h2 class="section-title">🔍 详细检测结果</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">
-                以下是每个检测项的详细信息。错误和警告项默认显示，通过项可展开查看。
-            </p>
-            <div class="detection-results">"""
+                以下是每个检测项的详细信息，包括具体的失败项和警告项。
+            </p>"""
 
         # 按严重程度排序：critical > error > warning > info
         severity_order = {
@@ -907,11 +902,9 @@ class ReportGenerator:
         )
 
         for result in sorted_results:
-            content += renderer.render_detection_result(result)
+            content += self._get_html_check_item(result)
 
-        content += """
-            </div>
-        </div>"""
+        content += "\n        </div>"
         return content
 
     def _get_html_check_item(self, result: CheckResult) -> str:

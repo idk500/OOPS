@@ -307,27 +307,23 @@ class SummaryModule(ReportModule):
 
 
 class CheckResultsModule(ReportModule):
-    """检测结果模块"""
+    """检测结果模块 - 使用统一渲染器"""
 
     def __init__(self):
         super().__init__("check_results", "🔍 检测结果")
-        # 检测名称中文映射
-        self.check_name_map = {
-            "system_info": "系统信息",
-            "network_connectivity": "网络连通性",
-            "environment_dependencies": "环境依赖",
-            "path_validation": "路径规范",
-            "hardware_compatibility": "硬件适配",
-        }
+        # 导入统一渲染器
+        from oops.core.unified_renderer import UnifiedDetectionRenderer
+        self.unified_renderer = UnifiedDetectionRenderer()
 
     def generate_html(self, results: List[CheckResult]) -> str:
-        """生成检测结果HTML"""
+        """生成检测结果HTML - 使用统一格式"""
         html_content = f"""
         <div class="section">
             <h2 class="section-title">{self.title}</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">
-                以下是每个检测项的详细信息，包括具体的失败项和警告项。
+                以下是每个检测项的详细信息，按照统一格式显示。错误和警告项默认展开，通过项可展开查看。
             </p>
+            <div class="detection-results">
         """
 
         # 按严重程度排序
@@ -341,13 +337,14 @@ class CheckResultsModule(ReportModule):
             results, key=lambda r: severity_order.get(r.severity, 4)
         )
 
+        # 使用统一渲染器渲染每个检测结果
         for result in sorted_results:
-            # 跳过系统信息检测（已在系统信息模块显示）
-            if result.check_name == "system_info":
-                continue
-            html_content += self._generate_check_item_html(result)
+            rendered_result = self.unified_renderer.render_detection_result(result)
+            if rendered_result:  # 统一渲染器会跳过系统信息等
+                html_content += rendered_result
 
         html_content += """
+            </div>
         </div>
         """
 
@@ -369,243 +366,9 @@ class CheckResultsModule(ReportModule):
                     "fix_suggestion": result.fix_suggestion,
                 }
                 for result in results
+                if result.check_name not in ["system_info", "hardware_info", "system_info_new"]
             ],
         }
-
-    def _generate_check_item_html(self, result: CheckResult) -> str:
-        """生成单个检测项HTML"""
-        status_class = f"status-{result.status.value}"
-        severity_class = f"check-item {result.severity.value}"
-
-        # 特殊处理不同类型的检测
-        if result.check_name == "network_connectivity":
-            details_html = self._generate_network_details_html(result)
-        elif result.check_name == "hardware_compatibility":
-            details_html = self._generate_hardware_compatibility_details_html(result)
-        else:
-            # 其他检测项的标准处理
-            details_html = self._generate_standard_details_html(result)
-
-        fix_suggestion_html = ""
-        if result.fix_suggestion:
-            fix_suggestion_html = f"""
-                <div class="fix-suggestion">
-                    <strong>💡 修复建议:</strong> {html.escape(result.fix_suggestion)}
-                </div>"""
-
-        # 获取中文名称
-        display_name = self.check_name_map.get(result.check_name, result.check_name)
-
-        return f"""
-            <div class="{severity_class}">
-                <div class="check-header">
-                    <div class="check-name">{html.escape(display_name)}</div>
-                    <div class="check-status {status_class}">{result.status.value.upper()}</div>
-                </div>
-                <div class="check-message">{html.escape(result.message)}</div>
-                {details_html}
-                <div class="check-meta">
-                    <small>执行时间: {result.execution_time:.2f}s | 严重程度: {result.severity.value}</small>
-                </div>
-                {fix_suggestion_html}
-            </div>"""
-
-    def _generate_network_details_html(self, result: CheckResult) -> str:
-        """生成网络检测的详细信息HTML（按类型分类）"""
-        if not result.details:
-            return ""
-
-        # 按类型分组
-        type_groups = {
-            "git_repo": {"name": "Git仓库", "items": []},
-            "pypi_source": {"name": "PyPI源", "items": []},
-            "mirror_site": {"name": "镜像站点", "items": []},
-            "github_proxy": {"name": "GitHub代理", "items": []},
-            "project_website": {"name": "项目官网", "items": []},
-            "mihoyo_api": {"name": "米哈游API", "items": []},
-        }
-
-        # 分类收集
-        for url, detail in result.details.items():
-            if isinstance(detail, dict):
-                item_type = detail.get("type", "unknown")
-                item_status = detail.get("status", "unknown")
-                response_time = detail.get("response_time_ms", 0)
-                error_msg = detail.get("error", "")
-
-                item_info = {
-                    "url": url,
-                    "status": item_status,
-                    "response_time": response_time,
-                    "error": error_msg,
-                }
-
-                if item_type in type_groups:
-                    type_groups[item_type]["items"].append(item_info)
-
-        # 生成HTML
-        html_parts = ["<div class='check-details-list'>"]
-
-        for type_key, group_data in type_groups.items():
-            items = group_data["items"]
-            if not items:
-                continue
-
-            type_name = group_data["name"]
-            success_items = [item for item in items if item["status"] == "success"]
-            failed_items = [
-                item
-                for item in items
-                if item["status"] in ["error", "failure", "timeout"]
-            ]
-
-            # 显示分类标题和统计
-            html_parts.append(
-                f"<div style='margin-top: 15px;'><strong>【{type_name}】</strong> "
-            )
-            html_parts.append(f"({len(success_items)}/{len(items)} 可用)</div>")
-
-            # 显示成功项
-            if success_items:
-                html_parts.append(
-                    "<div class='success-items' style='margin-left: 20px;'><ul>"
-                )
-                for item in success_items:
-                    url_display = (
-                        item["url"].replace("https://", "").replace("http://", "")
-                    )
-                    if len(url_display) > 60:
-                        url_display = url_display[:57] + "..."
-                    html_parts.append(
-                        f"<li>✅ <strong>{html.escape(url_display)}</strong> "
-                        f"<span style='color: #6b7280; font-size: 0.9em;'>({item['response_time']:.0f}ms)</span></li>"
-                    )
-                html_parts.append("</ul></div>")
-
-            # 失败项折叠显示
-            if failed_items:
-                collapse_id = f"network-{type_key}-failed-{id(result)}"
-                html_parts.append(
-                    f"""
-                    <div style="margin-left: 20px; margin-top: 5px;">
-                        <button class="collapse-button" onclick="toggleCollapse('{collapse_id}')">
-                            ▶ 显示不可用源 ({len(failed_items)})
-                        </button>
-                        <div id="{collapse_id}" style="display: none; margin-top: 5px;">
-                            <div class='failed-items'><ul>
-                """
-                )
-
-                for item in failed_items:
-                    url_display = (
-                        item["url"].replace("https://", "").replace("http://", "")
-                    )
-                    if len(url_display) > 60:
-                        url_display = url_display[:57] + "..."
-                    error_display = (
-                        item["error"][:50] + "..."
-                        if len(item["error"]) > 50
-                        else item["error"]
-                    )
-                    html_parts.append(
-                        f"<li>❌ <strong>{html.escape(url_display)}</strong> "
-                        f"<span style='color: #ef4444; font-size: 0.9em;'>({html.escape(error_display)})</span></li>"
-                    )
-
-                html_parts.append("</ul></div></div></div>")
-
-        html_parts.append("</div>")
-        return "".join(html_parts)
-
-    def _generate_hardware_compatibility_details_html(self, result: CheckResult) -> str:
-        """生成硬件适配检测的详细信息HTML"""
-        if not result.details:
-            return ""
-
-        issues = result.details.get("issues", [])
-        warnings = result.details.get("warnings", [])
-
-        if not (issues or warnings):
-            return ""
-
-        details_html = "<div class='check-details-list'>"
-
-        # 显示问题
-        if issues:
-            details_html += "<div class='failed-items'><strong>❌ 失败项:</strong><ul>"
-            for issue in issues:
-                details_html += f"<li>{html.escape(issue)}</li>"
-            details_html += "</ul></div>"
-
-        # 显示警告
-        if warnings:
-            details_html += "<div class='warning-items'><strong>⚠️ 警告项:</strong><ul>"
-            for warning in warnings:
-                details_html += f"<li>{html.escape(warning)}</li>"
-            details_html += "</ul></div>"
-
-        details_html += "</div>"
-        return details_html
-
-    def _generate_standard_details_html(self, result: CheckResult) -> str:
-        """生成标准检测项的详细信息HTML（默认隐藏成功项）"""
-        if not result.details:
-            return ""
-
-        failed_items = []
-        warning_items = []
-        success_items = []
-
-        for key, value in result.details.items():
-            if isinstance(value, dict):
-                item_status = value.get("status", "unknown")
-                item_message = value.get("message", value.get("error", ""))
-
-                if item_status in ["error", "failure", "timeout"]:
-                    failed_items.append(
-                        f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                    )
-                elif item_status == "warning":
-                    warning_items.append(
-                        f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                    )
-                elif item_status == "success":
-                    success_items.append(
-                        f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
-                    )
-
-        if not (failed_items or warning_items or success_items):
-            return ""
-
-        details_html = "<div class='check-details-list'>"
-
-        # 失败项和警告项直接显示
-        if failed_items:
-            details_html += "<div class='failed-items'><strong>❌ 失败项:</strong><ul>"
-            details_html += "".join(failed_items)
-            details_html += "</ul></div>"
-
-        if warning_items:
-            details_html += "<div class='warning-items'><strong>⚠️ 警告项:</strong><ul>"
-            details_html += "".join(warning_items)
-            details_html += "</ul></div>"
-
-        # 成功项默认折叠
-        if success_items:
-            collapse_id = f"success-items-{id(result)}"
-            details_html += f"""
-                <div style="margin-top: 10px;">
-                    <button class="collapse-button" onclick="toggleCollapse('{collapse_id}')">
-                        ▶ 显示通过项 ({len(success_items)})
-                    </button>
-                    <div id="{collapse_id}" style="display: none; margin-top: 5px;">
-                        <div class='success-items'><strong>✅ 通过项:</strong><ul>
-            """
-            details_html += "".join(success_items)
-            details_html += "</ul></div></div></div>"
-
-        details_html += "</div>"
-        return details_html
 
 
 class ReportModuleManager:
