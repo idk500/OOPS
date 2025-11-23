@@ -109,7 +109,7 @@ class ProjectDetector:
             },
             "checks": {
                 "network": {"enabled": True},
-                "environment": {"enabled": True},
+                "environment": {"enabled": True, "project_path": install_path},
                 "paths": {"enabled": True},
             },
         }

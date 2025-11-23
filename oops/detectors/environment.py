@@ -100,7 +100,7 @@ class EnvironmentDependencyDetector(DetectionRule):
     def _check_virtual_environment(self, env_config: Dict[str, Any]) -> Dict[str, Any]:
         """检测虚拟环境"""
         try:
-            # 检查是否在虚拟环境中
+            # 检查是否在虚拟环境中运行
             in_venv = hasattr(sys, "real_prefix") or (
                 hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
             )
@@ -113,7 +113,32 @@ class EnvironmentDependencyDetector(DetectionRule):
                     "message": "虚拟环境检测跳过（配置允许）",
                 }
 
-            if in_venv:
+            # 检查项目目录下是否存在虚拟环境
+            project_path = env_config.get("project_path")
+            venv_exists = False
+            venv_path = None
+
+            if project_path:
+                # 检查常见的虚拟环境目录
+                common_venv_names = [".venv", "venv", "env"]
+                for venv_name in common_venv_names:
+                    potential_venv = Path(project_path) / venv_name
+                    if potential_venv.exists() and potential_venv.is_dir():
+                        venv_exists = True
+                        venv_path = str(potential_venv)
+                        break
+
+            # 如果项目目录存在虚拟环境，认为配置正确
+            if venv_exists:
+                return {
+                    "status": "success",
+                    "in_virtual_env": in_venv,
+                    "venv_exists": True,
+                    "venv_path": venv_path,
+                    "message": f"项目已配置虚拟环境: {venv_path}",
+                }
+            elif in_venv:
+                # 当前在虚拟环境中运行
                 return {
                     "status": "success",
                     "in_virtual_env": True,
@@ -124,7 +149,8 @@ class EnvironmentDependencyDetector(DetectionRule):
                 return {
                     "status": "warning",
                     "in_virtual_env": False,
-                    "message": "未在虚拟环境中运行，建议使用虚拟环境隔离依赖",
+                    "venv_exists": False,
+                    "message": "未检测到虚拟环境，建议使用虚拟环境隔离依赖",
                 }
 
         except Exception as e:

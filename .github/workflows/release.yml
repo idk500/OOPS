@@ -69,25 +69,21 @@ jobs:
     - name: Display structure
       run: dir
     
-    - name: Create Release with GitHub CLI
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    - name: Create release notes file
       run: |
-        gh release create ${{ github.ref_name }} `
-          oops-windows-x64.zip `
-          --title "OOPS ${{ github.ref_name }}" `
-          --notes "## OOPS - One-click Operating Pre-check System
+        @"
+        ## OOPS - One-click Operating Pre-check System
 
         让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
 
         ### 📦 下载
 
-        下载 \`oops-windows-x64.zip\`，解压后双击运行 \`oops-windows-x64.exe\`
+        下载 ``oops-windows-x64.zip``，解压后双击运行 ``oops-windows-x64.exe``
 
-        ### 🚀 使用方法
+        ### � 使用方法
 
-        1. 解压 \`oops-windows-x64.zip\`
-        2. 双击运行 \`oops-windows-x64.exe\`
+        1. 解压 ``oops-windows-x64.zip``
+        2. 双击运行 ``oops-windows-x64.exe``
         3. 选择要检测的游戏脚本项目
         4. 等待检测完成
         5. 查看自动打开的HTML报告
@@ -106,4 +102,15 @@ jobs:
 
         - [快速开始](https://github.com/${{ github.repository }}/blob/main/QUICKSTART.md)
         - [用户指南](https://github.com/${{ github.repository }}/blob/main/USER_GUIDE.md)
-        - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)"
+        - [更新日志](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md)
+        "@ | Out-File -FilePath release-notes.md -Encoding utf8
+    
+    - name: Create Release with GitHub CLI
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        gh release create ${{ github.ref_name }} `
+          oops-windows-x64.zip `
+          --title "OOPS ${{ github.ref_name }}" `
+          --notes-file release-notes.md `
+          --verify-tag
