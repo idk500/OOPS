@@ -591,15 +591,71 @@ class ReportGenerator:
 </html>"""
 
     def _extract_system_info(self, results: List[CheckResult]) -> Dict[str, Any]:
-        """从检测结果中提取系统信息"""
+        """从检测结果中提取系统信息 - 支持新旧检测器"""
+        system_info = {}
+
+        # 尝试从新检测器获取数据
         for result in results:
-            if result.check_name == "system_info":
-                system_info = result.details.copy()
-                # 添加验证结果
-                if hasattr(result, "details") and "validation" in result.details:
-                    system_info["validation"] = result.details["validation"]
-                return system_info
-        return {}
+            if result.check_name == "hardware_info":
+                # 新的硬件检测器
+                hardware_data = result.details
+                system_info["hardware"] = {
+                    "cpu_model": hardware_data.get("cpu", {}).get("model"),
+                    "cpu_cores_physical": hardware_data.get("cpu", {}).get(
+                        "cores_physical"
+                    ),
+                    "cpu_cores_logical": hardware_data.get("cpu", {}).get(
+                        "cores_logical"
+                    ),
+                    "cpu_freq_current": hardware_data.get("cpu", {}).get(
+                        "freq_current"
+                    ),
+                    "cpu_freq_max": hardware_data.get("cpu", {}).get("freq_max"),
+                    "memory_total": hardware_data.get("memory", {}).get("total"),
+                    "memory_available": hardware_data.get("memory", {}).get(
+                        "available"
+                    ),
+                    "memory_used": hardware_data.get("memory", {}).get("used"),
+                    "memory_percent": hardware_data.get("memory", {}).get("percent"),
+                    "gpu_info": hardware_data.get("gpu"),
+                }
+                system_info["storage"] = {
+                    "current_drive": hardware_data.get("storage", {}).get(
+                        "current_drive"
+                    ),
+                    "disk_total": hardware_data.get("storage", {}).get("total"),
+                    "disk_used": hardware_data.get("storage", {}).get("used"),
+                    "disk_free": hardware_data.get("storage", {}).get("free"),
+                    "disk_usage_percent": hardware_data.get("storage", {}).get(
+                        "percent"
+                    ),
+                    "disk_type": hardware_data.get("storage", {}).get("type"),
+                }
+            elif result.check_name == "system_info_new":
+                # 新的系统检测器
+                sys_data = result.details
+                system_info["basic"] = {
+                    "os": sys_data.get("os", {}).get("name"),
+                    "os_version": sys_data.get("os", {}).get("version"),
+                    "os_release": sys_data.get("os", {}).get("release"),
+                    "architecture": sys_data.get("os", {}).get("architecture"),
+                    "machine": sys_data.get("os", {}).get("machine"),
+                    "processor": sys_data.get("os", {}).get("processor"),
+                    "python_version": sys_data.get("python", {}).get("version"),
+                    "python_executable": sys_data.get("python", {}).get("executable"),
+                    "current_path": sys_data.get("paths", {}).get("current"),
+                }
+
+        # 如果新检测器没有数据，尝试从旧检测器获取
+        if not system_info:
+            for result in results:
+                if result.check_name == "system_info":
+                    system_info = result.details.copy()
+                    if hasattr(result, "details") and "validation" in result.details:
+                        system_info["validation"] = result.details["validation"]
+                    return system_info
+
+        return system_info
 
     def _get_html_title_section(self, project_name: str) -> str:
         """获取HTML标题部分"""
