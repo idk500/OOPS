@@ -149,79 +149,18 @@ class ReportGenerator:
         self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
     ) -> str:
         """生成YAML报告 - 用于用户提交给项目开发者"""
+        from oops.core.data_models import create_diagnostic_report_from_results
         
-        # 提取系统信息
-        system_info = {}
-        for result in results:
-            if result.check_name == "system_info":
-                system_info = result.details
-                break
+        # 使用数据模型创建报告
+        report = create_diagnostic_report_from_results(
+            results=results,
+            project_name=project_name,
+            project_path="",  # 将在后续从配置中获取
+            summary=summary
+        )
         
-        # 构建报告数据
-        report_data = {
-            "oops_report": {
-                "version": "1.0",
-                "project": project_name,
-                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                "current_path": str(Path.cwd()),
-            },
-            "summary": {
-                "total_checks": summary.get('total_checks', 0),
-                "completed": summary.get('completed', 0),
-                "failed": summary.get('failed', 0),
-                "critical_issues": summary.get('critical_issues', 0),
-                "error_issues": summary.get('error_issues', 0),
-                "warning_issues": summary.get('warning_issues', 0),
-                "success_rate": f"{summary.get('success_rate', 0):.1f}%",
-            },
-            "system_info": {
-                "basic": system_info.get("basic", {}),
-                "hardware": system_info.get("hardware", {}),
-                "storage": system_info.get("storage", {}),
-            },
-            "check_results": {},
-            "issues": {
-                "critical": [],
-                "errors": [],
-                "warnings": [],
-            },
-            "fix_suggestions": self._extract_fix_suggestions(results),
-        }
-        
-        # 添加检测结果
-        for result in results:
-            if result.check_name == "system_info":
-                continue  # 系统信息已单独处理
-                
-            report_data["check_results"][result.check_name] = {
-                "status": result.status.value,
-                "severity": result.severity.value,
-                "message": result.message,
-                "details": result.details,
-                "fix_suggestion": result.fix_suggestion,
-            }
-            
-            # 收集问题
-            if result.severity == SeverityLevel.CRITICAL:
-                report_data["issues"]["critical"].append({
-                    "check": result.check_name,
-                    "message": result.message,
-                    "suggestion": result.fix_suggestion,
-                })
-            elif result.severity == SeverityLevel.ERROR:
-                report_data["issues"]["errors"].append({
-                    "check": result.check_name,
-                    "message": result.message,
-                    "suggestion": result.fix_suggestion,
-                })
-            elif result.severity == SeverityLevel.WARNING:
-                report_data["issues"]["warnings"].append({
-                    "check": result.check_name,
-                    "message": result.message,
-                    "suggestion": result.fix_suggestion,
-                })
-        
-        return yaml.dump(report_data, allow_unicode=True, default_flow_style=False, sort_keys=False)
+        # 转换为 YAML
+        return report.to_yaml()
 
     def _generate_markdown_report(
         self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
