@@ -1,5 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
+import sys
+
+# 获取项目根目录（spec 文件在 build/config/ 下）
+spec_root = os.path.abspath(os.path.join(SPECPATH, '..', '..'))
+sys.path.insert(0, spec_root)
+
 block_cipher = None
 
 # 收集所有需要的数据文件
@@ -13,31 +20,23 @@ hiddenimports = [
     'oops.core.config',
     'oops.core.diagnostics',
     'oops.core.report',
+    'oops.core.report_modules',
+    'oops.core.data_models',
+    'oops.core.html_renderer',
     'oops.core.project_detector',
     'oops.detectors.network',
     'oops.detectors.environment',
+    'oops.detectors.system_info',
     'oops.detectors.paths',
     'oops.validators.path_validator',
     'oops.knowledge.issue_matcher',
     'aiohttp',
-    'aiofiles',
     'yaml',
-    'pydantic',
     'psutil',
     'requests',
     'urllib3',
     'colorama',
-    'rich',
-    'ujson',
-    'click',
 ]
-
-import os
-import sys
-
-# 获取项目根目录（spec 文件在 build/config/ 下）
-spec_root = os.path.abspath(os.path.join(SPECPATH, '..', '..'))
-sys.path.insert(0, spec_root)
 
 a = Analysis(
     [os.path.join(spec_root, 'oops.py')],
