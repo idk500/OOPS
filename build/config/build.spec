@@ -12,7 +12,6 @@ block_cipher = None
 # 收集所有需要的数据文件
 datas = [
     (os.path.join(spec_root, 'configs'), 'configs'),
-    (os.path.join(spec_root, 'docs', 'knowledge_base'), 'docs/knowledge_base'),
 ]
 
 # 收集所有隐藏导入
@@ -23,13 +22,17 @@ hiddenimports = [
     'oops.core.report_modules',
     'oops.core.data_models',
     'oops.core.html_renderer',
+    'oops.core.unified_renderer',
+    'oops.core.default_config',
     'oops.core.project_detector',
     'oops.detectors.network',
     'oops.detectors.environment',
     'oops.detectors.system_info',
+    'oops.detectors.system',
+    'oops.detectors.system_settings',
+    'oops.detectors.hardware',
+    'oops.detectors.python_environment',
     'oops.detectors.paths',
-    'oops.validators.path_validator',
-    'oops.knowledge.issue_matcher',
     'aiohttp',
     'yaml',
     'psutil',
