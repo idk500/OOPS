@@ -83,13 +83,6 @@ class NetworkConnectivityDetector(DetectionRule):
             task = self._check_website(website_url)
             tasks.append(task)
 
-        # 米哈游API检测
-        mihoyo_apis = merged_config.get("mihoyo_apis", [])
-        for api_item in mihoyo_apis:
-            api_url = api_item.get("url") if isinstance(api_item, dict) else api_item
-            task = self._check_mihoyo_api(api_url)
-            tasks.append(task)
-
         # GitHub代理检测
         github_proxies = merged_config.get("github_proxies", [])
         for proxy_item in github_proxies:
@@ -394,67 +387,6 @@ class NetworkConnectivityDetector(DetectionRule):
                 }
             }
 
-    async def _check_mihoyo_api(self, api_url: str) -> Dict[str, Any]:
-        """检测米哈游API连通性"""
-        start_time = time.time()
-        try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(
-                    api_url, timeout=aiohttp.ClientTimeout(total=self.timeout)
-                ) as response:
-                    response_time = (time.time() - start_time) * 1000
-
-                    if response.status == 200:
-                        # 尝试解析JSON响应
-                        try:
-                            data = await response.json()
-                            return {
-                                api_url: {
-                                    "status": "success",
-                                    "response_time_ms": response_time,
-                                    "status_code": response.status,
-                                    "has_data": bool(data),
-                                    "type": "mihoyo_api",
-                                }
-                            }
-                        except:
-                            return {
-                                api_url: {
-                                    "status": "success",
-                                    "response_time_ms": response_time,
-                                    "status_code": response.status,
-                                    "type": "mihoyo_api",
-                                }
-                            }
-                    else:
-                        return {
-                            api_url: {
-                                "status": "failure",
-                                "response_time_ms": response_time,
-                                "status_code": response.status,
-                                "type": "mihoyo_api",
-                            }
-                        }
-
-        except asyncio.TimeoutError:
-            return {
-                api_url: {
-                    "status": "timeout",
-                    "error": f"请求超时 ({self.timeout}秒)",
-                    "response_time_ms": (time.time() - start_time) * 1000,
-                    "type": "mihoyo_api",
-                }
-            }
-        except Exception as e:
-            return {
-                api_url: {
-                    "status": "error",
-                    "error": str(e),
-                    "response_time_ms": (time.time() - start_time) * 1000,
-                    "type": "mihoyo_api",
-                }
-            }
-
     async def _check_github_proxy(self, proxy_url: str) -> Dict[str, Any]:
         """检测GitHub代理连通性"""
         start_time = time.time()
@@ -520,7 +452,6 @@ class NetworkConnectivityDetector(DetectionRule):
             "git_repo": [],
             "pypi_source": [],
             "github_proxy": [],
-            "mihoyo_api": [],
             "mirror_site": [],
             "project_website": [],
         }
@@ -548,7 +479,6 @@ class NetworkConnectivityDetector(DetectionRule):
         # 检查可选组（全部失败才警告）
         optional_groups = [
             "github_proxy",
-            "mihoyo_api",
             "mirror_site",
             "project_website",
         ]
@@ -588,7 +518,6 @@ class NetworkConnectivityDetector(DetectionRule):
             "git_repo": [],
             "pypi_source": [],
             "github_proxy": [],
-            "mihoyo_api": [],
         }
 
         for url, detail in details.items():

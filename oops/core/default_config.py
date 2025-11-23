@@ -129,7 +129,6 @@ class DefaultConfigLoader:
             "mirror_sites",
             "github_proxies",
             "project_websites",
-            "mihoyo_apis",
         ]:
             if key not in disable_list:
                 project_value = project_network.get(key)
