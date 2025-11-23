@@ -478,42 +478,22 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
         print("[*] 💡 提示: 将 oops.exe 放到项目根目录可以自动检测")
         return
     
-    # 如果只有一个有效项目，直接运行，不询问
-    if len(valid_projects) == 1:
-        project_name, _ = valid_projects[0]
-        project_info = valid_projects[0][1].get('project', {})
-        name = project_info.get('name', project_name)
-        print(f"[*] 自动运行唯一可用项目: {name}")
-        await run_diagnostic_for_project(project_name, args, config_manager)
-        return
+    # 自动模式：直接运行所有有效项目，无需用户输入
+    print(f"[*] 🚀 自动模式：检测到 {len(valid_projects)} 个可用项目")
+    print(f"[*] 💡 提示：使用 --project 参数可以指定单个项目")
+    print()
     
-    # 多个项目时才显示选择菜单
-    print("[*] 请选择要检测的项目:")
+    # 依次检测所有有效项目
     for i, (project_name, project_config) in enumerate(valid_projects, 1):
         project_info = project_config.get('project', {})
         name = project_info.get('name', project_name)
-        print(f"  {i}. {name}")
-    
-    print(f"  {len(valid_projects) + 1}. 所有项目")
-    print("  0. 退出")
-    
-    try:
-        choice = input("\n请输入选择编号: ").strip()
-        if choice == '0':
-            return
-        elif choice == str(len(valid_projects) + 1):
-            # 检测所有有效项目
-            for project_name, _ in valid_projects:
-                await run_diagnostic_for_project(project_name, args, config_manager)
-        else:
-            choice_index = int(choice) - 1
-            if 0 <= choice_index < len(valid_projects):
-                project_name, _ = valid_projects[choice_index]
-                await run_diagnostic_for_project(project_name, args, config_manager)
-            else:
-                print("[ERROR] 无效的选择")
-    except (ValueError, KeyboardInterrupt):
-        print("\n[*] 已取消")
+        
+        if len(valid_projects) > 1:
+            print(f"\n{'='*60}")
+            print(f"[{i}/{len(valid_projects)}] 检测项目: {name}")
+            print(f"{'='*60}")
+        
+        await run_diagnostic_for_project(project_name, args, config_manager)
 
 
 async def main():
