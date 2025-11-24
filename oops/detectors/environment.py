@@ -407,20 +407,22 @@ class EnvironmentDependencyDetector(DetectionRule):
                 }
 
             results = {}
-            
+
             # 检测 Git 工具
             git_check = self._check_git_tool(project_path)
             results["git"] = git_check
-            
+
             # 检测嵌入式 Python（如 OneDragon 项目）
             embedded_python_check = self._check_embedded_python(project_path)
             if embedded_python_check.get("status") != "skipped":
                 results["embedded_python"] = embedded_python_check
-            
+
             # 分析整体状态
             error_count = sum(1 for r in results.values() if r.get("status") == "error")
-            warning_count = sum(1 for r in results.values() if r.get("status") == "warning")
-            
+            warning_count = sum(
+                1 for r in results.values() if r.get("status") == "warning"
+            )
+
             if error_count > 0:
                 overall_status = "error"
                 message = f"项目依赖检测发现 {error_count} 个问题"
@@ -439,7 +441,7 @@ class EnvironmentDependencyDetector(DetectionRule):
 
         except Exception as e:
             return {"status": "error", "message": f"项目依赖检测失败: {str(e)}"}
-    
+
     def _check_git_tool(self, project_path: str) -> Dict[str, Any]:
         """检测 Git 工具（系统 Git 或嵌入式 MinGit）"""
         try:
@@ -449,7 +451,7 @@ class EnvironmentDependencyDetector(DetectionRule):
                 "git_version": None,
                 "git_path": None,
             }
-            
+
             # 检查嵌入式 MinGit（如 OneDragon 项目）
             mingit_path = Path(project_path) / ".install" / "MinGit" / "bin" / "git.exe"
             if mingit_path.exists():
@@ -466,7 +468,7 @@ class EnvironmentDependencyDetector(DetectionRule):
                         git_info["git_version"] = result.stdout.strip()
                 except Exception as e:
                     logger.debug(f"获取 MinGit 版本失败: {e}")
-            
+
             # 检查系统 Git
             try:
                 result = subprocess.run(
@@ -481,7 +483,7 @@ class EnvironmentDependencyDetector(DetectionRule):
                         git_info["git_version"] = result.stdout.strip()
             except Exception as e:
                 logger.debug(f"检测系统 Git 失败: {e}")
-            
+
             # 判断状态
             if git_info["embedded_git"] or git_info["system_git"]:
                 git_type = []
@@ -489,7 +491,7 @@ class EnvironmentDependencyDetector(DetectionRule):
                     git_type.append("嵌入式 Git")
                 if git_info["system_git"]:
                     git_type.append("系统 Git")
-                
+
                 return {
                     "status": "success",
                     "message": f"Git 工具可用: {', '.join(git_type)}",
@@ -501,24 +503,26 @@ class EnvironmentDependencyDetector(DetectionRule):
                     "message": "未检测到 Git 工具",
                     "details": git_info,
                 }
-                
+
         except Exception as e:
             logger.error(f"Git 工具检测失败: {e}")
             return {"status": "error", "message": f"Git 工具检测失败: {str(e)}"}
-    
+
     def _check_embedded_python(self, project_path: str) -> Dict[str, Any]:
         """检测嵌入式 Python（如 OneDragon 项目的 .install/python）"""
         try:
-            embedded_python_path = Path(project_path) / ".install" / "python" / "python.exe"
-            
+            embedded_python_path = (
+                Path(project_path) / ".install" / "python" / "python.exe"
+            )
+
             if not embedded_python_path.exists():
                 return {"status": "skipped", "message": "无嵌入式 Python"}
-            
+
             python_info = {
                 "path": str(embedded_python_path),
                 "version": None,
             }
-            
+
             try:
                 result = subprocess.run(
                     [str(embedded_python_path), "--version"],
@@ -530,13 +534,13 @@ class EnvironmentDependencyDetector(DetectionRule):
                     python_info["version"] = result.stdout.strip()
             except Exception as e:
                 logger.debug(f"获取嵌入式 Python 版本失败: {e}")
-            
+
             return {
                 "status": "success",
                 "message": f"嵌入式 Python 可用: {python_info['version'] or '版本未知'}",
                 "details": python_info,
             }
-            
+
         except Exception as e:
             logger.error(f"嵌入式 Python 检测失败: {e}")
             return {"status": "error", "message": f"嵌入式 Python 检测失败: {str(e)}"}

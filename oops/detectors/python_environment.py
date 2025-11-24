@@ -43,11 +43,11 @@ class PythonEnvironmentDetector(DetectionRule):
             # 如果检测到虚拟环境，检查依赖完整性
             if environment_info["virtual_env"].get("venv_exists"):
                 venv_path = environment_info["virtual_env"].get("venv_path")
-                
+
                 # 查找依赖文件（支持多种格式）
                 dependency_file = None
                 dependency_type = None
-                
+
                 # 优先查找 requirements.txt
                 requirements_txt = os.path.join(project_path, "requirements.txt")
                 if os.path.exists(requirements_txt):
@@ -61,7 +61,7 @@ class PythonEnvironmentDetector(DetectionRule):
                 elif os.path.exists(os.path.join(project_path, "uv.lock")):
                     dependency_file = os.path.join(project_path, "uv.lock")
                     dependency_type = "uv.lock"
-                
+
                 if dependency_file:
                     environment_info["dependencies"] = self._check_dependencies(
                         venv_path, dependency_file, dependency_type
@@ -313,13 +313,16 @@ class PythonEnvironmentDetector(DetectionRule):
             return False
 
     def _check_dependencies(
-        self, venv_path: str, dependency_file: str, dependency_type: str = "requirements.txt"
+        self,
+        venv_path: str,
+        dependency_file: str,
+        dependency_type: str = "requirements.txt",
     ) -> Dict[str, Any]:
         """检查虚拟环境中的依赖完整性"""
         try:
             # 获取已安装的包
             installed_packages = self._get_installed_packages(venv_path)
-            
+
             # 对于 pyproject.toml 和 uv.lock，只返回基本信息
             if dependency_type in ["pyproject.toml", "uv.lock"]:
                 return {
@@ -328,7 +331,7 @@ class PythonEnvironmentDetector(DetectionRule):
                     "total_installed": len(installed_packages),
                     "message": f"检测到 {dependency_type}，已安装 {len(installed_packages)} 个包",
                 }
-            
+
             # 解析 requirements.txt
             required_packages = self._parse_requirements(dependency_file)
 
@@ -390,7 +393,7 @@ class PythonEnvironmentDetector(DetectionRule):
             import platform
 
             system = platform.system().lower()
-            
+
             # 尝试使用 pip
             pip_exe = (
                 os.path.join(venv_path, "Scripts", "pip.exe")
@@ -416,14 +419,14 @@ class PythonEnvironmentDetector(DetectionRule):
                     logger.debug(f"pip list 执行失败: {result.stderr}")
             else:
                 logger.debug(f"pip 不存在于虚拟环境: {pip_exe}")
-            
+
             # 如果 pip 不可用，尝试使用 Python 的 importlib.metadata
             python_exe = (
                 os.path.join(venv_path, "Scripts", "python.exe")
                 if system == "windows"
                 else os.path.join(venv_path, "bin", "python")
             )
-            
+
             if os.path.exists(python_exe):
                 # 使用 importlib.metadata 列出包
                 py_code = """
@@ -442,7 +445,9 @@ for dist in importlib.metadata.distributions():
                         if "==" in line:
                             pkg_name, version = line.split("==", 1)
                             packages[pkg_name.strip()] = version.strip()
-                    logger.debug(f"从虚拟环境获取到 {len(packages)} 个包（使用 importlib.metadata）")
+                    logger.debug(
+                        f"从虚拟环境获取到 {len(packages)} 个包（使用 importlib.metadata）"
+                    )
                 else:
                     logger.debug(f"importlib.metadata 执行失败: {result.stderr}")
         except Exception as e:

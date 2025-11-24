@@ -40,8 +40,10 @@ class HardwareDetector(DetectionRule):
             # 进行硬件要求验证
             issues = []
             warnings = []
-            
-            hardware_requirements = config.get("checks", {}).get("hardware_requirements", {})
+
+            hardware_requirements = config.get("checks", {}).get(
+                "hardware_requirements", {}
+            )
 
             # 验证分辨率（从项目配置中获取最低要求）
             min_resolution = hardware_requirements.get("min_resolution", "1920x1080")
@@ -55,28 +57,28 @@ class HardwareDetector(DetectionRule):
                     issues.append(
                         f"主显示器分辨率 {current_resolution} 低于最低要求 {min_resolution}"
                     )
-            
+
             # 验证磁盘类型（是否要求 SSD）
             require_ssd = hardware_requirements.get("require_ssd", False)
             storage_info = hardware_info.get("storage", {})
             disk_type = storage_info.get("type", "Unknown")
-            
+
             if require_ssd:
                 if disk_type == "HDD":
-                    warnings.append(
-                        f"当前使用 HDD 硬盘，建议使用 SSD 以获得更好的性能"
-                    )
+                    warnings.append(f"当前使用 HDD 硬盘，建议使用 SSD 以获得更好的性能")
                 elif disk_type == "Unknown":
-                    warnings.append(
-                        "无法检测磁盘类型，建议确认是否使用 SSD"
-                    )
-            
+                    warnings.append("无法检测磁盘类型，建议确认是否使用 SSD")
+
             # 验证屏幕比例（是否要求特定比例如 16:9）
             required_aspect_ratio = hardware_requirements.get("aspect_ratio")
             if required_aspect_ratio and current_resolution:
-                aspect_ratio_check = self._check_aspect_ratio(current_resolution, required_aspect_ratio)
+                aspect_ratio_check = self._check_aspect_ratio(
+                    current_resolution, required_aspect_ratio
+                )
                 if not aspect_ratio_check.get("valid"):
-                    warnings.append(aspect_ratio_check.get("message", "屏幕比例不符合要求"))
+                    warnings.append(
+                        aspect_ratio_check.get("message", "屏幕比例不符合要求")
+                    )
 
             # 确定状态
             if issues:
@@ -313,32 +315,35 @@ class HardwareDetector(DetectionRule):
         except Exception as e:
             logger.debug(f"检查分辨率要求失败: {e}")
             return True  # 出错时跳过检查
-    
-    def _check_aspect_ratio(self, resolution: str, required_ratio: str) -> Dict[str, Any]:
+
+    def _check_aspect_ratio(
+        self, resolution: str, required_ratio: str
+    ) -> Dict[str, Any]:
         """检查屏幕比例是否符合要求"""
         try:
             # 解析分辨率
             parts = resolution.replace(" ", "").split("x")
             if len(parts) != 2:
                 return {"valid": True, "message": "无法解析分辨率"}
-            
+
             width = int(parts[0])
             height = int(parts[1])
-            
+
             # 计算实际比例
             from math import gcd
+
             divisor = gcd(width, height)
             actual_ratio = f"{width // divisor}:{height // divisor}"
-            
+
             # 比较比例
             if actual_ratio != required_ratio:
                 return {
                     "valid": False,
-                    "message": f"屏幕比例为 {actual_ratio}，建议使用 {required_ratio} 比例的分辨率（如 1920x1080）"
+                    "message": f"屏幕比例为 {actual_ratio}，建议使用 {required_ratio} 比例的分辨率（如 1920x1080）",
                 }
-            
+
             return {"valid": True, "message": f"屏幕比例符合要求: {actual_ratio}"}
-            
+
         except Exception as e:
             logger.debug(f"检查屏幕比例失败: {e}")
             return {"valid": True, "message": "无法检查屏幕比例"}
@@ -350,17 +355,17 @@ class HardwareDetector(DetectionRule):
         warnings = details.get("warnings", [])
 
         suggestions = []
-        
+
         # 处理错误
         for issue in issues:
             if "分辨率" in issue:
                 suggestions.append("请调整显示器分辨率以满足游戏要求")
-        
+
         # 处理警告
         for warning in warnings:
             if "HDD" in warning or "SSD" in warning:
                 suggestions.append("建议将游戏安装到 SSD 以提升加载速度和运行流畅度")
             elif "磁盘类型" in warning:
                 suggestions.append("建议确认游戏是否安装在 SSD 上")
-        
+
         return "; ".join(suggestions) if suggestions else ""

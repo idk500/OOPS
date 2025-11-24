@@ -1301,15 +1301,15 @@ class ReportGenerator:
                 warnings = result.details.get("warnings", [])
                 settings = result.details.get("settings", {})
                 game_reminder = result.details.get("game_settings_reminder", [])
-                
+
                 # 添加错误项
                 for issue in issues:
                     failed_items.append(f"<li>{html.escape(issue)}</li>")
-                
+
                 # 添加警告项
                 for warning in warnings:
                     warning_items.append(f"<li>{html.escape(warning)}</li>")
-                
+
                 # 显示检测的设置项
                 if settings:
                     settings_info = []
@@ -1328,15 +1328,22 @@ class ReportGenerator:
                             settings_info.append(f"颜色滤镜: {status}")
                         elif setting_key == "primary_resolution":
                             settings_info.append(f"主显示器分辨率: {setting_value}")
-                    
+
                     if settings_info:
-                        success_items.extend([f"<li>{info}</li>" for info in settings_info])
-                
+                        success_items.extend(
+                            [f"<li>{info}</li>" for info in settings_info]
+                        )
+
                 # 如果有游戏内设置提醒，添加到详情中
                 if game_reminder:
                     success_items.append(
                         "<li><strong>📋 游戏内设置要求</strong>（请在游戏中手动配置）:<ul style='margin-top: 8px;'>"
-                        + "".join([f"<li style='color: #2563eb;'>{html.escape(item)}</li>" for item in game_reminder])
+                        + "".join(
+                            [
+                                f"<li style='color: #2563eb;'>{html.escape(item)}</li>"
+                                for item in game_reminder
+                            ]
+                        )
                         + "</ul></li>"
                     )
             elif result.check_name == "environment_dependencies":
@@ -1345,44 +1352,62 @@ class ReportGenerator:
                     if isinstance(value, dict):
                         item_status = value.get("status", "unknown")
                         item_message = value.get("message", "")
-                        
+
                         # 特殊处理 project_dependencies
                         if key == "project_dependencies" and "details" in value:
                             proj_details = value.get("details", {})
-                            
+
                             # Git 工具检测
                             if "git" in proj_details:
                                 git_info = proj_details["git"]
                                 git_status = git_info.get("status", "unknown")
                                 git_msg = git_info.get("message", "")
-                                
+
                                 if git_status == "success":
                                     git_details = git_info.get("details", {})
-                                    git_version = git_details.get("git_version", "未知版本")
-                                    success_items.append(f"<li><strong>Git 工具</strong>: ✅ {html.escape(git_msg)} ({html.escape(git_version)})</li>")
+                                    git_version = git_details.get(
+                                        "git_version", "未知版本"
+                                    )
+                                    success_items.append(
+                                        f"<li><strong>Git 工具</strong>: ✅ {html.escape(git_msg)} ({html.escape(git_version)})</li>"
+                                    )
                                 elif git_status == "warning":
-                                    warning_items.append(f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>")
+                                    warning_items.append(
+                                        f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>"
+                                    )
                                 elif git_status == "error":
-                                    failed_items.append(f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>")
-                            
+                                    failed_items.append(
+                                        f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>"
+                                    )
+
                             # 嵌入式 Python 检测
                             if "embedded_python" in proj_details:
                                 py_info = proj_details["embedded_python"]
                                 py_status = py_info.get("status", "unknown")
                                 py_msg = py_info.get("message", "")
-                                
+
                                 if py_status == "success":
-                                    success_items.append(f"<li><strong>嵌入式 Python</strong>: ✅ {html.escape(py_msg)}</li>")
+                                    success_items.append(
+                                        f"<li><strong>嵌入式 Python</strong>: ✅ {html.escape(py_msg)}</li>"
+                                    )
                                 elif py_status == "warning":
-                                    warning_items.append(f"<li><strong>嵌入式 Python</strong>: {html.escape(py_msg)}</li>")
+                                    warning_items.append(
+                                        f"<li><strong>嵌入式 Python</strong>: {html.escape(py_msg)}</li>"
+                                    )
                         else:
                             # 其他标准项
                             if item_status == "error":
-                                failed_items.append(f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>")
+                                failed_items.append(
+                                    f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
+                                )
                             elif item_status == "warning":
-                                warning_items.append(f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>")
+                                warning_items.append(
+                                    f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
+                                )
                             elif item_status == "success":
-                                success_items.append(f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>")
+                                success_items.append(
+                                    f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
+                                )
             else:
                 # 处理其他检测器的标准数据结构
                 for key, value in result.details.items():
