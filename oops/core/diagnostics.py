@@ -239,7 +239,7 @@ class DiagnosticSuite:
 
         try:
             # 为环境检测动态添加 project_path
-            if check_name == "environment_dependencies":
+            if check_name in ["environment_dependencies", "python_environment"]:
                 install_path = (
                     project_config.get("project", {})
                     .get("paths", {})
@@ -251,7 +251,7 @@ class DiagnosticSuite:
                     project_config["checks"]["environment"][
                         "project_path"
                     ] = install_path
-                    logger.debug(f"为环境检测设置项目路径: {install_path}")
+                    logger.debug(f"为 {check_name} 设置项目路径: {install_path}")
 
             # 执行检测规则
             check_result = await asyncio.get_event_loop().run_in_executor(

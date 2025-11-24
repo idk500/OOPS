@@ -977,21 +977,78 @@ class ReportGenerator:
             <p style="margin: 0 0 8px 0; color: #1e40af;">
                 💡 <strong>提示</strong>：提交问题时请附带 YAML 格式的报告文件（而非截图），以便开发者准确分析。
             </p>
-            <button onclick="openReportFolder()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                📁 打开报告文件夹
+            <button onclick="showYamlPath()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                📋 显示 YAML 报告路径
             </button>
-            <span id="yaml-path" style="margin-left: 10px; color: #6b7280; font-size: 13px;"></span>
+            <div id="yaml-info" style="margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px; border-left: 3px solid #3b82f6; display: none;">
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: #374151;">YAML 报告文件：</strong>
+                    <code id="yaml-filename" style="background: white; padding: 2px 6px; border-radius: 3px; color: #1f2937; font-size: 13px;"></code>
+                </div>
+                <div style="margin-bottom: 8px;">
+                    <strong style="color: #374151;">完整路径：</strong>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                        <input id="yaml-path" readonly style="flex: 1; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-family: monospace; font-size: 12px; background: white;" />
+                        <button onclick="copyYamlPath()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
+                            📋 复制路径
+                        </button>
+                    </div>
+                </div>
+                <div style="color: #6b7280; font-size: 12px; margin-top: 8px;">
+                    💡 提示：复制路径后可直接粘贴到文件管理器地址栏打开
+                </div>
+            </div>
         </div>
         <script>
-            function openReportFolder() {
+            function showYamlPath() {
                 const htmlPath = window.location.pathname;
                 if (window.location.protocol === 'file:') {
+                    // 获取 YAML 文件路径
                     const yamlPath = htmlPath.replace('.html', '.yaml');
-                    document.getElementById('yaml-path').textContent = 'YAML 报告: ' + yamlPath.split('/').pop();
-                    alert('YAML 报告位于同一目录下\\n\\n文件名: ' + yamlPath.split('/').pop() + '\\n\\n请在文件管理器中找到该文件并提交。');
+                    const yamlFilename = yamlPath.split('/').pop().split('\\\\').pop();
+                    
+                    // 显示信息区域
+                    document.getElementById('yaml-info').style.display = 'block';
+                    document.getElementById('yaml-filename').textContent = yamlFilename;
+                    document.getElementById('yaml-path').value = decodeURIComponent(yamlPath);
+                    
+                    // 滚动到信息区域
+                    document.getElementById('yaml-info').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 } else {
-                    alert('请在本地打开此报告以访问 YAML 文件。');
+                    document.getElementById('yaml-info').style.display = 'block';
+                    document.getElementById('yaml-info').innerHTML = '<div style="color: #dc2626;">⚠️ 请在本地打开此报告以访问 YAML 文件</div>';
                 }
+            }
+            
+            function copyYamlPath() {
+                const pathInput = document.getElementById('yaml-path');
+                pathInput.select();
+                
+                try {
+                    // 尝试使用现代 API
+                    navigator.clipboard.writeText(pathInput.value).then(() => {
+                        showCopySuccess();
+                    }).catch(() => {
+                        // 降级到传统方法
+                        document.execCommand('copy');
+                        showCopySuccess();
+                    });
+                } catch (err) {
+                    // 最后的降级方案
+                    document.execCommand('copy');
+                    showCopySuccess();
+                }
+            }
+            
+            function showCopySuccess() {
+                const btn = event.target;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '✅ 已复制';
+                btn.style.background = '#059669';
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '#10b981';
+                }, 2000);
             }
         </script>
 """
@@ -1238,6 +1295,94 @@ class ReportGenerator:
                         success_items.extend(
                             [f"<li>{info}</li>" for info in settings_info]
                         )
+            elif result.check_name == "system_settings":
+                # system_settings 可能包含游戏内设置提醒
+                issues = result.details.get("issues", [])
+                warnings = result.details.get("warnings", [])
+                settings = result.details.get("settings", {})
+                game_reminder = result.details.get("game_settings_reminder", [])
+                
+                # 添加错误项
+                for issue in issues:
+                    failed_items.append(f"<li>{html.escape(issue)}</li>")
+                
+                # 添加警告项
+                for warning in warnings:
+                    warning_items.append(f"<li>{html.escape(warning)}</li>")
+                
+                # 显示检测的设置项
+                if settings:
+                    settings_info = []
+                    for setting_key, setting_value in settings.items():
+                        if setting_key == "is_admin":
+                            status = "✅ 是" if setting_value else "❌ 否"
+                            settings_info.append(f"管理员权限: {status}")
+                        elif setting_key == "hdr_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"HDR: {status}")
+                        elif setting_key == "night_light_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"夜间模式: {status}")
+                        elif setting_key == "color_filter_enabled":
+                            status = "启用" if setting_value else "禁用"
+                            settings_info.append(f"颜色滤镜: {status}")
+                        elif setting_key == "primary_resolution":
+                            settings_info.append(f"主显示器分辨率: {setting_value}")
+                    
+                    if settings_info:
+                        success_items.extend([f"<li>{info}</li>" for info in settings_info])
+                
+                # 如果有游戏内设置提醒，添加到详情中
+                if game_reminder:
+                    success_items.append(
+                        "<li><strong>📋 游戏内设置要求</strong>（请在游戏中手动配置）:<ul style='margin-top: 8px;'>"
+                        + "".join([f"<li style='color: #2563eb;'>{html.escape(item)}</li>" for item in game_reminder])
+                        + "</ul></li>"
+                    )
+            elif result.check_name == "environment_dependencies":
+                # environment_dependencies 有嵌套的数据结构
+                for key, value in result.details.items():
+                    if isinstance(value, dict):
+                        item_status = value.get("status", "unknown")
+                        item_message = value.get("message", "")
+                        
+                        # 特殊处理 project_dependencies
+                        if key == "project_dependencies" and "details" in value:
+                            proj_details = value.get("details", {})
+                            
+                            # Git 工具检测
+                            if "git" in proj_details:
+                                git_info = proj_details["git"]
+                                git_status = git_info.get("status", "unknown")
+                                git_msg = git_info.get("message", "")
+                                
+                                if git_status == "success":
+                                    git_details = git_info.get("details", {})
+                                    git_version = git_details.get("git_version", "未知版本")
+                                    success_items.append(f"<li><strong>Git 工具</strong>: ✅ {html.escape(git_msg)} ({html.escape(git_version)})</li>")
+                                elif git_status == "warning":
+                                    warning_items.append(f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>")
+                                elif git_status == "error":
+                                    failed_items.append(f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>")
+                            
+                            # 嵌入式 Python 检测
+                            if "embedded_python" in proj_details:
+                                py_info = proj_details["embedded_python"]
+                                py_status = py_info.get("status", "unknown")
+                                py_msg = py_info.get("message", "")
+                                
+                                if py_status == "success":
+                                    success_items.append(f"<li><strong>嵌入式 Python</strong>: ✅ {html.escape(py_msg)}</li>")
+                                elif py_status == "warning":
+                                    warning_items.append(f"<li><strong>嵌入式 Python</strong>: {html.escape(py_msg)}</li>")
+                        else:
+                            # 其他标准项
+                            if item_status == "error":
+                                failed_items.append(f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>")
+                            elif item_status == "warning":
+                                warning_items.append(f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>")
+                            elif item_status == "success":
+                                success_items.append(f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>")
             else:
                 # 处理其他检测器的标准数据结构
                 for key, value in result.details.items():

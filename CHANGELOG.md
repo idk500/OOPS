@@ -2,6 +2,114 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.1.8 - 2025-11-24 🎯
+
+### ✨ 新功能
+
+1. **OneDragon 项目特定检测**
+   - 检测 UV 包管理器（嵌入式和系统）
+   - 检测 Git 工具（MinGit 和系统 Git）
+   - 检测嵌入式 Python（`.install/python/python.exe`）
+   - 管理员权限检测（无 UAC 弹窗）
+   - SSD 要求检测
+   - 屏幕比例检测（16:9）
+
+2. **虚拟环境依赖检测**
+   - 自动检测虚拟环境中的已安装包
+   - 支持多种依赖文件格式：
+     - `requirements.txt` - 完整比对（缺失包、版本不匹配）
+     - `pyproject.toml` - 基本检测（显示已安装包数量）
+     - `uv.lock` - 基本检测
+   - 支持 UV 虚拟环境（使用 `importlib.metadata`）
+   - 支持传统 pip 虚拟环境
+
+3. **游戏内设置提醒**
+   - 在报告中显示需要用户手动配置的游戏内设置
+   - 包含分辨率、窗口模式、多屏幕、画质等要求
+   - 醒目的蓝色提示框展示
+
+### 🎨 用户体验改进
+
+1. **HTML 报告优化**
+   - 移除弹窗，改用展开式信息区域
+   - 点击"显示 YAML 报告路径"展开详细信息
+   - 一键复制路径到剪贴板
+   - 按钮状态反馈（✅ 已复制）
+   - 更流畅的用户体验
+
+2. **检测结果显示优化**
+   - `environment_dependencies` 嵌套结构清晰展示
+   - Git 工具信息包含版本号
+   - 嵌入式 Python 信息独立显示
+   - 游戏设置提醒醒目展示
+
+### 🔧 技术改进
+
+1. **包管理器检测增强**
+   - 优先检测嵌入式 UV（`.install/uv/uv.exe`）
+   - 支持 `uv.lock` 文件检测
+   - 自动获取 UV 版本信息
+
+2. **虚拟环境检测增强**
+   - 支持无 pip 的 UV 虚拟环境
+   - 使用 `importlib.metadata` 作为降级方案
+   - 更准确的包列表获取
+
+3. **硬件检测增强**
+   - SSD 要求配置：`require_ssd: true`
+   - 屏幕比例要求配置：`aspect_ratio: '16:9'`
+   - 自动计算实际屏幕比例（使用 GCD）
+   - 非 16:9 屏幕显示警告
+
+4. **系统设置检测增强**
+   - 管理员权限检测（使用 `ctypes.windll.shell32.IsUserAnAdmin()`）
+   - 无 UAC 弹窗，只检查当前进程权限状态
+   - 配置项：`require_admin: true`
+
+### 📦 Zenless Zone Zero 配置
+
+新增完整的 OneDragon 项目检测配置：
+
+```yaml
+hardware_requirements:
+  min_resolution: '1920x1080'
+  require_ssd: true
+  aspect_ratio: '16:9'
+
+system_settings:
+  enabled: true
+  require_admin: true
+  game_settings_reminder:
+    - 游戏分辨率设置为 1920x1080（16:9）
+    - 优先使用窗口模式
+    - 全屏模式时确保屏幕和游戏分辨率都是 16:9
+    - 多屏幕用户需将游戏窗口放在主显示器（1号屏）
+    - 确保游戏画面完整且无遮挡
+    - 建议使用较高画质以降低脚本出错率
+```
+
+### 🐛 Bug 修复
+
+- 修复 JavaScript 字符串转义问题（反斜杠）
+- 修复虚拟环境路径检测问题
+- 修复 UV 虚拟环境包列表获取失败问题
+
+### 📊 检测覆盖
+
+现在支持检测：
+- ✅ Python 版本和虚拟环境
+- ✅ 包管理器（pip/conda/uv/poetry/pipenv）
+- ✅ 虚拟环境依赖完整性
+- ✅ Git 工具（系统/嵌入式）
+- ✅ 管理员权限
+- ✅ SSD/HDD 磁盘类型
+- ✅ 屏幕分辨率和比例
+- ✅ 系统设置（HDR/夜间模式/颜色滤镜）
+- ✅ 网络连通性
+- ✅ 路径规范
+
+---
+
 ## v0.1.7 - 2025-11-24 🚀
 
 ### ✨ 新功能

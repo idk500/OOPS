@@ -28,12 +28,23 @@ class SystemSettingsDetector(DetectionRule):
         """执行系统设置检测"""
         try:
             settings = self._get_display_settings()
+            
+            # 获取系统设置配置
+            system_settings_config = config.get("checks", {}).get("system_settings", {})
 
             # 分析设置问题
             issues = []
             warnings = []
             recommendations = []
 
+            # 检查管理员权限
+            require_admin = system_settings_config.get("require_admin", False)
+            is_admin = settings.get("is_admin")
+            
+            if require_admin and is_admin is False:
+                issues.append("未以管理员权限运行")
+                recommendations.append("请右键点击程序，选择「以管理员身份运行」")
+            
             # 检查 HDR
             if settings.get("hdr_enabled") is True:
                 issues.append("HDR已启用")
@@ -65,6 +76,9 @@ class SystemSettingsDetector(DetectionRule):
                             "建议使用 1920x1080 或更高分辨率以获得最佳识别效果"
                         )
 
+            # 获取游戏内设置提醒
+            game_settings_reminder = system_settings_config.get("game_settings_reminder", [])
+            
             # 确定状态
             if issues:
                 status = "error"
@@ -76,15 +90,21 @@ class SystemSettingsDetector(DetectionRule):
                 status = "success"
                 message = "系统设置检查通过"
 
+            details = {
+                "settings": settings,
+                "issues": issues,
+                "warnings": warnings,
+                "recommendations": recommendations,
+            }
+            
+            # 如果有游戏内设置提醒，添加到详情中
+            if game_settings_reminder:
+                details["game_settings_reminder"] = game_settings_reminder
+
             return {
                 "status": status,
                 "message": message,
-                "details": {
-                    "settings": settings,
-                    "issues": issues,
-                    "warnings": warnings,
-                    "recommendations": recommendations,
-                },
+                "details": details,
             }
         except Exception as e:
             logger.error(f"系统设置检测失败: {e}")
@@ -96,6 +116,9 @@ class SystemSettingsDetector(DetectionRule):
 
         try:
             if platform.system() == "Windows":
+                # 检测管理员权限（不触发 UAC）
+                settings["is_admin"] = self._check_admin_windows()
+                
                 # 检测 HDR
                 settings["hdr_enabled"] = self._check_hdr_windows()
 
@@ -112,6 +135,17 @@ class SystemSettingsDetector(DetectionRule):
             logger.debug(f"获取显示设置失败: {e}")
 
         return settings
+    
+    def _check_admin_windows(self) -> Optional[bool]:
+        """检测是否以管理员权限运行（不触发 UAC）"""
+        try:
+            import ctypes
+            # 使用 shell32.IsUserAnAdmin() 检查当前进程是否有管理员权限
+            # 这个方法不会触发 UAC，只是检查当前进程的权限状态
+            return ctypes.windll.shell32.IsUserAnAdmin() != 0
+        except Exception as e:
+            logger.debug(f"检测管理员权限失败: {e}")
+            return None
 
     def _check_hdr_windows(self) -> Optional[bool]:
         """检测Windows HDR状态"""

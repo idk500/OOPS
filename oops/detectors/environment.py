@@ -395,7 +395,7 @@ class EnvironmentDependencyDetector(DetectionRule):
             return {"status": "error", "message": f"{library_name} 检测失败: {str(e)}"}
 
     def _check_project_dependencies(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """检测项目特定依赖"""
+        """检测项目特定依赖和工具"""
         try:
             project_path = (
                 config.get("project", {}).get("paths", {}).get("install_path", "")
@@ -406,16 +406,140 @@ class EnvironmentDependencyDetector(DetectionRule):
                     "message": "未指定项目安装路径，跳过项目依赖检测",
                 }
 
-            # 这里可以扩展为检查项目的requirements.txt或pyproject.toml
-            # 目前返回基础信息
+            results = {}
+            
+            # 检测 Git 工具
+            git_check = self._check_git_tool(project_path)
+            results["git"] = git_check
+            
+            # 检测嵌入式 Python（如 OneDragon 项目）
+            embedded_python_check = self._check_embedded_python(project_path)
+            if embedded_python_check.get("status") != "skipped":
+                results["embedded_python"] = embedded_python_check
+            
+            # 分析整体状态
+            error_count = sum(1 for r in results.values() if r.get("status") == "error")
+            warning_count = sum(1 for r in results.values() if r.get("status") == "warning")
+            
+            if error_count > 0:
+                overall_status = "error"
+                message = f"项目依赖检测发现 {error_count} 个问题"
+            elif warning_count > 0:
+                overall_status = "warning"
+                message = f"项目依赖检测发现 {warning_count} 个警告"
+            else:
+                overall_status = "success"
+                message = "项目依赖检测通过"
+
             return {
-                "status": "info",
-                "message": "项目依赖检测待实现",
-                "project_path": project_path,
+                "status": overall_status,
+                "message": message,
+                "details": results,
             }
 
         except Exception as e:
             return {"status": "error", "message": f"项目依赖检测失败: {str(e)}"}
+    
+    def _check_git_tool(self, project_path: str) -> Dict[str, Any]:
+        """检测 Git 工具（系统 Git 或嵌入式 MinGit）"""
+        try:
+            git_info = {
+                "system_git": False,
+                "embedded_git": False,
+                "git_version": None,
+                "git_path": None,
+            }
+            
+            # 检查嵌入式 MinGit（如 OneDragon 项目）
+            mingit_path = Path(project_path) / ".install" / "MinGit" / "bin" / "git.exe"
+            if mingit_path.exists():
+                git_info["embedded_git"] = True
+                git_info["git_path"] = str(mingit_path)
+                try:
+                    result = subprocess.run(
+                        [str(mingit_path), "--version"],
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                    )
+                    if result.returncode == 0:
+                        git_info["git_version"] = result.stdout.strip()
+                except Exception as e:
+                    logger.debug(f"获取 MinGit 版本失败: {e}")
+            
+            # 检查系统 Git
+            try:
+                result = subprocess.run(
+                    ["git", "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    git_info["system_git"] = True
+                    if not git_info["git_version"]:
+                        git_info["git_version"] = result.stdout.strip()
+            except Exception as e:
+                logger.debug(f"检测系统 Git 失败: {e}")
+            
+            # 判断状态
+            if git_info["embedded_git"] or git_info["system_git"]:
+                git_type = []
+                if git_info["embedded_git"]:
+                    git_type.append("嵌入式 Git")
+                if git_info["system_git"]:
+                    git_type.append("系统 Git")
+                
+                return {
+                    "status": "success",
+                    "message": f"Git 工具可用: {', '.join(git_type)}",
+                    "details": git_info,
+                }
+            else:
+                return {
+                    "status": "warning",
+                    "message": "未检测到 Git 工具",
+                    "details": git_info,
+                }
+                
+        except Exception as e:
+            logger.error(f"Git 工具检测失败: {e}")
+            return {"status": "error", "message": f"Git 工具检测失败: {str(e)}"}
+    
+    def _check_embedded_python(self, project_path: str) -> Dict[str, Any]:
+        """检测嵌入式 Python（如 OneDragon 项目的 .install/python）"""
+        try:
+            embedded_python_path = Path(project_path) / ".install" / "python" / "python.exe"
+            
+            if not embedded_python_path.exists():
+                return {"status": "skipped", "message": "无嵌入式 Python"}
+            
+            python_info = {
+                "path": str(embedded_python_path),
+                "version": None,
+            }
+            
+            try:
+                result = subprocess.run(
+                    [str(embedded_python_path), "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    python_info["version"] = result.stdout.strip()
+            except Exception as e:
+                logger.debug(f"获取嵌入式 Python 版本失败: {e}")
+            
+            return {
+                "status": "success",
+                "message": f"嵌入式 Python 可用: {python_info['version'] or '版本未知'}",
+                "details": python_info,
+            }
+            
+        except Exception as e:
+            logger.error(f"嵌入式 Python 检测失败: {e}")
+            return {"status": "error", "message": f"嵌入式 Python 检测失败: {str(e)}"}
 
     def _analyze_environment_status(self, results: Dict[str, Any]) -> str:
         """分析整体环境状态"""

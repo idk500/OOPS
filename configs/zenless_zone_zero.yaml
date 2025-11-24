@@ -11,6 +11,8 @@ checks:
     enabled: true
   hardware_requirements:
     min_resolution: '1920x1080'
+    require_ssd: true  # 要求使用 SSD
+    aspect_ratio: '16:9'  # 要求 16:9 分辨率
   network:
     enabled: true
     # 项目特定的Git仓库（会添加到默认列表）
@@ -24,7 +26,9 @@ checks:
       name: 一条龙官网
     - url: https://zzz.mihoyo.com
       name: 绝区零官网
-    
+    - url: https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5
+      name: 绝区零官方文档
+
     # PyPI源使用默认配置（清华、阿里云等镜像）
     # 如需自定义，取消注释并修改：
     # pypi_sources:
@@ -41,6 +45,17 @@ checks:
     enabled: true
   system_info:
     enabled: true
+  system_settings:
+    enabled: true
+    require_admin: true  # 要求管理员权限
+    # 游戏内设置提示（无法自动检测，仅作为提醒）
+    game_settings_reminder:
+      - 游戏分辨率设置为 1920x1080（16:9）
+      - 优先使用窗口模式
+      - 全屏模式时确保屏幕和游戏分辨率都是 16:9
+      - 多屏幕用户需将游戏窗口放在主显示器（1号屏）
+      - 确保游戏画面完整且无遮挡（关闭帧率显示、激活 Windows 等）
+      - 建议使用较高画质以降低脚本出错率
 project:
   description: 绝区零自动化脚本
   name: 绝区零一条龙

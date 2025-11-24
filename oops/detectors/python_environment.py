@@ -43,10 +43,28 @@ class PythonEnvironmentDetector(DetectionRule):
             # 如果检测到虚拟环境，检查依赖完整性
             if environment_info["virtual_env"].get("venv_exists"):
                 venv_path = environment_info["virtual_env"].get("venv_path")
-                requirements_file = os.path.join(project_path, "requirements.txt")
-                if os.path.exists(requirements_file):
+                
+                # 查找依赖文件（支持多种格式）
+                dependency_file = None
+                dependency_type = None
+                
+                # 优先查找 requirements.txt
+                requirements_txt = os.path.join(project_path, "requirements.txt")
+                if os.path.exists(requirements_txt):
+                    dependency_file = requirements_txt
+                    dependency_type = "requirements.txt"
+                # 其次查找 pyproject.toml
+                elif os.path.exists(os.path.join(project_path, "pyproject.toml")):
+                    dependency_file = os.path.join(project_path, "pyproject.toml")
+                    dependency_type = "pyproject.toml"
+                # 最后查找 uv.lock
+                elif os.path.exists(os.path.join(project_path, "uv.lock")):
+                    dependency_file = os.path.join(project_path, "uv.lock")
+                    dependency_type = "uv.lock"
+                
+                if dependency_file:
                     environment_info["dependencies"] = self._check_dependencies(
-                        venv_path, requirements_file
+                        venv_path, dependency_file, dependency_type
                     )
 
             # 分析问题
@@ -125,6 +143,7 @@ class PythonEnvironmentDetector(DetectionRule):
         """检测包管理器类型"""
         manager_type = "unknown"
         manager_version = None
+        manager_path = None
 
         try:
             # 检查是否在 conda 环境
@@ -142,10 +161,39 @@ class PythonEnvironmentDetector(DetectionRule):
                 except:
                     pass
 
-            # 检查项目特定文件
+            # 检查项目特定文件和工具
             elif project_path:
-                if os.path.exists(os.path.join(project_path, "uv.lock")):
+                # 检查 OneDragon 项目的嵌入式 UV
+                uv_embedded = os.path.join(project_path, ".install", "uv", "uv.exe")
+                if os.path.exists(uv_embedded):
                     manager_type = "uv"
+                    manager_path = uv_embedded
+                    try:
+                        result = subprocess.run(
+                            [uv_embedded, "--version"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
+                        )
+                        if result.returncode == 0:
+                            manager_version = result.stdout.strip()
+                    except:
+                        pass
+                # 检查 uv.lock 文件
+                elif os.path.exists(os.path.join(project_path, "uv.lock")):
+                    manager_type = "uv"
+                    # 尝试系统 UV
+                    try:
+                        result = subprocess.run(
+                            ["uv", "--version"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
+                        )
+                        if result.returncode == 0:
+                            manager_version = result.stdout.strip()
+                    except:
+                        pass
                 elif os.path.exists(os.path.join(project_path, "poetry.lock")):
                     manager_type = "poetry"
                 elif os.path.exists(os.path.join(project_path, "Pipfile")):
@@ -169,7 +217,11 @@ class PythonEnvironmentDetector(DetectionRule):
         except Exception as e:
             logger.debug(f"检测包管理器失败: {e}")
 
-        return {"type": manager_type, "version": manager_version}
+        return {
+            "type": manager_type,
+            "version": manager_version,
+            "path": manager_path,
+        }
 
     def _check_virtual_environment(
         self, project_path: str, env_config: Dict[str, Any]
@@ -261,15 +313,24 @@ class PythonEnvironmentDetector(DetectionRule):
             return False
 
     def _check_dependencies(
-        self, venv_path: str, requirements_file: str
+        self, venv_path: str, dependency_file: str, dependency_type: str = "requirements.txt"
     ) -> Dict[str, Any]:
         """检查虚拟环境中的依赖完整性"""
         try:
-            # 解析 requirements.txt
-            required_packages = self._parse_requirements(requirements_file)
-
             # 获取已安装的包
             installed_packages = self._get_installed_packages(venv_path)
+            
+            # 对于 pyproject.toml 和 uv.lock，只返回基本信息
+            if dependency_type in ["pyproject.toml", "uv.lock"]:
+                return {
+                    "complete": True,  # 假设完整（无法精确检查）
+                    "dependency_file": dependency_type,
+                    "total_installed": len(installed_packages),
+                    "message": f"检测到 {dependency_type}，已安装 {len(installed_packages)} 个包",
+                }
+            
+            # 解析 requirements.txt
+            required_packages = self._parse_requirements(dependency_file)
 
             # 比对
             missing = []
@@ -295,6 +356,7 @@ class PythonEnvironmentDetector(DetectionRule):
                 "version_mismatch": version_mismatch,
                 "total_required": len(required_packages),
                 "total_installed": len(installed_packages),
+                "dependency_file": dependency_type,
             }
         except Exception as e:
             logger.error(f"检查依赖失败: {e}")
@@ -328,6 +390,8 @@ class PythonEnvironmentDetector(DetectionRule):
             import platform
 
             system = platform.system().lower()
+            
+            # 尝试使用 pip
             pip_exe = (
                 os.path.join(venv_path, "Scripts", "pip.exe")
                 if system == "windows"
@@ -346,6 +410,41 @@ class PythonEnvironmentDetector(DetectionRule):
                         if "==" in line:
                             pkg_name, version = line.split("==", 1)
                             packages[pkg_name.strip()] = version.strip()
+                    logger.debug(f"从虚拟环境获取到 {len(packages)} 个包（使用 pip）")
+                    return packages
+                else:
+                    logger.debug(f"pip list 执行失败: {result.stderr}")
+            else:
+                logger.debug(f"pip 不存在于虚拟环境: {pip_exe}")
+            
+            # 如果 pip 不可用，尝试使用 Python 的 importlib.metadata
+            python_exe = (
+                os.path.join(venv_path, "Scripts", "python.exe")
+                if system == "windows"
+                else os.path.join(venv_path, "bin", "python")
+            )
+            
+            if os.path.exists(python_exe):
+                # 使用 importlib.metadata 列出包
+                py_code = """
+import importlib.metadata
+for dist in importlib.metadata.distributions():
+    print(f"{dist.name}=={dist.version}")
+"""
+                result = subprocess.run(
+                    [python_exe, "-c", py_code],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    for line in result.stdout.strip().split("\n"):
+                        if "==" in line:
+                            pkg_name, version = line.split("==", 1)
+                            packages[pkg_name.strip()] = version.strip()
+                    logger.debug(f"从虚拟环境获取到 {len(packages)} 个包（使用 importlib.metadata）")
+                else:
+                    logger.debug(f"importlib.metadata 执行失败: {result.stderr}")
         except Exception as e:
             logger.error(f"获取已安装包列表失败: {e}")
         return packages
