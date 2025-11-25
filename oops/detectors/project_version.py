@@ -88,29 +88,41 @@ class ProjectVersionDetector(DetectionRule):
                         parts[0], parts[1]
                     )
 
-            # 比较版本
-            if remote_version:
-                local_tag = local_version.get("current_tag", "")
-                remote_tag = remote_version.get("tag_name", "")
-
-                if local_tag and remote_tag:
-                    if local_tag != remote_tag:
-                        warnings.append(
-                            f"本地版本 ({local_tag}) 与远程最新版本 ({remote_tag}) 不一致"
-                        )
-                        recommendations.append(f"建议更新到最新版本 {remote_tag}")
-                elif not local_tag:
-                    warnings.append("本地未检测到版本标签")
-                    recommendations.append(
-                        f"远程最新版本: {remote_tag}，建议检查是否需要更新"
-                    )
-
             # 检查启动器版本
+            launcher_ver = launcher_version.get("version", "")
             if not launcher_version.get("exists"):
                 warnings.append("未找到启动器文件 (OneDragon-Launcher.exe)")
-            elif not launcher_version.get("version"):
+            elif not launcher_ver:
                 error_msg = launcher_version.get("error", "未知错误")
                 warnings.append(f"无法获取启动器版本: {error_msg}")
+
+            # 比较版本（优先使用启动器版本）
+            if remote_version:
+                remote_tag = remote_version.get("tag_name", "")
+
+                # 优先使用启动器版本进行比对
+                if launcher_ver:
+                    if launcher_ver != remote_tag:
+                        warnings.append(
+                            f"启动器版本 ({launcher_ver}) 与远程最新版本 ({remote_tag}) 不一致"
+                        )
+                        recommendations.append(f"建议更新到最新版本 {remote_tag}")
+                    # 如果启动器版本与远程版本一致，不需要任何警告
+                else:
+                    # 如果没有启动器版本，使用 Git tag 进行比对
+                    local_tag = local_version.get("current_tag", "")
+                    if local_tag:
+                        if local_tag != remote_tag:
+                            warnings.append(
+                                f"本地 Git 标签 ({local_tag}) 与远程最新版本 ({remote_tag}) 不一致"
+                            )
+                            recommendations.append(f"建议更新到最新版本 {remote_tag}")
+                    else:
+                        # 既没有启动器版本，也没有 Git tag
+                        warnings.append("无法确定本地版本（未找到启动器或 Git 标签）")
+                        recommendations.append(
+                            f"远程最新版本: {remote_tag}，建议检查是否需要更新"
+                        )
 
             version_info = {
                 "local": local_version,
