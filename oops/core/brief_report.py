@@ -20,7 +20,7 @@ class BriefReportGenerator:
     ) -> List[str]:
         """
         生成文本格式简报（适合QQ/微信/论坛）
-        
+
         新格式：
         OOPS_v0.2.1, Zenless_OD, 通过项(8/9)
         - 硬件信息(5/1/0): 非SSD
@@ -40,29 +40,29 @@ class BriefReportGenerator:
         # 第一行：版本和通过率
         total = summary.get("total_checks", 0)
         completed = summary.get("completed", 0)
-        
+
         # 简化项目名称
         project_short = BriefReportGenerator._shorten_project_name(project_name)
-        
+
         header = f"OOPS_v{oops_version}, {project_short}, 通过项({completed}/{total})"
-        
+
         # 收集所有检测项的详细信息
         detail_lines = []
-        
+
         for result in results:
             # 跳过成功且无警告的项
             if result.severity.value == "info" and not result.details.get("warnings"):
                 continue
-            
+
             # 统计该检测项的状态
             stats = BriefReportGenerator._get_check_stats(result)
             success_count = stats["success"]
             warning_count = stats["warning"]
             error_count = stats["error"]
-            
+
             # 获取简短的问题描述
             issue_desc = BriefReportGenerator._get_issue_description(result)
-            
+
             # 检测器名称
             name_map = {
                 "system_settings": "系统设置",
@@ -74,33 +74,35 @@ class BriefReportGenerator:
                 "game_settings": "游戏设置",
                 "project_version": "版本",
             }
-            
+
             display_name = name_map.get(result.check_name, result.check_name)
-            
+
             # 格式：- 检测器名(成功/警告/错误): 问题描述
             line = f"- {display_name}({success_count}/{warning_count}/{error_count}): {issue_desc}"
             detail_lines.append(line)
-        
+
         # 分段处理（每段不超过2000字符）
         briefs = []
         current_brief = header
         part_num = 1
-        
+
         for line in detail_lines:
             test_brief = current_brief + "\n" + line
-            
+
             if len(test_brief) > 2000:
                 # 当前段已满，保存并开始新段
                 briefs.append(current_brief)
                 part_num += 1
-                current_brief = f"OOPS_v{oops_version}, {project_short} (续{part_num})\n{line}"
+                current_brief = (
+                    f"OOPS_v{oops_version}, {project_short} (续{part_num})\n{line}"
+                )
             else:
                 current_brief = test_brief
-        
+
         # 添加最后一段
         if current_brief:
             briefs.append(current_brief)
-        
+
         return briefs
 
     @staticmethod
@@ -116,7 +118,7 @@ class BriefReportGenerator:
     def _get_check_stats(result: Any) -> Dict[str, int]:
         """获取检测项的统计信息（成功/警告/错误数量）"""
         stats = {"success": 0, "warning": 0, "error": 0}
-        
+
         details = result.details
         if not details:
             # 根据 severity 判断
@@ -127,7 +129,7 @@ class BriefReportGenerator:
             else:
                 stats["success"] = 1
             return stats
-        
+
         # 特殊处理：environment_dependencies 有子项状态
         if result.check_name == "environment_dependencies":
             for key, value in details.items():
@@ -140,14 +142,14 @@ class BriefReportGenerator:
                     elif status == "error":
                         stats["error"] += 1
             return stats
-        
+
         # 从 details 中提取统计
         issues = details.get("issues", [])
         warnings = details.get("warnings", [])
-        
+
         stats["error"] = len(issues)
         stats["warning"] = len(warnings)
-        
+
         # 成功数量需要根据具体检测器计算
         if result.severity.value == "info" and not issues and not warnings:
             stats["success"] = 1
@@ -157,14 +159,14 @@ class BriefReportGenerator:
         elif result.severity.value != "error" and not issues:
             # 没有错误，有部分成功
             stats["success"] = 1
-        
+
         return stats
 
     @staticmethod
     def _get_issue_description(result: Any) -> str:
         """获取问题的简短描述"""
         details = result.details
-        
+
         # 特殊处理：环境依赖检测
         if result.check_name == "environment_dependencies":
             if details:
@@ -172,39 +174,45 @@ class BriefReportGenerator:
                 venv_status = details.get("virtual_environment", {})
                 if venv_status.get("status") == "warning":
                     return "未使用虚拟环境"
-                
+
                 # 检查是否有失败项
                 failed_items = []
                 for key, value in details.items():
                     if isinstance(value, dict) and value.get("status") == "error":
                         failed_items.append(key)
-                
+
                 if failed_items:
                     return f"{len(failed_items)}项失败"
-                
+
                 # 检查警告项
                 warning_items = []
                 for key, value in details.items():
                     if isinstance(value, dict) and value.get("status") == "warning":
                         warning_items.append(key)
-                
+
                 if warning_items:
                     return f"{len(warning_items)}项警告"
-                
+
                 return "检测通过"
             return "检测完成"
-        
+
         # 特殊处理：网络连通性
         if result.check_name == "network_connectivity":
             if details:
                 issues = details.get("issues", [])
                 if issues:
                     # 统计失败的连接
-                    failed_count = len([i for i in issues if "失败" in i or "超时" in i or "Cannot" in i])
+                    failed_count = len(
+                        [
+                            i
+                            for i in issues
+                            if "失败" in i or "超时" in i or "Cannot" in i
+                        ]
+                    )
                     if failed_count > 0:
                         return f"{failed_count}个连接失败"
             return "网络检测完成"
-        
+
         # 特殊处理：Python 环境
         if result.check_name == "python_environment":
             if details:
@@ -212,12 +220,12 @@ class BriefReportGenerator:
                 if warnings and any("虚拟环境" in w for w in warnings):
                     return "未检测到虚拟环境"
             return "Python环境正常"
-        
+
         # 优先从 issues 和 warnings 中提取
         if details:
             issues = details.get("issues", [])
             warnings = details.get("warnings", [])
-            
+
             if issues:
                 # 取第一个错误的关键信息
                 first_issue = issues[0]
@@ -230,10 +238,10 @@ class BriefReportGenerator:
                 if len(first_warning) > 30:
                     return first_warning[:30] + "..."
                 return first_warning
-        
+
         # 从 message 中提取关键信息
         message = result.message
-        
+
         if "管理员" in message:
             return "未以管理员权限运行"
         elif "HDD" in message or "硬盘" in message:

@@ -143,25 +143,26 @@ class ReportGenerator:
 
         # 注入简报数据和按钮
         import json
+
         brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
-        
+
         # 生成简报按钮的 HTML
         brief_buttons_html = ""
         if len(brief_texts) == 1:
-            brief_buttons_html = '''
+            brief_buttons_html = """
                 <button onclick="copyBrief(0)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
                     📋 复制简报
                 </button>
-            '''
+            """
         else:
             for i in range(len(brief_texts)):
                 label = "📋 复制简报" if i == 0 else f"📋 复制简报 ({i + 1})"
-                brief_buttons_html += f'''
+                brief_buttons_html += f"""
                 <button onclick="copyBrief({i})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
                     {label}
                 </button>
-                '''
-        
+                """
+
         brief_injection_script = f"""
         <script>
             // 注入简报数据
@@ -1331,6 +1332,7 @@ class ReportGenerator:
 
         # 转义简报内容用于 JavaScript
         import json
+
         brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
 
         return f"""
