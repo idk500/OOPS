@@ -106,8 +106,11 @@ class ProjectVersionDetector(DetectionRule):
                     )
 
             # 检查启动器版本
-            if launcher_version.get("version") == "v0.0.0":
-                warnings.append("启动器版本为默认值 (v0.0.0)，可能未正确设置")
+            if not launcher_version.get("exists"):
+                warnings.append("未找到启动器文件 (OneDragon-Launcher.exe)")
+            elif not launcher_version.get("version"):
+                error_msg = launcher_version.get("error", "未知错误")
+                warnings.append(f"无法获取启动器版本: {error_msg}")
 
             version_info = {
                 "local": local_version,
@@ -239,27 +242,48 @@ class ProjectVersionDetector(DetectionRule):
     def _get_launcher_version(self, project_path: str) -> Dict[str, Any]:
         """获取启动器版本信息"""
         try:
-            version_file = Path(project_path) / "src" / "one_dragon" / "version.py"
-            if not version_file.exists():
-                return {"exists": False, "version": None}
+            launcher_path = Path(project_path) / "OneDragon-Launcher.exe"
+            if not launcher_path.exists():
+                return {"exists": False, "version": None, "path": str(launcher_path)}
 
-            # 读取版本文件
-            with open(version_file, "r", encoding="utf-8") as f:
-                content = f.read()
-
-            # 解析版本号
-            import re
-
-            match = re.search(r'__version__\s*=\s*["\']([^"\']+)["\']', content)
-            if match:
-                version = match.group(1)
-                return {"exists": True, "version": version, "file": str(version_file)}
-            else:
+            # 通过 --version 参数获取版本号
+            try:
+                result = subprocess.run(
+                    [str(launcher_path), "--version"],
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                )
+                if result.returncode == 0:
+                    version_output = result.stdout.strip()
+                    # 解析版本号（格式可能是 "OneDragon Launcher v2.3.3" 或 "v2.3.3"）
+                    parts = version_output.split("v", 1)
+                    version = f"v{parts[1]}" if len(parts) > 1 else version_output
+                    return {
+                        "exists": True,
+                        "version": version,
+                        "path": str(launcher_path),
+                    }
+                else:
+                    return {
+                        "exists": True,
+                        "version": None,
+                        "error": f"启动器返回错误代码: {result.returncode}",
+                        "path": str(launcher_path),
+                    }
+            except subprocess.TimeoutExpired:
                 return {
                     "exists": True,
                     "version": None,
-                    "error": "无法解析版本号",
-                    "file": str(version_file),
+                    "error": "获取版本超时",
+                    "path": str(launcher_path),
+                }
+            except Exception as e:
+                return {
+                    "exists": True,
+                    "version": None,
+                    "error": f"执行失败: {str(e)}",
+                    "path": str(launcher_path),
                 }
         except Exception as e:
             logger.debug(f"获取启动器版本失败: {e}")
