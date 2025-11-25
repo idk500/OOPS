@@ -2,7 +2,7 @@
 *One-click Operating Pre-check System*  
 *一键运行预检系统*
 
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  |   [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  |   [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)  |  [![GitHub](https://img.shields.io/badge/GitHub-idk500/OOPS-blue?logo=github)](https://github.com/idk500/OOPS)  |  [![Gitee](https://img.shields.io/badge/Gitee-idk500/OOPS-red?logo=gitee)](https://gitee.com/idk500/OOPS)
 
 > 让游戏脚本运行更顺畅  
 > Run Your Game Scripts Smoothly  
@@ -11,11 +11,18 @@
 
 ---
 
+## 📦 下载地址
+
+- **GitHub**: https://github.com/idk500/OOPS/releases （国际用户推荐）
+- **Gitee**: https://gitee.com/idk500/OOPS/releases （国内用户推荐，速度更快）
+
+---
+
 ## 🚀 快速开始
 
 ### 方式1: 下载可执行文件（推荐）
 
-1. **下载** - 从 [Releases](https://github.com/idk500/OOPS/releases) 下载 `oops-windows-x64.zip`
+1. **下载** - 从 [GitHub Releases](https://github.com/idk500/OOPS/releases) 或 [Gitee Releases](https://gitee.com/idk500/OOPS/releases) 下载 `oops-windows-x64.zip`
 2. **运行** - 将`oops-windows-x64.zip`扔到项目根目录, 例如你的项目根目录是`E:\\Z1D`,则
     放到 `E:\\Z1D\`下, 最后双击 `E:\\Z1D\oops-windows-x64\oops.exe`
 3. **选择项目** - 选择要检测的游戏脚本项目, 当前无需选择.
