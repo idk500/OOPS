@@ -24,8 +24,19 @@ checks:
     project_websites:
     - url: https://one-dragon.org
       name: 一条龙官网
+    - url: https://one-dragon.com/zzz/zh/home.html
+      name: 一条龙项目主页
+    - url: https://one-dragon.com/notice/zzz/notice.json
+      name: 公告系统
     - url: https://zzz.mihoyo.com
       name: 绝区零官网
+    
+    # 米哈游 API（可选检测）
+    mihoyo_api:
+    - url: https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getGames?launcher_id=jGHBHlcOq1&language=zh-cn
+      name: 米哈游游戏信息API
+    - url: https://hyp-api.mihoyo.com/hyp/hyp-connect/api/getAllGameBasicInfo?launcher_id=jGHBHlcOq1&language=zh-cn
+      name: 米哈游基础信息API
     - url: https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5
       name: 绝区零官方文档
 

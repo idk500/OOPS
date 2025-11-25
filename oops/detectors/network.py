@@ -92,6 +92,13 @@ class NetworkConnectivityDetector(DetectionRule):
             task = self._check_github_proxy(proxy_url)
             tasks.append(task)
 
+        # 米哈游API检测（可选）
+        mihoyo_api = merged_config.get("mihoyo_api", [])
+        for api_item in mihoyo_api:
+            api_url = api_item.get("url") if isinstance(api_item, dict) else api_item
+            task = self._check_website(api_url)
+            tasks.append(task)
+
         # 并行执行所有检测
         if tasks:
             check_results = await asyncio.gather(*tasks, return_exceptions=True)
