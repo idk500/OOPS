@@ -86,8 +86,20 @@ project:
   description: 绝区零自动化脚本
   name: 绝区零一条龙
   paths:
-    config_path: E:/ZZZ-1D/config
-    install_path: E:/ZZZ-1D
+    # ⚠️ 重要：首次使用请修改为你的实际安装路径！
+    # 
+    # 支持的路径格式：
+    # 1. 绝对路径（推荐）: E:/ZZZ-1D 或 C:/Games/ZenlessZoneZero-OneDragon
+    # 2. 环境变量: ${ZZZ_INSTALL_PATH} 或 ${USERPROFILE}/ZZZ-1D
+    # 3. 相对路径: ../ZenlessZoneZero-OneDragon
+    # 4. 自动检测: 'auto' (在当前目录查找 OneDragon-Launcher.exe)
+    # 
+    # 示例：
+    # install_path: 'E:/ZZZ-1D'
+    # install_path: 'C:/Games/ZenlessZoneZero-OneDragon'
+    # install_path: '${USERPROFILE}/Desktop/ZZZ-1D'
+    install_path: ''  # ← 请在这里填写你的项目路径
+    config_path: ''  # 留空则自动设置为 {install_path}/config
   type: game_script
 report:
   format: html

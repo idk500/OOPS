@@ -10,6 +10,8 @@ from typing import Any, Dict, List, Optional
 
 import yaml
 
+from oops.core.path_resolver import PathResolver
+
 logger = logging.getLogger(__name__)
 
 
@@ -57,12 +59,53 @@ class ConfigManager:
         try:
             with open(config_path, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
+
+            # 解析路径配置
+            self._resolve_paths(config, project_name)
+
             self.project_configs[project_name] = config
             logger.info(f"成功加载项目配置: {project_name}")
             return config
         except Exception as e:
             logger.error(f"加载项目配置失败 {project_name}: {e}")
             return None
+
+    def _resolve_paths(self, config: Dict[str, Any], project_name: str):
+        """解析配置中的路径"""
+        if "project" not in config or "paths" not in config["project"]:
+            return
+
+        paths = config["project"]["paths"]
+
+        # 解析安装路径
+        install_path_config = paths.get("install_path", "")
+        install_path = PathResolver.resolve_path(
+            install_path_config, base_dir=str(Path.cwd()), project_name=project_name
+        )
+
+        if install_path:
+            paths["install_path"] = install_path
+            logger.info(f"项目安装路径: {install_path}")
+        else:
+            if not install_path_config or install_path_config.lower() in ["auto", ""]:
+                logger.warning(
+                    f"项目路径未配置: {project_name}，请在配置文件中设置 install_path"
+                )
+            else:
+                logger.warning(f"无法解析项目安装路径: {install_path_config}")
+            paths["install_path"] = ""
+
+        # 解析配置路径
+        config_path_config = paths.get("config_path", "")
+        config_path = PathResolver.resolve_config_path(
+            install_path or "", config_path_config
+        )
+
+        if config_path:
+            paths["config_path"] = config_path
+            logger.info(f"项目配置路径: {config_path}")
+        else:
+            paths["config_path"] = ""
 
     def get_enabled_projects(self) -> List[str]:
         """获取启用的项目列表"""
