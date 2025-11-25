@@ -43,6 +43,15 @@ checks:
     check_path_length: true
     check_permissions: true
     enabled: true
+    # 默认游戏路径（仅作为信息提示）
+    default_game_path: 'C:\Program Files\miHoYo Launcher\games\ZenlessZoneZero Game\ZenlessZoneZero.exe'
+  
+  # 游戏设置检测
+  game_settings:
+    enabled: true
+    config_file: 'config/01/game_account.yml'  # 游戏配置文件路径
+    default_game_path: 'C:\Program Files\miHoYo Launcher\games\ZenlessZoneZero Game\ZenlessZoneZero.exe'
+  
   system_info:
     enabled: true
   system_settings:

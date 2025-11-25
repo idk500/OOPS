@@ -63,6 +63,7 @@ class DiagnosticSuite:
     def _register_default_rules(self):
         """注册默认检测规则 - 按照新的检测顺序"""
         from oops.detectors.environment import EnvironmentDependencyDetector
+        from oops.detectors.game_settings import GameSettingsDetector
         from oops.detectors.hardware import HardwareDetector
         from oops.detectors.network import NetworkConnectivityDetector
         from oops.detectors.paths import PathValidationDetector
@@ -72,13 +73,14 @@ class DiagnosticSuite:
         from oops.detectors.system_settings import SystemSettingsDetector
 
         # 新的检测顺序：
-        # 1. 硬件信息 -> 2. 系统信息 -> 3. 系统设置 -> 4. 网络连通性
-        # 5. Python环境 -> 6. 组件依赖 -> 7. 路径规范
+        # 1. 硬件信息 -> 2. 系统信息 -> 3. 系统设置 -> 4. 游戏设置 -> 5. 网络连通性
+        # 6. Python环境 -> 7. 组件依赖 -> 8. 路径规范
         self.detection_rules = {
             # 新检测器（按顺序）
             "hardware_info": HardwareDetector(),
             "system_info_new": SystemDetector(),
             "system_settings": SystemSettingsDetector(),
+            "game_settings": GameSettingsDetector(),
             "network_connectivity": NetworkConnectivityDetector(),
             "python_environment": PythonEnvironmentDetector(),
             "environment_dependencies": EnvironmentDependencyDetector(),
@@ -209,6 +211,8 @@ class DiagnosticSuite:
                             "system_settings",
                         ]
                     )
+                elif check_category == "game_settings":
+                    enabled_checks.append("game_settings")
                 elif check_category == "network":
                     enabled_checks.append("network_connectivity")
                 elif check_category == "environment":

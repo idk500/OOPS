@@ -69,6 +69,12 @@ class PathValidationDetector(DetectionRule):
         spaces_check = self._check_spaces_in_path(install_path)
         results["spaces"] = spaces_check
 
+        # 默认游戏路径检查（仅作为信息提示）
+        default_game_path = paths_config.get("default_game_path")
+        if default_game_path:
+            default_path_check = self._check_default_game_path(default_game_path)
+            results["default_game_path"] = default_path_check
+
         # 分析整体路径状态
         overall_status = self._analyze_path_status(results)
 
@@ -269,6 +275,27 @@ class PathValidationDetector(DetectionRule):
             return "warning"
         else:
             return "success"
+
+    def _check_default_game_path(self, default_path: str) -> Dict[str, Any]:
+        """检查默认游戏路径（仅作为信息提示）"""
+        try:
+            path = Path(default_path)
+            exists = path.exists() and path.is_file()
+
+            if exists:
+                return {
+                    "status": "info",
+                    "message": f"默认游戏路径存在: {default_path}",
+                }
+            else:
+                return {
+                    "status": "info",
+                    "message": f"默认游戏路径不存在: {default_path}",
+                    "note": "这不影响脚本运行，如果游戏安装在其他位置，请在配置文件中指定",
+                }
+        except Exception as e:
+            logger.debug(f"检查默认游戏路径失败: {e}")
+            return {"status": "info", "message": "无法检查默认游戏路径"}
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
         """获取路径问题修复建议"""
