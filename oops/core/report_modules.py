@@ -336,11 +336,12 @@ class CheckResultsModule(ReportModule):
             "hardware_info": 1,
             "system_info_new": 2,
             "system_settings": 3,
-            "network_connectivity": 4,
+            "path_validation": 4,
             "python_environment": 5,
             "environment_dependencies": 6,
-            "path_validation": 7,
-            "game_settings": 8,  # 游戏内设置（待开发）
+            "network_connectivity": 7,
+            "project_version": 8,
+            "game_settings": 9,
         }
 
         # 按照指定顺序排序，未指定的放在最后

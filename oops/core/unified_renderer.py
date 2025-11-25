@@ -347,6 +347,10 @@ class UnifiedDetectionRenderer:
 
     def _render_raw_details(self, details: Dict[str, Any], check_name: str = "") -> str:
         """渲染原始详细信息 - 直接显示在详细信息区域"""
+        # 项目版本检测的特殊渲染
+        if check_name == "project_version":
+            return self._render_project_version_details(details)
+
         html_content = """
         <div class="raw-details">
             <h4>📋 详细数据</h4>
@@ -394,6 +398,108 @@ class UnifiedDetectionRenderer:
 
         return html_content
 
+    def _render_project_version_details(self, details: Dict[str, Any]) -> str:
+        """渲染项目版本详细信息"""
+        html_content = """
+        <div class="raw-details">
+            <h4>📋 版本详情</h4>
+            <div class="details-grid">
+        """
+
+        # 渲染本地版本
+        version_info = details.get("version", {})
+        local_version = version_info.get("local", {})
+        remote_version = version_info.get("remote")
+
+        if local_version:
+            html_content += """
+            <div class="detail-group">
+                <strong>📦 本地版本:</strong>
+                <ul>
+            """
+            if local_version.get("is_git_repo"):
+                if local_version.get("current_branch"):
+                    html_content += (
+                        f"<li>分支: {html.escape(local_version['current_branch'])}</li>"
+                    )
+                if local_version.get("current_commit"):
+                    html_content += f"<li>Commit: {html.escape(local_version['current_commit'])}</li>"
+                if local_version.get("current_tag"):
+                    html_content += (
+                        f"<li>标签: {html.escape(local_version['current_tag'])}</li>"
+                    )
+                if local_version.get("last_update"):
+                    html_content += f"<li>最后更新: {html.escape(local_version['last_update'])}</li>"
+                if local_version.get("has_uncommitted_changes") is not None:
+                    status = "是" if local_version["has_uncommitted_changes"] else "否"
+                    html_content += f"<li>未提交更改: {status}</li>"
+            else:
+                html_content += "<li>不是 Git 仓库</li>"
+            html_content += "</ul></div>"
+
+        # 渲染远程版本
+        if remote_version:
+            html_content += """
+            <div class="detail-group">
+                <strong>🌐 远程最新版本:</strong>
+                <ul>
+            """
+            if remote_version.get("tag_name"):
+                html_content += (
+                    f"<li>版本: {html.escape(remote_version['tag_name'])}</li>"
+                )
+            if remote_version.get("name"):
+                html_content += f"<li>名称: {html.escape(remote_version['name'])}</li>"
+            if remote_version.get("published_at"):
+                html_content += (
+                    f"<li>发布时间: {html.escape(remote_version['published_at'])}</li>"
+                )
+            if remote_version.get("source"):
+                source_name = (
+                    "Gitee" if remote_version["source"] == "gitee" else "GitHub"
+                )
+                html_content += f"<li>来源: {source_name}</li>"
+            html_content += "</ul></div>"
+        else:
+            html_content += """
+            <div class="detail-group">
+                <strong>🌐 远程最新版本:</strong>
+                <p style="color: #6b7280;">无法获取（请检查网络连接）</p>
+            </div>
+            """
+
+        # 渲染启动器版本
+        launcher_info = details.get("launcher", {})
+        if launcher_info:
+            html_content += """
+            <div class="detail-group">
+                <strong>🚀 启动器版本:</strong>
+                <ul>
+            """
+            if launcher_info.get("exists"):
+                if launcher_info.get("version"):
+                    html_content += (
+                        f"<li>版本: {html.escape(launcher_info['version'])}</li>"
+                    )
+                if launcher_info.get("file"):
+                    html_content += (
+                        f"<li>文件: {html.escape(launcher_info['file'])}</li>"
+                    )
+                if launcher_info.get("error"):
+                    html_content += f"<li style='color: #ef4444;'>错误: {html.escape(launcher_info['error'])}</li>"
+            else:
+                html_content += "<li>未找到启动器版本文件</li>"
+                if launcher_info.get("error"):
+                    html_content += f"<li style='color: #ef4444;'>错误: {html.escape(launcher_info['error'])}</li>"
+            html_content += "</ul></div>"
+
+        html_content += """
+            </div>
+        </div>
+        """
+
+        return html_content
+
     def _get_display_name(self, key: str) -> str:
         """获取显示名称"""
         display_names = {
@@ -405,6 +511,8 @@ class UnifiedDetectionRenderer:
             "python_environment": "Python环境",
             "environment_dependencies": "环境依赖",
             "path_validation": "路径规范",
+            "game_settings": "游戏启动项设置",
+            "project_version": "项目版本状态",
             "system_info": "系统信息",
             # 通用字段名
             "status": "状态",

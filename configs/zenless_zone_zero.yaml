@@ -57,6 +57,12 @@ checks:
     # 默认游戏路径（仅作为信息提示）
     default_game_path: 'C:\Program Files\miHoYo Launcher\games\ZenlessZoneZero Game\ZenlessZoneZero.exe'
   
+  # 项目版本检测
+  project_version:
+    enabled: true
+    gitee_repo: 'OneDragon-Anything/ZenlessZoneZero-OneDragon'  # Gitee 仓库
+    github_repo: 'OneDragon-Anything/ZenlessZoneZero-OneDragon'  # GitHub 仓库（备选）
+  
   # 游戏设置检测
   game_settings:
     enabled: true

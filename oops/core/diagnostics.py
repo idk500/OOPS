@@ -67,24 +67,27 @@ class DiagnosticSuite:
         from oops.detectors.hardware import HardwareDetector
         from oops.detectors.network import NetworkConnectivityDetector
         from oops.detectors.paths import PathValidationDetector
+        from oops.detectors.project_version import ProjectVersionDetector
         from oops.detectors.python_environment import PythonEnvironmentDetector
         from oops.detectors.system import SystemDetector
         from oops.detectors.system_info import SystemInfoDetector
         from oops.detectors.system_settings import SystemSettingsDetector
 
-        # 新的检测顺序：
-        # 1. 硬件信息 -> 2. 系统信息 -> 3. 系统设置 -> 4. 游戏设置 -> 5. 网络连通性
-        # 6. Python环境 -> 7. 组件依赖 -> 8. 路径规范
+        # 新的检测顺序（从下到上）：
+        # 1. 硬件信息 -> 2. 系统信息 -> 3. 系统设置 -> 4. 路径规范
+        # 5. Python环境 -> 6. 组件依赖 -> 7. 网络连通性
+        # 8. 项目版本状态 -> 9. 游戏启动项设置
         self.detection_rules = {
             # 新检测器（按顺序）
             "hardware_info": HardwareDetector(),
             "system_info_new": SystemDetector(),
             "system_settings": SystemSettingsDetector(),
-            "game_settings": GameSettingsDetector(),
-            "network_connectivity": NetworkConnectivityDetector(),
+            "path_validation": PathValidationDetector(),
             "python_environment": PythonEnvironmentDetector(),
             "environment_dependencies": EnvironmentDependencyDetector(),
-            "path_validation": PathValidationDetector(),
+            "network_connectivity": NetworkConnectivityDetector(),
+            "project_version": ProjectVersionDetector(),
+            "game_settings": GameSettingsDetector(),
             # 保留旧的 system_info 用于向后兼容
             "system_info": SystemInfoDetector(),
         }
@@ -213,6 +216,8 @@ class DiagnosticSuite:
                     )
                 elif check_category == "game_settings":
                     enabled_checks.append("game_settings")
+                elif check_category == "project_version":
+                    enabled_checks.append("project_version")
                 elif check_category == "network":
                     enabled_checks.append("network_connectivity")
                 elif check_category == "environment":
@@ -255,6 +260,24 @@ class DiagnosticSuite:
                     project_config["checks"]["environment"][
                         "project_path"
                     ] = install_path
+                    logger.debug(f"为 {check_name} 设置项目路径: {install_path}")
+
+            # 为项目版本检测动态添加 project_path
+            if check_name == "project_version":
+                install_path = (
+                    project_config.get("project", {})
+                    .get("paths", {})
+                    .get("install_path", "")
+                )
+                if install_path and "checks" in project_config:
+                    if "project_version" not in project_config["checks"]:
+                        project_config["checks"]["project_version"] = {}
+                    # 确保 project 和 paths 存在
+                    if "project" not in project_config:
+                        project_config["project"] = {}
+                    if "paths" not in project_config["project"]:
+                        project_config["project"]["paths"] = {}
+                    project_config["project"]["paths"]["install_path"] = install_path
                     logger.debug(f"为 {check_name} 设置项目路径: {install_path}")
 
             # 执行检测规则
