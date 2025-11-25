@@ -535,6 +535,11 @@ async def main():
 if __name__ == "__main__":
     try:
         asyncio.run(main())
+        # 运行完成后暂停，让用户有机会复制日志
+        print("\n" + "=" * 60)
+        print("💡 提示：可以向上滚动查看完整日志")
+        print("=" * 60)
+        input("\n按 Enter 键退出...")
     except KeyboardInterrupt:
         print("\n[*] 用户中断程序")
         sys.exit(1)
@@ -544,4 +549,5 @@ if __name__ == "__main__":
         if len(sys.argv) > 1 and ('-v' in sys.argv or '--verbose' in sys.argv):
             import traceback
             traceback.print_exc()
+        input("\n按 Enter 键退出...")
         sys.exit(1)

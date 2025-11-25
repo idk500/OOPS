@@ -99,11 +99,25 @@ class ReportGenerator:
         # 头部
         content_parts.append(self.templates["html"]["header"])
 
-        # 标题和项目信息
-        content_parts.append(self._get_html_title_section(project_name))
-
         # 提取系统信息
         system_info = self._extract_system_info(results)
+
+        # 获取 OOPS 版本号
+        from oops import __version__ as oops_version
+
+        # 生成简报（用于复制按钮）
+        from oops.core.brief_report import BriefReportGenerator
+
+        brief_texts = BriefReportGenerator.generate_text_brief(
+            project_name, summary, results, system_info, oops_version=oops_version
+        )
+
+        # 标题和项目信息（包含复制简报按钮）
+        content_parts.append(
+            self._get_html_title_section_with_brief(
+                project_name, brief_texts, oops_version
+            )
+        )
 
         # 使用模块化系统生成报告内容
         module_manager = ReportModuleManager()
@@ -126,6 +140,44 @@ class ReportGenerator:
         # 修复建议汇总
         if self.config.include_fix_suggestions:
             content_parts.append(self._get_html_fix_suggestions_section(results))
+
+        # 注入简报数据和按钮
+        import json
+        brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
+        
+        # 生成简报按钮的 HTML
+        brief_buttons_html = ""
+        if len(brief_texts) == 1:
+            brief_buttons_html = '''
+                <button onclick="copyBrief(0)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    📋 复制简报
+                </button>
+            '''
+        else:
+            for i in range(len(brief_texts)):
+                label = "📋 复制简报" if i == 0 else f"📋 复制简报 ({i + 1})"
+                brief_buttons_html += f'''
+                <button onclick="copyBrief({i})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    {label}
+                </button>
+                '''
+        
+        brief_injection_script = f"""
+        <script>
+            // 注入简报数据
+            window.briefTexts = {brief_texts_json};
+            
+            // 注入简报按钮
+            (function() {{
+                const container = document.getElementById('brief-buttons-container');
+                if (container) {{
+                    const buttonsHtml = `{brief_buttons_html}`;
+                    container.insertAdjacentHTML('afterbegin', buttonsHtml);
+                }}
+            }})();
+        </script>
+        """
+        content_parts.append(brief_injection_script)
 
         # 底部
         content_parts.append(self.templates["html"]["footer"])
@@ -969,17 +1021,56 @@ class ReportGenerator:
                 systemInfoContent.style.display = 'none';
             }
         });
+        
+        // 初始化简报按钮
+        function initBriefButtons() {
+            const container = document.getElementById('brief-buttons-container');
+            if (!container) return;
+            
+            // 如果没有简报数据，不显示按钮
+            if (!window.briefTexts || window.briefTexts.length === 0) {
+                return;
+            }
+            
+            // 创建简报按钮
+            const briefTexts = window.briefTexts;
+            if (briefTexts.length === 1) {
+                // 只有一段简报，显示单个按钮
+                const btn = document.createElement('button');
+                btn.id = 'copy-brief-btn';
+                btn.onclick = () => copyBrief(0);
+                btn.style.cssText = 'background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;';
+                btn.innerHTML = '📋 复制简报';
+                container.insertBefore(btn, container.firstChild);
+            } else {
+                // 多段简报，显示多个按钮
+                for (let i = 0; i < briefTexts.length; i++) {
+                    const btn = document.createElement('button');
+                    btn.id = `copy-brief-btn-${i}`;
+                    btn.onclick = () => copyBrief(i);
+                    btn.style.cssText = 'background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;';
+                    btn.innerHTML = `📋 复制简报${i === 0 ? '' : ` (${i + 1})`}`;
+                    container.insertBefore(btn, container.firstChild);
+                }
+            }
+        }
     </script>
 </head>
 <body>
     <div class="container">
         <div class="report-info" style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 12px 15px; margin-bottom: 20px; font-size: 14px;">
             <p style="margin: 0 0 8px 0; color: #1e40af;">
-                💡 <strong>提示</strong>：提交问题时请附带 YAML 格式的报告文件（而非截图），以便开发者准确分析。
+                💡 <strong>提示</strong>：提交问题时可复制简报快速描述，或附带 YAML 报告文件以便开发者准确分析。
             </p>
-            <button onclick="showYamlPath()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                📋 显示 YAML 报告路径
-            </button>
+            <div id="brief-buttons-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <!-- 简报按钮将由 JavaScript 动态生成 -->
+                <button onclick="showYamlPath()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
+                    📄 显示 YAML 报告路径
+                </button>
+            </div>
+            <div id="copy-success" style="display: none; margin-top: 8px; color: #059669; font-size: 13px;">
+                ✅ 简报已复制到剪贴板！
+            </div>
             <div id="yaml-info" style="margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px; border-left: 3px solid #3b82f6; display: none;">
                 <div style="margin-bottom: 8px;">
                     <strong style="color: #374151;">YAML 报告文件：</strong>
@@ -1049,6 +1140,62 @@ class ReportGenerator:
                     btn.innerHTML = originalText;
                     btn.style.background = '#10b981';
                 }, 2000);
+            }
+            
+            // 简报数据（将在页面底部注入）
+            let briefTexts = [];
+            
+            function copyBrief(index) {
+                if (!window.briefTexts || window.briefTexts.length === 0) {
+                    alert('简报数据不可用');
+                    return;
+                }
+                
+                const textToCopy = window.briefTexts[index] || window.briefTexts[0];
+                
+                try {
+                    // 尝试使用现代 API
+                    navigator.clipboard.writeText(textToCopy).then(() => {
+                        showBriefCopySuccess(index);
+                    }).catch(() => {
+                        // 降级到传统方法
+                        const textarea = document.createElement('textarea');
+                        textarea.value = textToCopy;
+                        textarea.style.position = 'fixed';
+                        textarea.style.opacity = '0';
+                        document.body.appendChild(textarea);
+                        textarea.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(textarea);
+                        showBriefCopySuccess(index);
+                    });
+                } catch (err) {
+                    alert('复制失败，请手动复制');
+                }
+            }
+            
+            function showBriefCopySuccess(index) {
+                const successDiv = document.getElementById('copy-success');
+                if (successDiv) {
+                    successDiv.style.display = 'block';
+                    setTimeout(() => {
+                        successDiv.style.display = 'none';
+                    }, 2000);
+                }
+                
+                // 更新按钮文本
+                const btnId = window.briefTexts.length === 1 ? 'copy-brief-btn' : `copy-brief-btn-${index}`;
+                const btn = document.getElementById(btnId);
+                if (btn) {
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '✅ 已复制';
+                    btn.style.background = '#059669';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = '#10b981';
+                    }, 2000);
+                }
             }
         </script>
 """
@@ -1175,6 +1322,26 @@ class ReportGenerator:
             <h2>项目: {html.escape(project_name)}</h2>
             <div class="timestamp">生成时间: {timestamp}</div>
         </div>"""
+
+    def _get_html_title_section_with_brief(
+        self, project_name: str, brief_texts: list, oops_version: str
+    ) -> str:
+        """获取HTML标题部分（包含复制简报按钮）"""
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        # 转义简报内容用于 JavaScript
+        import json
+        brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
+
+        return f"""
+        <div class="header">
+            <h1>🚀 OOPS 运行预检报告</h1>
+            <p style="color: #6b7280; margin: 5px 0;">让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly</p>
+            <p style="color: #9ca3af; margin: 5px 0; font-size: 14px;">版本: {html.escape(oops_version)}</p>
+            <h2>项目: {html.escape(project_name)}</h2>
+            <div class="timestamp">生成时间: {timestamp}</div>
+        </div>
+        """
 
     def _get_html_summary_section(self, summary: Dict[str, Any]) -> str:
         """获取HTML摘要部分"""

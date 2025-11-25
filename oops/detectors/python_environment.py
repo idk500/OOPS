@@ -429,8 +429,7 @@ class PythonEnvironmentDetector(DetectionRule):
 
             if os.path.exists(python_exe):
                 # 使用 importlib.metadata 列出包
-                py_code = """
-import importlib.metadata
+                py_code = """import importlib.metadata
 for dist in importlib.metadata.distributions():
     print(f"{dist.name}=={dist.version}")
 """
