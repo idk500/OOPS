@@ -147,18 +147,13 @@ class NetworkConnectivityDetector(DetectionRule):
 
             if stats["failed"] > 0:
                 if stats["success"] > 0:
-                    # 部分失败
-                    if is_critical:
-                        message_parts.append(
-                            f"{type_name}: {stats['success']}/{stats['total']} 可用 ✓"
-                        )
-                    else:
-                        message_parts.append(
-                            f"{type_name}: {stats['success']}/{stats['total']} 可用 "
-                            f"(建议避免使用失败的{stats['failed']}个)"
-                        )
+                    # 部分失败 - 显示警告
+                    message_parts.append(
+                        f"{type_name}: {stats['success']}/{stats['total']} 可用 "
+                        f"⚠️ 有 {stats['failed']} 个不可用"
+                    )
                 else:
-                    # 全部失败
+                    # 全部失败 - 显示错误
                     if is_critical:
                         message_parts.append(
                             f"{type_name}: ❌ 全部失败 ({stats['total']}个)"
@@ -167,6 +162,11 @@ class NetworkConnectivityDetector(DetectionRule):
                         message_parts.append(
                             f"{type_name}: ⚠️ 全部失败 ({stats['total']}个，可选)"
                         )
+            else:
+                # 全部成功
+                message_parts.append(
+                    f"{type_name}: ✅ 全部可用 ({stats['total']}个)"
+                )
 
         message = "\n".join(message_parts)
 
@@ -450,6 +450,7 @@ class NetworkConnectivityDetector(DetectionRule):
         - PyPI源：至少一个可用即可
         - GitHub代理：至少一个可用即可（可选）
         - 米哈游API：至少一个可用即可（可选）
+        - 同一个大分类只有当所有都不通过时才报错，单个不可用只显示warning
         """
         if not results:
             return "unknown"
@@ -465,7 +466,7 @@ class NetworkConnectivityDetector(DetectionRule):
 
         for url, result in results.items():
             result_type = result.get("type", "unknown")
-            groups[result_type].append(result)
+            groups[result_type].append((url, result))
 
         # 检查关键组（必须至少有一个可用）
         critical_groups = ["git_repo", "pypi_source"]
@@ -475,7 +476,7 @@ class NetworkConnectivityDetector(DetectionRule):
             group_results = groups[group_name]
             if group_results:
                 # 检查是否至少有一个成功
-                has_success = any(r.get("status") == "success" for r in group_results)
+                has_success = any(r.get("status") == "success" for _, r in group_results)
                 if not has_success:
                     has_critical_issue = True
                     break
@@ -483,27 +484,22 @@ class NetworkConnectivityDetector(DetectionRule):
         if has_critical_issue:
             return "error"
 
-        # 检查可选组（全部失败才警告）
-        optional_groups = [
-            "github_proxy",
-            "mirror_site",
-            "project_website",
-        ]
-        has_warning = False
+        # 检查是否有任何单个端点失败（用于警告）
+        has_any_failure = False
 
-        for group_name in optional_groups:
+        for group_name in groups:
             group_results = groups[group_name]
             if group_results:
-                # 检查是否全部失败
-                all_failed = all(
+                # 检查是否有任何失败
+                any_failed = any(
                     r.get("status") in ["failure", "timeout", "error"]
-                    for r in group_results
+                    for _, r in group_results
                 )
-                if all_failed:
-                    has_warning = True
+                if any_failed:
+                    has_any_failure = True
                     break
 
-        if has_warning:
+        if has_any_failure:
             return "warning"
 
         return "success"
