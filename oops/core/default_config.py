@@ -9,6 +9,8 @@ from typing import Any, Dict, List
 
 import yaml
 
+from oops.core.embedded_config import EmbeddedConfigLoader
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,20 +21,18 @@ class DefaultConfigLoader:
         self.config_dir = Path(config_dir)
         self.defaults_file = self.config_dir / "defaults.yaml"
         self._defaults = None
+        # 初始化嵌入式配置加载器
+        self.embedded_loader = EmbeddedConfigLoader()
 
     def load_defaults(self) -> Dict[str, Any]:
         """加载默认配置"""
         if self._defaults is None:
-            if self.defaults_file.exists():
-                try:
-                    with open(self.defaults_file, "r", encoding="utf-8") as f:
-                        self._defaults = yaml.safe_load(f) or {}
-                    logger.info(f"已加载默认配置: {self.defaults_file}")
-                except Exception as e:
-                    logger.warning(f"加载默认配置失败: {e}，使用内置默认配置")
-                    self._defaults = self._create_builtin_defaults()
+            # 使用嵌入式配置加载器（优先外部配置）
+            config = self.embedded_loader.load_defaults_config()
+            if config:
+                self._defaults = config or {}
             else:
-                logger.info("默认配置文件不存在，使用内置默认配置")
+                logger.info("默认配置文件不存在或加载失败，使用内置默认配置")
                 self._defaults = self._create_builtin_defaults()
         return self._defaults
 

@@ -12,6 +12,7 @@ block_cipher = None
 # 收集所有需要的数据文件
 datas = [
     (os.path.join(spec_root, 'configs'), 'configs'),
+    (os.path.join(spec_root, 'oops', 'configs_embedded'), 'oops/configs_embedded'),
 ]
 
 # 收集所有隐藏导入

@@ -1,0 +1,77 @@
+# OOPS 默认配置
+# 此文件包含所有检测器的默认配置，可被项目配置覆盖
+
+# 网络检测默认配置
+# 注意：这里定义所有可用的源，项目配置中可以选择启用哪些
+
+network_defaults:
+  # 可用的 Git 托管平台（用于测试连通性）
+  available_git_platforms:
+    github:
+      url: https://github.com/git/git.git
+      name: GitHub
+      enabled: true
+    gitee:
+      url: https://gitee.com/mirrors/git.git
+      name: Gitee
+      enabled: true
+    gitlab:
+      url: https://gitlab.com/gitlab-org/gitlab.git
+      name: GitLab
+      enabled: false
+    gitcode:
+      url: https://gitcode.com/mirrors/git/git.git
+      name: GitCode
+      enabled: false
+    sourceforge:
+      url: https://sourceforge.net/projects/git/
+      name: SourceForge
+      enabled: false
+  
+  # 可用的 PyPI 源
+  available_pypi_sources:
+    official:
+      url: https://pypi.org/simple/
+      name: PyPI官方源
+      enabled: true
+    tsinghua:
+      url: https://pypi.tuna.tsinghua.edu.cn/simple/
+      name: 清华大学镜像
+      enabled: true
+    aliyun:
+      url: https://mirrors.aliyun.com/pypi/simple/
+      name: 阿里云镜像
+      enabled: true
+    tencent:
+      url: https://mirrors.cloud.tencent.com/pypi/simple/
+      name: 腾讯云镜像
+      enabled: false
+    ustc:
+      url: https://mirrors.ustc.edu.cn/pypi/simple/
+      name: 中科大镜像
+      enabled: false
+    huawei:
+      url: https://repo.huaweicloud.com/repository/pypi/simple/
+      name: 华为云镜像
+      enabled: false
+  
+  # 镜像站点测试
+  mirror_sites:
+    - url: https://mirrors.tuna.tsinghua.edu.cn
+      name: 清华大学开源镜像站
+      type: mirror_site
+    - url: https://mirrors.aliyun.com
+      name: 阿里云镜像站
+      type: mirror_site
+    - url: https://mirrors.cloud.tencent.com
+      name: 腾讯云镜像站
+      type: mirror_site
+  
+  # GitHub代理测试
+  github_proxies:
+    - url: https://ghproxy.com
+      name: ghproxy.com
+      type: github_proxy
+    - url: https://mirror.ghproxy.com
+      name: mirror.ghproxy.com
+      type: github_proxy

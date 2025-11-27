@@ -1,0 +1,19 @@
+projects:
+  generic_python:
+    config: configs/generic_python.yaml
+    description: 通用Python项目
+    enabled: true
+  zenless_zone_zero:
+    config: configs/zenless_zone_zero.yaml
+    description: 绝区零一条龙项目
+    enabled: true
+  maa_assistant_arknights:
+    config: configs/maa_assistant_arknights.yaml
+    description: MAA明日方舟助手
+    enabled: false
+settings:
+  default_report_format: html
+  enable_auto_fix: false
+  log_level: INFO
+  max_concurrent_checks: 5
+version: '1.0'

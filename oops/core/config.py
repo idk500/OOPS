@@ -11,6 +11,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from oops.core.path_resolver import PathResolver
+from oops.core.embedded_config import EmbeddedConfigLoader
 
 logger = logging.getLogger(__name__)
 
@@ -23,20 +24,28 @@ class ConfigManager:
         self.master_config: Dict[str, Any] = {}
         self.project_configs: Dict[str, Dict[str, Any]] = {}
         self.detection_rules: Dict[str, Any] = {}
+        # 初始化嵌入式配置加载器
+        self.embedded_loader = EmbeddedConfigLoader()
 
     def load_master_config(self, config_path: Optional[str] = None) -> bool:
         """加载主配置文件"""
-        if config_path is None:
-            config_path = self.config_dir / "oops_master.yaml"
-
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                self.master_config = yaml.safe_load(f)
-            logger.info(f"成功加载主配置文件: {config_path}")
+        # 如果提供了具体路径，使用传统方式加载
+        if config_path is not None:
+            try:
+                with open(config_path, "r", encoding="utf-8") as f:
+                    self.master_config = yaml.safe_load(f)
+                logger.info(f"成功加载主配置文件: {config_path}")
+                return True
+            except Exception as e:
+                logger.error(f"加载主配置文件失败: {e}")
+                return False
+        
+        # 否则使用嵌入式配置加载器（优先外部配置）
+        config = self.embedded_loader.load_master_config()
+        if config:
+            self.master_config = config
             return True
-        except Exception as e:
-            logger.error(f"加载主配置文件失败: {e}")
-            return False
+        return False
 
     def load_project_config(
         self, project_name: str, silent: bool = False
@@ -50,25 +59,18 @@ class ConfigManager:
         if project_name in self.project_configs:
             return self.project_configs[project_name]
 
-        config_path = self.config_dir / f"{project_name}.yaml"
-        if not config_path.exists():
-            if not silent:
-                logger.warning(f"项目配置文件不存在: {config_path}")
-            return None
-
-        try:
-            with open(config_path, "r", encoding="utf-8") as f:
-                config = yaml.safe_load(f)
-
+        # 使用嵌入式配置加载器（优先外部配置）
+        config = self.embedded_loader.load_project_config(project_name)
+        if config:
             # 解析路径配置
             self._resolve_paths(config, project_name)
-
             self.project_configs[project_name] = config
             logger.info(f"成功加载项目配置: {project_name}")
             return config
-        except Exception as e:
-            logger.error(f"加载项目配置失败 {project_name}: {e}")
-            return None
+        
+        if not silent:
+            logger.warning(f"项目配置文件不存在: {project_name}")
+        return None
 
     def _resolve_paths(self, config: Dict[str, Any], project_name: str):
         """解析配置中的路径"""

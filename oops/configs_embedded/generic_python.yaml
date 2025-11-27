@@ -1,0 +1,33 @@
+checks:
+  environment:
+    enabled: true
+    python_version: '>=3.8'
+    system_libraries: []
+    virtual_env: true
+  hardware:
+    check_disk: true
+    check_gpu: false
+    check_ram: true
+    enabled: false
+  network:
+    enabled: true
+    # 通用Python项目使用默认配置
+    # 默认会检测：GitHub、Gitee、PyPI官方源、清华镜像、阿里云镜像等
+    # 如需添加项目特定的Git仓库，取消注释并修改：
+    # git_repos:
+    #   - https://github.com/idk500/your-project.git
+  paths:
+    check_chinese_paths: true
+    check_path_length: true
+    check_permissions: true
+    enabled: true
+  system_info:
+    enabled: true
+project:
+  description: 通用Python项目检测模板
+  name: 通用Python项目
+  type: generic
+report:
+  format: html
+  include_timestamp: true
+  output_dir: reports
