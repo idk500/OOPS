@@ -459,6 +459,13 @@ class ReportGenerator:
         .check-item.success { border-left: 4px solid var(--success-color); }
         .check-item.info { border-left: 4px solid var(--warning-color); background: #fffbeb; }
         
+        /* 检测结果网格布局 */
+        .check-results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(48%, 1fr));
+            gap: 15px;
+        }
+        
         .check-details-list {
             margin-top: 10px;
             padding: 10px;
@@ -1475,7 +1482,8 @@ class ReportGenerator:
             <h2 class="section-title">🔍 详细检测结果</h2>
             <p style="color: #6b7280; margin-bottom: 20px;">
                 以下是每个检测项的详细信息，包括具体的失败项和警告项。
-            </p>"""
+            </p>
+            <div class="check-results-grid">"""
 
         # 按严重程度排序：critical > error > warning > info
         severity_order = {
@@ -1492,7 +1500,7 @@ class ReportGenerator:
         for result in sorted_results:
             content += self._get_html_check_item(result)
 
-        content += "\n        </div>"
+        content += "\n            </div>\n        </div>"
         return content
 
     def _get_html_check_item(self, result: CheckResult) -> str:
