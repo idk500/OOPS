@@ -551,7 +551,9 @@ if __name__ == "__main__":
         print("\n" + "=" * 60)
         print("💡 提示：可以向上滚动查看完整日志")
         print("=" * 60)
-        input("\n按 Enter 键退出...")
+        # 不使用input()函数，避免在事件循环关闭后保持程序运行
+        # 直接退出，让用户可以通过终端查看日志
+        # input("\n按 Enter 键退出...")
     except KeyboardInterrupt:
         print("\n[*] 用户中断程序")
         sys.exit(1)
@@ -562,5 +564,6 @@ if __name__ == "__main__":
             import traceback
 
             traceback.print_exc()
-        input("\n按 Enter 键退出...")
+        # 不使用input()函数
+        # input("\n按 Enter 键退出...")
         sys.exit(1)
