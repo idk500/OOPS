@@ -176,6 +176,7 @@ class HTMLRenderer:
             return ""
 
         html_parts = ['<div class="section"><h2 class="section-title">🔍 检测结果</h2>']
+        html_parts.append('<div class="check-results-grid">')
 
         for check_name, result in check_results.items():
             severity = result.get("severity", "info")
@@ -194,7 +195,7 @@ class HTMLRenderer:
             """
             )
 
-        html_parts.append("</div>")
+        html_parts.append('</div></div>')
         return "".join(html_parts)
 
     def _render_issues(self, issues: Dict[str, Any]) -> str:
@@ -455,6 +456,13 @@ class HTMLRenderer:
         .check-item.error { border-color: var(--error-color); background: #fef2f2; }
         .check-item.warning { border-color: var(--warning-color); background: #fffbeb; }
         .check-item.info { border-color: var(--info-color); background: #f9fafb; }
+        
+        /* 检测结果网格布局 */
+        .check-results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(48%, 1fr));
+            gap: 15px;
+        }
         
         .check-header {
             display: flex;
