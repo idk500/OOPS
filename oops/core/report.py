@@ -119,7 +119,20 @@ class ReportGenerator:
             )
         )
 
-        # 使用模块化系统生成报告内容
+        # 检查是否需要右侧栏
+        critical_results = [r for r in results if r.severity == SeverityLevel.CRITICAL]
+        has_right_column = bool(critical_results and self.config.include_details)
+        
+        # 根据是否有右侧栏选择布局
+        if has_right_column:
+            # 双栏布局
+            content_parts.append('<div class="content-layout">')
+            content_parts.append('<div class="left-column">')
+        else:
+            # 单栏布局 - 直接使用左侧栏样式
+            content_parts.append('<div class="left-column full-width">')
+
+        # 使用模块化系统生成报告内容（主要内容）
         module_manager = ReportModuleManager()
         report_data = {
             "system_info": system_info,
@@ -127,17 +140,23 @@ class ReportGenerator:
             "results": results,
         }
 
-        # 生成模块化内容
+        # 生成模块化内容（系统信息、摘要、检测结果）
         content_parts.append(module_manager.generate_html_report(report_data))
 
-        # 关键问题（如果有）
-        critical_results = [r for r in results if r.severity == SeverityLevel.CRITICAL]
-        if critical_results and self.config.include_details:
-            content_parts.append(
-                self._get_html_critical_issues_section(critical_results)
-            )
-
-        # 修复建议汇总
+        # 关闭主要内容容器
+        if has_right_column:
+            content_parts.append('</div>')
+            # 添加右侧栏
+            content_parts.append('<div class="right-column">')
+            content_parts.append(self._get_html_critical_issues_section(critical_results))
+            content_parts.append('</div>')
+            # 关闭双栏布局
+            content_parts.append('</div>')
+        else:
+            # 关闭单栏容器
+            content_parts.append('</div>')
+        
+        # 修复建议汇总（移至页面最下方）
         if self.config.include_fix_suggestions:
             content_parts.append(self._get_html_fix_suggestions_section(results))
 
@@ -326,9 +345,57 @@ class ReportGenerator:
         }
         
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
             padding: 20px;
+        }
+
+        /* 双栏布局样式 */
+        .content-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .left-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        
+        /* 单栏模式下的左侧栏 */
+        .left-column.full-width {
+            width: 100%;
+        }
+
+        .right-column {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: calc(100vh - 200px);
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        /* 右侧栏内部样式重置 */
+        .right-column .section {
+            margin-bottom: 20px;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 1024px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-column {
+                height: auto;
+                overflow-y: visible;
+            }
         }
         
         .header {
@@ -390,7 +457,7 @@ class ReportGenerator:
         .check-item.error { border-left: 4px solid var(--error-color); }
         .check-item.warning { border-left: 4px solid var(--warning-color); }
         .check-item.success { border-left: 4px solid var(--success-color); }
-        .check-item.info { border-left: 4px solid var(--info-color); }
+        .check-item.info { border-left: 4px solid var(--warning-color); background: #fffbeb; }
         
         .check-details-list {
             margin-top: 10px;
@@ -1224,6 +1291,17 @@ class ReportGenerator:
                 </p>
             </div>
         </div>
+        
+        <!-- 友情链接部分 -->
+        <div class="friend-links">
+            <h2>🔗 友情链接</h2>
+            <div class="links-container">
+                <a href="https://github.com/idk500/OOPS" target="_blank" class="link-item">项目GitHub</a>
+                <a href="https://github.com/idk500/OOPS/issues" target="_blank" class="link-item">问题反馈</a>
+                <a href="https://github.com/idk500/OOPS/discussions" target="_blank" class="link-item">讨论交流</a>
+                <a href="https://github.com/idk500/OOPS/releases" target="_blank" class="link-item">版本发布</a>
+            </div>
+        </div>
     </div>
 </body>
 </html>"""
@@ -1655,7 +1733,7 @@ class ReportGenerator:
         for category, suggestions in fix_suggestions.items():
             if suggestions:
                 content += f"""
-            <div class="check-item info">
+            <div class="check-item info warning-style">
                 <div class="check-header">
                     <div class="check-name">{html.escape(category)}</div>
                 </div>"""

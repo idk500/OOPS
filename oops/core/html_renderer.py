@@ -29,10 +29,17 @@ class HTMLRenderer:
 <body>
     <div class="container">
         {self._render_header(report)}
-        {self._render_summary(report.summary)}
-        {self._render_system_info(report.system_info)}
-        {self._render_check_results(report.check_results)}
-        {self._render_issues(report.issues)}
+        <div class="content-layout">
+            <div class="left-column">
+                {self._render_summary(report.summary)}
+                {self._render_system_info(report.system_info)}
+                {self._render_check_results(report.check_results)}
+                {self._render_friend_links()}
+            </div>
+            <div class="right-column">
+                {self._render_issues(report.issues)}
+            </div>
+        </div>
     </div>
     <script>{self.scripts}</script>
 </body>
@@ -303,58 +310,113 @@ class HTMLRenderer:
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
+            line-height: 1.5; /* 减少行高，增加内容密度 */
             color: var(--text-color);
             background-color: #f9fafb;
+            max-height: 100vh; /* 限制页面最大高度为视口高度 */
+            overflow-x: hidden;
         }
         
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 15px; /* 减少内边距 */
+            max-height: calc(100vh - 90px); /* 考虑任务栏(40px)和标题栏(50px)高度 */
+            overflow-y: auto;
+        }
+        
+        /* 双栏布局 */
+        .content-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .left-column, .right-column {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .right-column {
+            max-height: calc(100vh - 150px);
+            overflow-y: auto;
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        /* 右侧列的问题部分样式调整 */
+        .right-column .section {
+            background: transparent;
+            box-shadow: none;
+            padding: 0;
+            margin-bottom: 0;
+        }
+        
+        /* 滚动条样式优化 */
+        .container::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        
+        .container::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        
+        .container::-webkit-scrollbar-thumb:hover {
+            background: #555;
         }
         
         .header {
             background: white;
-            padding: 30px;
+            padding: 20px; /* 减少内边距 */
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* 减少外边距 */
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .header h1 {
             color: var(--primary-color);
-            margin-bottom: 15px;
+            margin-bottom: 10px; /* 减少外边距 */
+            font-size: 1.8rem; /* 调整字体大小 */
         }
         
         .project-info p {
-            margin: 5px 0;
+            margin: 3px 0; /* 减少外边距 */
             color: var(--info-color);
+            font-size: 0.9rem; /* 调整字体大小 */
         }
         
         .section {
             background: white;
-            padding: 20px;
+            padding: 15px; /* 减少内边距 */
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-bottom: 15px; /* 减少外边距 */
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
         .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
+            font-size: 1.3rem; /* 调整字体大小 */
+            margin-bottom: 10px; /* 减少外边距 */
             color: var(--primary-color);
         }
         
         .summary-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* 调整卡片最小宽度 */
+            gap: 10px; /* 减少间距 */
+            margin-top: 10px; /* 减少上边距 */
         }
         
         .card {
-            padding: 20px;
+            padding: 15px; /* 减少内边距 */
             border-radius: 8px;
             text-align: center;
             border-left: 4px solid;
@@ -367,9 +429,9 @@ class HTMLRenderer:
         .card.info { border-color: var(--info-color); background: #f9fafb; }
         
         .card-number {
-            font-size: 2rem;
+            font-size: 1.8rem; /* 调整字体大小 */
             font-weight: bold;
-            margin-bottom: 5px;
+            margin-bottom: 3px; /* 减少外边距 */
         }
         
         .card.success .card-number { color: var(--success-color); }
@@ -378,9 +440,13 @@ class HTMLRenderer:
         .card.warning .card-number { color: var(--warning-color); }
         .card.info .card-number { color: var(--info-color); }
         
+        .card-label {
+            font-size: 0.85rem; /* 调整字体大小 */
+        }
+        
         .check-item {
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px; /* 减少内边距 */
+            margin: 8px 0; /* 减少外边距 */
             border-radius: 8px;
             border-left: 4px solid;
         }
@@ -394,18 +460,18 @@ class HTMLRenderer:
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 8px; /* 减少外边距 */
         }
         
         .check-name {
             font-weight: bold;
-            font-size: 1.1rem;
+            font-size: 1rem; /* 调整字体大小 */
         }
         
         .check-status {
-            padding: 4px 8px;
+            padding: 3px 6px; /* 减少内边距 */
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.75rem; /* 调整字体大小 */
             font-weight: bold;
             background: var(--info-color);
             color: white;
@@ -413,21 +479,23 @@ class HTMLRenderer:
         
         .system-info-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); /* 调整网格最小宽度 */
+            gap: 15px; /* 减少间距 */
+            margin-top: 10px; /* 减少上边距 */
         }
         
         .info-group h3 {
-            margin-bottom: 10px;
+            margin-bottom: 8px; /* 减少外边距 */
             color: var(--primary-color);
+            font-size: 1.1rem; /* 调整字体大小 */
         }
         
         .info-item {
             display: flex;
             justify-content: space-between;
-            padding: 8px 0;
+            padding: 6px 0; /* 减少内边距 */
             border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem; /* 调整字体大小 */
         }
         
         .info-label {
@@ -443,19 +511,20 @@ class HTMLRenderer:
             background: var(--primary-color);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 12px; /* 减少内边距 */
             border-radius: 4px;
             cursor: pointer;
+            font-size: 0.85rem; /* 调整字体大小 */
         }
         
         .collapsible-content {
             display: none;
-            margin-top: 15px;
+            margin-top: 10px; /* 减少上边距 */
         }
         
         .issue-item {
-            padding: 15px;
-            margin: 10px 0;
+            padding: 12px; /* 减少内边距 */
+            margin: 8px 0; /* 减少外边距 */
             border-radius: 8px;
             border-left: 4px solid;
         }
@@ -465,10 +534,99 @@ class HTMLRenderer:
         .issue-item.warning { border-color: var(--warning-color); background: #fffbeb; }
         
         .fix-suggestion {
-            margin-top: 10px;
-            padding: 10px;
+            margin-top: 8px; /* 减少外边距 */
+            padding: 8px; /* 减少内边距 */
             background: #fef3c7;
             border-radius: 4px;
+            font-size: 0.9rem; /* 调整字体大小 */
+        }
+        
+        /* 友情链接样式 */
+        .friend-links {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .friend-links h2 {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+        
+        .links-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .link-item {
+            display: inline-block;
+            padding: 8px 15px;
+            background: #f3f4f6;
+            color: var(--primary-color);
+            text-decoration: none;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+        
+        .link-item:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 1920px) {
+            .container {
+                max-height: calc(100vh - 90px); /* 1920×800分辨率，考虑任务栏和标题栏 */
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            .container {
+                max-width: 100%;
+                padding: 10px;
+            }
+            
+            .system-info-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+        
+        /* 在中等屏幕上调整布局 */
+        @media (max-width: 1024px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+            
+            .right-column {
+                max-height: none;
+                overflow-y: visible;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            }
+            
+            .system-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+            }
         }
         """
 
