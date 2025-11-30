@@ -351,6 +351,80 @@ class ReportStyles:
         .issue-item.critical { border-color: var(--critical-color); background: #fef2f2; }
         .issue-item.error { border-color: var(--error-color); background: #fef2f2; }
         .issue-item.warning { border-color: var(--warning-color); background: #fffbeb; }
+        
+        /* 友情链接样式 */
+        .friend-links-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .friend-link-group {
+            margin-bottom: 15px;
+        }
+        
+        .friend-link-group h3 {
+            margin-bottom: 10px;
+            color: var(--primary-color);
+            font-size: 16px;
+        }
+        
+        .friend-links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 10px;
+        }
+        
+        .friend-link-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 12px;
+            background: #f9fafb;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            text-decoration: none;
+            color: var(--text-color);
+            transition: all 0.2s ease;
+        }
+        
+        .friend-link-item:hover {
+            background: var(--primary-color);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .friend-link-name {
+            font-weight: 600;
+            font-size: 15px;
+        }
+        
+        .friend-link-url {
+            font-size: 13px;
+            color: var(--text-secondary);
+            word-break: break-all;
+        }
+        
+        .friend-link-item:hover .friend-link-url {
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* AI助手提示样式 */
+        .ai-assistant-tip {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .ai-assistant-tip strong {
+            font-weight: 600;
+        }
         """
 
     @staticmethod

@@ -107,3 +107,13 @@ report:
   format: html
   include_timestamp: true
   output_dir: reports
+  friend_links:
+    "官方网站": "https://one-dragon.com/zzz/zh/home.html"
+    "官方文档": "https://docs.qq.com/doc/p/7add96a4600d363b75d2df83bb2635a7c6a969b5"
+    "GitHub主仓库": "https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon"
+    "Mirror酱": "https://mirrorchyan.com/zh/projects"
+    "Gitee 国内镜像": "https://gitee.com/OneDragon-Anything/ZenlessZoneZero-OneDragon"
+    "GitHub Issue (VVIP 专区)": "https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon/issues"
+    "千机链": "https://github.com/OneDragon-Anything/OneDragon-ScriptChainer"
+    "崩铁一条龙": "https://github.com/OneDragon-Anything/StarRailOneDragon"
+    "一条龙官方频道": "https://pd.qq.com/g/onedrag00n"

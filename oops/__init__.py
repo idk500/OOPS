@@ -5,7 +5,7 @@ OOPS - Open-source One-click Problem Solver
 A lightweight diagnostic toolbox for Windows gamers and developers.
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
 __author__ = "OOPS Team"
 __email__ = "oops@example.com"
 
