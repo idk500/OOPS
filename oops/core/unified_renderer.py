@@ -57,10 +57,12 @@ class UnifiedDetectionRenderer:
                 <div class="detection-title">
                     {self.severity_icons[result.severity]} {self._get_display_name(result.check_name)}
                 </div>
-                <div class="detection-summary">{summary}</div>
-                <button class="collapse-button" onclick="toggleCollapse('{result.check_name}-details')">
-                    ▶ 详细信息
-                </button>
+                <div class="detection-right">
+                    <div class="detection-summary">{summary}</div>
+                    <button class="collapse-button" onclick="toggleCollapse('{result.check_name}-details')">
+                        ▶ 详细信息
+                    </button>
+                </div>
             </div>
             
             <div class="detection-message" style="color: {self.severity_colors[result.severity]};">
@@ -175,22 +177,54 @@ class UnifiedDetectionRenderer:
             error_items.extend(issues)
             warning_items.extend(warnings)
 
-            # 将硬件信息作为通过项显示
+            # 将硬件信息作为通过项显示 - 分行显示详细信息
             cpu_info = result.details.get("cpu", {})
-            if cpu_info.get("model"):
-                success_items.append(f"CPU: {cpu_info['model']}")
+            if cpu_info:
+                success_items.append("CPU信息")
+                if cpu_info.get("model"):
+                    success_items.append(f"INDENT:型号: {cpu_info['model']}")
+                if cpu_info.get("cores_physical") and cpu_info.get("cores_logical"):
+                    success_items.append(
+                        f"INDENT:核心: {cpu_info['cores_physical']}物理/{cpu_info['cores_logical']}逻辑"
+                    )
+                if cpu_info.get("freq_current") and cpu_info.get("freq_max"):
+                    success_items.append(
+                        f"INDENT:频率: {cpu_info['freq_current']}/{cpu_info['freq_max']}"
+                    )
 
             memory_info = result.details.get("memory", {})
-            if memory_info.get("total"):
-                success_items.append(f"内存: {memory_info['total']}")
+            if memory_info:
+                success_items.append("内存信息")
+                if memory_info.get("total"):
+                    success_items.append(f"INDENT:总容量: {memory_info['total']}")
+                if memory_info.get("available"):
+                    success_items.append(f"INDENT:可用: {memory_info['available']}")
+                if memory_info.get("used"):
+                    success_items.append(f"INDENT:已使用: {memory_info['used']}")
+                if memory_info.get("percent"):
+                    success_items.append(f"INDENT:使用率: {memory_info['percent']}")
 
             gpu_info = result.details.get("gpu")
             if gpu_info:
                 success_items.append(f"GPU: {gpu_info}")
 
             storage_info = result.details.get("storage", {})
-            if storage_info.get("type"):
-                success_items.append(f"磁盘类型: {storage_info['type']}")
+            if storage_info:
+                success_items.append("存储信息")
+                if storage_info.get("current_drive"):
+                    success_items.append(
+                        f"INDENT:当前盘符: {storage_info['current_drive']}"
+                    )
+                if storage_info.get("total"):
+                    success_items.append(f"INDENT:总容量: {storage_info['total']}")
+                if storage_info.get("free"):
+                    success_items.append(f"INDENT:可用空间: {storage_info['free']}")
+                if storage_info.get("used"):
+                    success_items.append(f"INDENT:已使用: {storage_info['used']}")
+                if storage_info.get("percent"):
+                    success_items.append(f"INDENT:使用率: {storage_info['percent']}")
+                if storage_info.get("type"):
+                    success_items.append(f"INDENT:类型: {storage_info['type']}")
 
             display_info = result.details.get("display", {})
             if display_info.get("primary_resolution"):

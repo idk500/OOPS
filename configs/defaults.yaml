@@ -69,8 +69,17 @@ network_defaults:
   
   # GitHub代理测试
   github_proxies:
-    - url: https://ghproxy.com
-      name: ghproxy.com
+    # 动态代理（优先级最高，从 ghproxy.link 动态获取）
+    - url: dynamic  # 标记为动态获取
+      name: ghproxy.link（动态）
+      type: github_proxy
+      dynamic: true
+    # 静态代理备用
+    - url: https://gh-proxy.com
+      name: gh-proxy.com
+      type: github_proxy
+    - url: https://ghfast.top
+      name: ghfast.top
       type: github_proxy
     - url: https://mirror.ghproxy.com
       name: mirror.ghproxy.com

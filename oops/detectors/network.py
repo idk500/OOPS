@@ -5,6 +5,7 @@
 
 import asyncio
 import logging
+import re
 import subprocess
 import time
 from typing import Any, Dict, List, Optional
@@ -15,6 +16,50 @@ from oops.core.config import DetectionRule
 from oops.core.default_config import DefaultConfigLoader
 
 logger = logging.getLogger(__name__)
+
+
+class GhProxyUpdater:
+    """GitHub 代理地址动态更新器"""
+
+    PROXY_JS_URL = "https://ghproxy.link/js/src_views_home_HomeView_vue.js"
+
+    @classmethod
+    async def fetch_latest_proxy(cls) -> Optional[str]:
+        """从 ghproxy.link 获取最新的代理地址"""
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    cls.PROXY_JS_URL, timeout=aiohttp.ClientTimeout(total=10)
+                ) as response:
+                    if response.status != 200:
+                        return None
+
+                    js_content = await response.text()
+
+                    # 解析 JS 内容提取代理 URL
+                    url_prefix = '<a href=\\\\\\"'
+                    url_prefix_idx = js_content.find(url_prefix)
+                    if url_prefix_idx == -1:
+                        return None
+
+                    url_suffix = '\\\\\\" target='
+                    url_suffix_idx = js_content.find(url_suffix, url_prefix_idx)
+                    if url_suffix_idx == -1:
+                        return None
+
+                    proxy_url = js_content[
+                        url_prefix_idx + len(url_prefix) : url_suffix_idx
+                    ]
+
+                    # 验证 URL 格式
+                    pattern = r"^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
+                    if re.match(pattern, proxy_url):
+                        return proxy_url
+
+                    return None
+        except Exception as e:
+            logger.debug(f"获取动态代理地址失败: {e}")
+            return None
 
 
 class NetworkConnectivityDetector(DetectionRule):
@@ -85,6 +130,23 @@ class NetworkConnectivityDetector(DetectionRule):
 
         # GitHub代理检测
         github_proxies = merged_config.get("github_proxies", [])
+
+        # 动态获取 GitHub 代理地址
+        dynamic_proxies = [
+            p for p in github_proxies if isinstance(p, dict) and p.get("dynamic")
+        ]
+        if dynamic_proxies:
+            latest_proxy = await GhProxyUpdater.fetch_latest_proxy()
+            if latest_proxy:
+                # 将动态获取的代理添加到检测列表
+                github_proxies = [
+                    {"url": latest_proxy, "name": "动态代理", "type": "github_proxy"}
+                ] + [
+                    p
+                    for p in github_proxies
+                    if not (isinstance(p, dict) and p.get("dynamic"))
+                ]
+
         for proxy_item in github_proxies:
             proxy_url = (
                 proxy_item.get("url") if isinstance(proxy_item, dict) else proxy_item

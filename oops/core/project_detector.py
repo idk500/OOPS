@@ -18,7 +18,7 @@ class ProjectDetector:
         # 项目特征标识
         self.project_signatures = {
             "zenless_zone_zero": {
-                "name": "绝区零一条龙",
+                "name": "ZenlessZoneZero-OneDragon",
                 "markers": [
                     "zzz_od",
                     "ZenlessZoneZero",

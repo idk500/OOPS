@@ -1,3 +1,5 @@
+project_name: ZenlessZoneZero-OneDragon
+
 checks:
   environment:
     enabled: true
@@ -84,7 +86,7 @@ checks:
       - 建议使用较高画质以降低脚本出错率
 project:
   description: 绝区零自动化脚本
-  name: 绝区零一条龙
+  name: ZenlessZoneZero-OneDragon
   paths:
     # ⚠️ 重要：首次使用请修改为你的实际安装路径！
     # 

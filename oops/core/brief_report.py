@@ -3,7 +3,7 @@
 生成适合快速分享的简短报告（500字符以内）
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 
 class BriefReportGenerator:
@@ -17,6 +17,7 @@ class BriefReportGenerator:
         system_info: Dict[str, Any],
         report_path: str = "",
         oops_version: str = "",
+        project_config: Optional[Dict[str, Any]] = None,
     ) -> List[str]:
         """
         生成文本格式简报（适合QQ/微信/论坛）
@@ -41,8 +42,10 @@ class BriefReportGenerator:
         total = summary.get("total_checks", 0)
         completed = summary.get("completed", 0)
 
-        # 简化项目名称
-        project_short = BriefReportGenerator._shorten_project_name(project_name)
+        # 简化项目名称 - 优先从配置中获取显示名称
+        project_short = BriefReportGenerator._shorten_project_name(
+            project_name, project_config
+        )
 
         header = f"OOPS_v{oops_version}, {project_short}, 通过项({completed}/{total})"
 
@@ -106,10 +109,21 @@ class BriefReportGenerator:
         return briefs
 
     @staticmethod
-    def _shorten_project_name(project_name: str) -> str:
-        """简化项目名称"""
+    def _shorten_project_name(
+        project_name: str, project_config: Optional[Dict[str, Any]] = None
+    ) -> str:
+        """简化项目名称 - 优先从配置中获取显示名称"""
+        # 优先从配置中获取项目名
+        if project_config:
+            display_name = project_config.get("project_name") or project_config.get(
+                "project", {}
+            ).get("name")
+            if display_name:
+                return display_name
+
+        # 回退到硬编码映射（向后兼容）
         name_map = {
-            "zenless_zone_zero": "Zenless_OD",
+            "zenless_zone_zero": "ZenlessZoneZero-OneDragon",
             "generic_python": "Python项目",
         }
         return name_map.get(project_name, project_name)
