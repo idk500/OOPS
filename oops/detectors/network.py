@@ -36,29 +36,18 @@ class GhProxyUpdater:
 
                     js_content = await response.text()
 
-                    # 解析 JS 内容提取代理 URL
-                    url_prefix = '<a href=\\\\\\"'
-                    url_prefix_idx = js_content.find(url_prefix)
-                    if url_prefix_idx == -1:
-                        return None
-
-                    url_suffix = '\\\\\\" target='
-                    url_suffix_idx = js_content.find(url_suffix, url_prefix_idx)
-                    if url_suffix_idx == -1:
-                        return None
-
-                    proxy_url = js_content[
-                        url_prefix_idx + len(url_prefix) : url_suffix_idx
-                    ]
-
-                    # 验证 URL 格式
-                    pattern = r"^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
-                    if re.match(pattern, proxy_url):
-                        return proxy_url
+                    # 使用正则表达式提取代理 URL
+                    pattern = r'<a\s+href=\\\\\"(https://[^\"\\\\]+)\\\\\".*?target='
+                    match = re.search(pattern, js_content)
+                    if match:
+                        proxy_url = match.group(1)
+                        # 验证 URL 格式
+                        if re.match(r'^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', proxy_url):
+                            return proxy_url
 
                     return None
         except Exception as e:
-            logger.debug(f"获取动态代理地址失败: {e}")
+            logger.warning(f"获取动态代理地址失败: {e}")
             return None
 
 

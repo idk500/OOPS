@@ -7,7 +7,6 @@ import html
 from typing import Any, Dict, List
 
 from oops.core.diagnostics import CheckResult, SeverityLevel
-from oops.core.styles import ReportStyles
 
 
 class ReportModule:

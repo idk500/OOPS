@@ -485,17 +485,6 @@ class HTMLRenderer:
             <div class="timestamp">生成时间: {timestamp}</div>
         </div>"""
 
-    def _get_html_title_section_with_brief(
-        self, project_name: str, brief_texts: list, oops_version: str
-    ) -> str:
-        """获取HTML标题部分（包含复制简报按钮）"""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return f"""
-        <div class="header">
-            <h1>🚀 OOPS 运行预检报告 - {html.escape(project_name)}</h1>
-            <p style="color: #6b7280; margin: 5px 0;">让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly | 版本: {html.escape(oops_version)} | 生成时间: {timestamp}</p>
-        </div>
-        """
 
     def _get_html_summary_section(self, summary: Dict[str, Any]) -> str:
         """获取HTML摘要部分"""

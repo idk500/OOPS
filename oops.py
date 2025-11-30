@@ -573,17 +573,20 @@ async def main():
 if __name__ == "__main__":
     try:
         # 在 Windows 上使用 WindowsSelectorEventLoopPolicy 避免 ProactorEventLoop 的资源清理警告
+        # 参考: https://github.com/aio-libs/aiohttp/issues/4324
         if sys.platform == "win32":
-            # 设置事件循环策略
+            # 设置事件循环策略以避免 ProactorEventLoop 在 aiohttp 场景下的资源清理警告
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            # 抑制 asyncio 的资源警告
+
+            # 仅抑制已知的 aiohttp 相关资源警告（Windows + ProactorEventLoop 的已知问题）
+            # TODO: 在 aiohttp 修复此问题后移除此变通方案
             import warnings
 
             warnings.filterwarnings(
-                "ignore", category=ResourceWarning, message="unclosed transport"
-            )
-            warnings.filterwarnings(
-                "ignore", category=ResourceWarning, message=".*unclosed.*"
+                "ignore",
+                category=ResourceWarning,
+                message="unclosed transport",
+                module="asyncio"
             )
 
         asyncio.run(main())
