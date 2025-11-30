@@ -327,8 +327,6 @@ class ReportGenerator:
 
         return system_info
 
-
-
     def _get_html_fix_suggestions_section(self, results: List[CheckResult]) -> str:
         """获取HTML修复建议部分"""
         fix_suggestions = self._extract_fix_suggestions(results)

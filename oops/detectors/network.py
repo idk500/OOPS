@@ -37,12 +37,14 @@ class GhProxyUpdater:
                     js_content = await response.text()
 
                     # 使用正则表达式提取代理 URL
-                    pattern = r'<a\s+href=\\\\\"(https://[^\"\\\\]+)\\\\\".*?target='
+                    pattern = r"<a\s+href=\\\\\"(https://[^\"\\\\]+)\\\\\".*?target="
                     match = re.search(pattern, js_content)
                     if match:
                         proxy_url = match.group(1)
                         # 验证 URL 格式
-                        if re.match(r'^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$', proxy_url):
+                        if re.match(
+                            r"^https://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", proxy_url
+                        ):
                             return proxy_url
 
                     return None

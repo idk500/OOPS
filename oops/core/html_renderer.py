@@ -485,7 +485,6 @@ class HTMLRenderer:
             <div class="timestamp">生成时间: {timestamp}</div>
         </div>"""
 
-
     def _get_html_summary_section(self, summary: Dict[str, Any]) -> str:
         """获取HTML摘要部分"""
         success_rate = summary.get("success_rate", 0)
