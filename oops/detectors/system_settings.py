@@ -75,6 +75,36 @@ class SystemSettingsDetector(DetectionRule):
                         recommendations.append(
                             "建议使用 1920x1080 或更高分辨率以获得最佳识别效果"
                         )
+            elif resolution is None:
+                # 检测失败时显示 N/A
+                warnings.append("主显示器分辨率: N/A")
+                recommendations.append(
+                    "无法检测显示器分辨率，请手动确认分辨率不低于 1920x1080"
+                )
+
+            # 检查屏幕缩放比例
+            scaling = settings.get("scaling_factor")
+            if scaling is not None:
+                if scaling != 100:
+                    warnings.append(f"屏幕缩放比例: {scaling}%")
+                    recommendations.append(
+                        "非100%缩放比例可能影响游戏脚本的图像识别，建议设置为100%"
+                    )
+            elif scaling is None:
+                warnings.append("屏幕缩放比例: N/A")
+                recommendations.append("无法检测屏幕缩放比例，请手动确认设置为100%")
+
+            # 检查显示方向
+            orientation = settings.get("orientation")
+            if orientation is not None:
+                if "Portrait" in orientation:
+                    warnings.append(f"显示方向: {orientation}")
+                    recommendations.append(
+                        "纵向显示可能影响游戏脚本的图像识别，建议使用横向显示"
+                    )
+            elif orientation is None:
+                warnings.append("显示方向: N/A")
+                recommendations.append("无法检测显示方向，请手动确认使用横向显示")
 
             # 获取游戏内设置提醒
             game_settings_reminder = system_settings_config.get(
@@ -132,6 +162,12 @@ class SystemSettingsDetector(DetectionRule):
 
                 # 获取主显示器分辨率
                 settings["primary_resolution"] = self._get_primary_resolution_windows()
+
+                # 获取屏幕缩放比例
+                settings["scaling_factor"] = self._get_scaling_windows()
+
+                # 获取显示方向
+                settings["orientation"] = self._get_orientation_windows()
 
         except Exception as e:
             logger.debug(f"获取显示设置失败: {e}")
@@ -241,10 +277,19 @@ class SystemSettingsDetector(DetectionRule):
     def _get_primary_resolution_windows(self) -> Optional[str]:
         """获取Windows主显示器分辨率"""
         try:
+            # 使用更可靠的方法获取分辨率
             ps_command = """
-            Add-Type -AssemblyName System.Windows.Forms
-            $screen = [System.Windows.Forms.Screen]::PrimaryScreen
-            "$($screen.Bounds.Width) x $($screen.Bounds.Height)"
+            $monitors = Get-WmiObject -Namespace root\\wmi -Class WmiMonitorBasicDisplayParams
+            $primary = $monitors | Where-Object { $_.IsPrimary -eq $true } | Select-Object -First 1
+            if ($primary) {
+                "$($primary.MaxHorizontalImageSize)00 x $($primary.MaxVerticalImageSize)00"
+            } else {
+                # 备用方法：使用CIM类
+                $display = Get-CimInstance -Namespace root\\cimv2 -ClassName Win32_VideoController | Select-Object -First 1
+                if ($display) {
+                    "$($display.CurrentHorizontalResolution) x $($display.CurrentVerticalResolution)"
+                }
+            }
             """
             result = subprocess.run(
                 ["powershell", "-Command", ps_command],
@@ -253,8 +298,20 @@ class SystemSettingsDetector(DetectionRule):
                 timeout=self.timeout,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
-            if result.returncode == 0:
-                return result.stdout.strip()
+            if result.returncode == 0 and result.stdout.strip():
+                resolution = result.stdout.strip()
+                # 验证分辨率是否合理（避免返回明显错误的值）
+                if resolution and " x " in resolution:
+                    parts = resolution.split(" x ")
+                    if len(parts) == 2:
+                        try:
+                            width = int(parts[0])
+                            height = int(parts[1])
+                            # 检查是否是合理的分辨率范围
+                            if 800 <= width <= 7680 and 600 <= height <= 4320:
+                                return resolution
+                        except ValueError:
+                            pass
         except Exception as e:
             logger.debug(f"获取分辨率失败: {e}")
         return None
@@ -288,6 +345,81 @@ class SystemSettingsDetector(DetectionRule):
             logger.debug(f"验证分辨率失败: {e}")
 
         return {"valid": True, "message": "无法验证分辨率"}
+
+    def _get_scaling_windows(self) -> Optional[int]:
+        """获取Windows屏幕缩放比例"""
+        try:
+            ps_command = """
+            $dpi = Get-ItemProperty -Path 'HKCU:\\Control Panel\\Desktop\\WindowMetrics' -Name 'AppliedDPI' -ErrorAction SilentlyContinue
+            if ($dpi -and $dpi.AppliedDPI) {
+                # AppliedDPI值为96表示100%，120表示125%，144表示150%，等等
+                [math]::Round(($dpi.AppliedDPI / 96) * 100)
+            } else {
+                # 备用方法：使用WMI
+                $display = Get-WmiObject -Namespace root\\cimv2 -Class Win32_DesktopMonitor | Select-Object -First 1
+                if ($display -and $display.PixelsPerXLogicalInch) {
+                    [math]::Round(($display.PixelsPerXLogicalInch / 96) * 100)
+                }
+            }
+            """
+            result = subprocess.run(
+                ["powershell", "-Command", ps_command],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                scaling = int(result.stdout.strip())
+                # 验证缩放比例是否合理
+                if 100 <= scaling <= 300:
+                    return scaling
+        except Exception as e:
+            logger.debug(f"获取屏幕缩放比例失败: {e}")
+        return None
+
+    def _get_orientation_windows(self) -> Optional[str]:
+        """获取Windows显示方向"""
+        try:
+            # 首先尝试使用WMI
+            ps_command = """
+            $display = Get-WmiObject -Namespace root\\cimv2 -Class Win32_DesktopMonitor | Select-Object -First 1
+            if ($display -and $display.DisplayOrientation -ne $null) {
+                switch ($display.DisplayOrientation) {
+                    0 { "Landscape (横向)" }
+                    1 { "Portrait (纵向)" }
+                    2 { "Landscape (横向翻转)" }
+                    3 { "Portrait (纵向翻转)" }
+                    default { "Unknown" }
+                }
+            } else {
+                # 备用方法：使用CIM类获取分辨率
+                $cimDisplay = Get-CimInstance -Namespace root\\cimv2 -ClassName Win32_VideoController | Select-Object -First 1
+                if ($cimDisplay) {
+                    $width = $cimDisplay.CurrentHorizontalResolution
+                    $height = $cimDisplay.CurrentVerticalResolution
+                    if ($height -gt $width) {
+                        "Portrait (纵向)"
+                    } else {
+                        "Landscape (横向)"
+                    }
+                }
+            }
+            """
+            result = subprocess.run(
+                ["powershell", "-Command", ps_command],
+                capture_output=True,
+                text=True,
+                timeout=self.timeout,
+                creationflags=subprocess.CREATE_NO_WINDOW,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                orientation = result.stdout.strip()
+                if orientation and orientation != "Unknown":
+                    return orientation
+        except Exception as e:
+            logger.debug(f"获取显示方向失败: {e}")
+        return None
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
         """获取修复建议"""

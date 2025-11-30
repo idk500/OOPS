@@ -261,7 +261,7 @@ def create_default_master_config() -> Dict[str, Any]:
             "zenless_zone_zero": {
                 "enabled": True,
                 "config": "configs/zenless_zone_zero.yaml",
-                "description": "绝区零一条龙项目",
+                "description": "ZenlessZoneZero-OneDragon 项目",
             },
             "maa_assistant_arknights": {
                 "enabled": True,

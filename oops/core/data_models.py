@@ -138,6 +138,8 @@ class SystemInfoData:
             parts.append(f"CPU: {self.hardware['cpu_model']}")
         if self.hardware.get("memory_total"):
             parts.append(f"内存: {self.hardware['memory_total']}")
+        if self.hardware.get("gpu"):
+            parts.append(f"GPU: {self.hardware['gpu']}")
         if self.storage.get("disk_type"):
             disk_icon = "⚠️" if self.storage["disk_type"] == "HDD" else "✅"
             parts.append(f"磁盘: {self.storage['disk_type']} {disk_icon}")

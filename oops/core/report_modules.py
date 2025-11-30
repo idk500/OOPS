@@ -63,6 +63,12 @@ class SystemInfoModule(ReportModule):
             summary_parts.append(f"CPU: {hardware['cpu_model']}")
         if hardware.get("memory_total"):
             summary_parts.append(f"内存: {hardware['memory_total']}")
+        if hardware.get("gpu_info"):
+            gpu_info = hardware["gpu_info"]
+            # 截取显卡名称的关键部分（避免过长）
+            if len(gpu_info) > 30:
+                gpu_info = gpu_info[:27] + "..."
+            summary_parts.append(f"GPU: {gpu_info}")
         if storage.get("disk_type"):
             summary_parts.append(f"磁盘: {storage['disk_type']}")
         if basic.get("os"):
@@ -74,13 +80,13 @@ class SystemInfoModule(ReportModule):
         <div class="section">
             <div class="section-header">
                 <h2 class="section-title">{self.title}</h2>
+            </div>
+            <div class="system-summary-row">
+                <span class="system-summary-text">{summary_text}</span>
                 <button class="collapse-button" onclick="toggleCollapse('system-info-content')">
                     ▶ 展开详情
                 </button>
             </div>
-            <p style="color: #6b7280; margin: 10px 0;">
-                {summary_text}
-            </p>
             <div id="system-info-content" class="collapsible-content">
                 <div class="system-info-grid">
         """
@@ -159,7 +165,7 @@ class SystemInfoModule(ReportModule):
                     </div>
                 """
 
-        # 硬件信息
+        # 硬件信息 - 紧凑显示
         hardware_info = system_info.get("hardware", {})
         if hardware_info:
             html_content += """
@@ -167,20 +173,125 @@ class SystemInfoModule(ReportModule):
                     <h3>硬件信息</h3>
                     <div class="info-items">
             """
-            for key, value in hardware_info.items():
-                display_name = self._get_display_name(key)
+
+            # CPU 信息
+            if hardware_info.get("cpu_model"):
                 html_content += f"""
                         <div class="info-item">
-                            <span class="info-label">{display_name}:</span>
-                            <span class="info-value">{html.escape(str(value))}</span>
+                            <span class="info-label">CPU型号:</span>
+                            <span class="info-value">{html.escape(str(hardware_info['cpu_model']))}</span>
                         </div>
                 """
+            if hardware_info.get("cpu_cores_physical") and hardware_info.get(
+                "cpu_cores_logical"
+            ):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU核心(物理/逻辑):</span>
+                            <span class="info-value">{hardware_info['cpu_cores_physical']}/{hardware_info['cpu_cores_logical']}</span>
+                        </div>
+                """
+            elif hardware_info.get("cpu_cores_physical"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU物理核心:</span>
+                            <span class="info-value">{hardware_info['cpu_cores_physical']}</span>
+                        </div>
+                """
+            elif hardware_info.get("cpu_cores_logical"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU逻辑核心:</span>
+                            <span class="info-value">{hardware_info['cpu_cores_logical']}</span>
+                        </div>
+                """
+            if hardware_info.get("cpu_freq_current") and hardware_info.get(
+                "cpu_freq_max"
+            ):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU频率(当前/最大):</span>
+                            <span class="info-value">{hardware_info['cpu_freq_current']}/{hardware_info['cpu_freq_max']}</span>
+                        </div>
+                """
+            elif hardware_info.get("cpu_freq_current"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU当前频率:</span>
+                            <span class="info-value">{hardware_info['cpu_freq_current']}</span>
+                        </div>
+                """
+            elif hardware_info.get("cpu_freq_max"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">CPU最大频率:</span>
+                            <span class="info-value">{hardware_info['cpu_freq_max']}</span>
+                        </div>
+                """
+
+            # 内存信息
+            if hardware_info.get("memory_available") and hardware_info.get(
+                "memory_total"
+            ):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">内存容量(可用/总共):</span>
+                            <span class="info-value">{html.escape(str(hardware_info['memory_available']))}/{html.escape(str(hardware_info['memory_total']))}</span>
+                        </div>
+                """
+            elif hardware_info.get("memory_total"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">内存总容量:</span>
+                            <span class="info-value">{html.escape(str(hardware_info['memory_total']))}</span>
+                        </div>
+                """
+            elif hardware_info.get("memory_available"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">内存可用:</span>
+                            <span class="info-value">{html.escape(str(hardware_info['memory_available']))}</span>
+                        </div>
+                """
+
+            # GPU 信息
+            if hardware_info.get("gpu_info"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">GPU:</span>
+                            <span class="info-value">{html.escape(str(hardware_info['gpu_info']))}</span>
+                        </div>
+                """
+
+            # 其他硬件信息（不包括已合并的）
+            excluded_keys = {
+                "cpu_model",
+                "cpu_cores_physical",
+                "cpu_cores_logical",
+                "cpu_freq_current",
+                "cpu_freq_max",
+                "memory_total",
+                "memory_available",
+                "memory_used",
+                "memory_percent",
+                "gpu_info",
+            }
+            for key, value in hardware_info.items():
+                if key not in excluded_keys:
+                    display_name = self._get_display_name(key)
+                    html_content += f"""
+                            <div class="info-item">
+                                <span class="info-label">{display_name}:</span>
+                                <span class="info-value">{html.escape(str(value))}</span>
+                            </div>
+                    """
+
             html_content += """
                     </div>
                 </div>
             """
 
-        # 存储信息
+        # 存储信息 - 紧凑显示
         storage_info = system_info.get("storage", {})
         if storage_info:
             html_content += """
@@ -188,15 +299,58 @@ class SystemInfoModule(ReportModule):
                     <h3>存储信息</h3>
                     <div class="info-items">
             """
-            for key, value in storage_info.items():
-                display_name = self._get_display_name(key)
-                # 所有存储信息统一处理，不显示警告
+
+            # 存储信息
+            if storage_info.get("current_drive"):
                 html_content += f"""
                         <div class="info-item">
-                            <span class="info-label">{display_name}:</span>
-                            <span class="info-value">{html.escape(str(value))}</span>
+                            <span class="info-label">当前盘符:</span>
+                            <span class="info-value">{html.escape(str(storage_info['current_drive']))}</span>
                         </div>
                 """
+            if storage_info.get("disk_free") and storage_info.get("disk_total"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘空间(可用/总共):</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_free']))}/{html.escape(str(storage_info['disk_total']))}</span>
+                        </div>
+                """
+            elif storage_info.get("disk_total"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘总容量:</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_total']))}</span>
+                        </div>
+                """
+            elif storage_info.get("disk_free"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘可用空间:</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_free']))}</span>
+                        </div>
+                """
+            if storage_info.get("disk_used"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘已使用:</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_used']))}</span>
+                        </div>
+                """
+            if storage_info.get("disk_usage_percent"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘使用率:</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_usage_percent']))}</span>
+                        </div>
+                """
+            if storage_info.get("disk_type"):
+                html_content += f"""
+                        <div class="info-item">
+                            <span class="info-label">磁盘类型:</span>
+                            <span class="info-value">{html.escape(str(storage_info['disk_type']))}</span>
+                        </div>
+                """
+
             html_content += """
                     </div>
                 </div>
@@ -271,26 +425,34 @@ class SummaryModule(ReportModule):
         return f"""
         <div class="section">
             <h2 class="section-title">{self.title}</h2>
-            <div class="summary-grid">
-                <div class="summary-item">
-                    <div class="summary-number">{summary.get('total_checks', 0)}</div>
-                    <div class="summary-label">总检测项</div>
+            <div class="summary-stats-grid">
+                <div class="stat-item">
+                    <span class="stat-label">总检测项</span>
+                    <span class="stat-value">{summary.get('total_checks', 0)}</span>
                 </div>
-                <div class="summary-item success">
-                    <div class="summary-number">{summary.get('completed', 0)}</div>
-                    <div class="summary-label">成功项</div>
+                <div class="stat-item">
+                    <span class="stat-label">成功完成</span>
+                    <span class="stat-value">{summary.get('completed', 0)}</span>
                 </div>
-                <div class="summary-item error">
-                    <div class="summary-number">{summary.get('failed', 0)}</div>
-                    <div class="summary-label">失败项</div>
+                <div class="stat-item">
+                    <span class="stat-label">执行失败</span>
+                    <span class="stat-value">{summary.get('failed', 0)}</span>
                 </div>
-                <div class="summary-item warning">
-                    <div class="summary-number">{summary.get('warning_issues', 0)}</div>
-                    <div class="summary-label">警告项</div>
+                <div class="stat-item">
+                    <span class="stat-label">关键问题</span>
+                    <span class="stat-value">{summary.get('critical_issues', 0)}</span>
                 </div>
-                <div class="summary-item {status_class}">
-                    <div class="summary-number">{success_rate:.1f}%</div>
-                    <div class="summary-label">成功率</div>
+                <div class="stat-item">
+                    <span class="stat-label">错误问题</span>
+                    <span class="stat-value">{summary.get('error_issues', 0)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">警告问题</span>
+                    <span class="stat-value">{summary.get('warning_issues', 0)}</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">成功率</span>
+                    <span class="stat-value">{success_rate:.1f}%</span>
                 </div>
             </div>
         </div>
@@ -362,7 +524,9 @@ class CheckResultsModule(ReportModule):
                 <div class="detection-title">
                     🎮 游戏内设置
                 </div>
-                <div class="detection-summary">功能开发中</div>
+                <div class="detection-right">
+                    <div class="detection-summary">功能开发中</div>
+                </div>
             </div>
             
             <div class="detection-message" style="color: var(--info-color);">

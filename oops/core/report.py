@@ -14,6 +14,7 @@ from typing import Any, Dict, List, Optional
 import yaml
 
 from oops.core.diagnostics import CheckResult, SeverityLevel
+from oops.core.html_renderer import HTMLRenderer
 from oops.core.report_modules import ReportModuleManager
 
 logger = logging.getLogger(__name__)
@@ -37,26 +38,27 @@ class ReportGenerator:
 
     def __init__(self, config: Optional[ReportConfig] = None):
         self.config = config or ReportConfig()
-        self.templates = {}
-        self._load_templates()
-
-    def _load_templates(self):
-        """加载报告模板"""
-        # HTML模板
-        self.templates["html"] = {
-            "header": self._get_html_header(),
-            "footer": self._get_html_footer(),
-            "summary": self._get_html_summary_template(),
-            "check_item": self._get_html_check_item_template(),
-            "critical_issue": self._get_html_critical_issue_template(),
-        }
 
     def generate_report(
-        self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
+        self,
+        results: List[CheckResult],
+        project_name: str,
+        summary: Dict[str, Any],
+        yaml_path: str = "",
+        project_config: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """生成报告"""
+        """生成报告
+
+        Args:
+            results: 检测结果列表
+            project_name: 项目名称
+            summary: 摘要信息
+            yaml_path: YAML报告路径（用于HTML报告显示）
+        """
         if self.config.format == "html":
-            return self._generate_html_report(results, project_name, summary)
+            return self._generate_html_report(
+                results, project_name, summary, yaml_path, project_config
+            )
         elif self.config.format == "json":
             return self._generate_json_report(results, project_name, summary)
         elif self.config.format == "yaml":
@@ -65,7 +67,9 @@ class ReportGenerator:
             return self._generate_markdown_report(results, project_name, summary)
         else:
             logger.warning(f"未知的报告格式: {self.config.format}，使用HTML格式")
-            return self._generate_html_report(results, project_name, summary)
+            return self._generate_html_report(
+                results, project_name, summary, yaml_path, project_config
+            )
 
     def save_report(self, report_content: str, project_name: str) -> str:
         """保存报告到文件"""
@@ -90,15 +94,21 @@ class ReportGenerator:
         return str(file_path)
 
     def _generate_html_report(
-        self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
+        self,
+        results: List[CheckResult],
+        project_name: str,
+        summary: Dict[str, Any],
+        yaml_path: str = "",
+        project_config: Optional[Dict[str, Any]] = None,
     ) -> str:
-        """生成HTML报告"""
-        # 构建报告内容
-        content_parts = []
+        """生成HTML报告
 
-        # 头部
-        content_parts.append(self.templates["html"]["header"])
-
+        Args:
+            results: 检测结果列表
+            project_name: 项目名称
+            summary: 摘要信息
+            yaml_path: YAML报告路径（可选，用于在HTML中显示）
+        """
         # 提取系统信息
         system_info = self._extract_system_info(results)
 
@@ -109,81 +119,29 @@ class ReportGenerator:
         from oops.core.brief_report import BriefReportGenerator
 
         brief_texts = BriefReportGenerator.generate_text_brief(
-            project_name, summary, results, system_info, oops_version=oops_version
+            project_name,
+            summary,
+            results,
+            system_info,
+            oops_version=oops_version,
+            project_config=project_config,
         )
 
-        # 标题和项目信息（包含复制简报按钮）
-        content_parts.append(
-            self._get_html_title_section_with_brief(
-                project_name, brief_texts, oops_version
-            )
+        # 使用HTMLRenderer类生成完整报告
+        renderer = HTMLRenderer(
+            include_details=self.config.include_details,
+            include_fix_suggestions=self.config.include_fix_suggestions,
         )
-
-        # 使用模块化系统生成报告内容
-        module_manager = ReportModuleManager()
-        report_data = {
-            "system_info": system_info,
-            "summary": summary,
-            "results": results,
-        }
-
-        # 生成模块化内容
-        content_parts.append(module_manager.generate_html_report(report_data))
-
-        # 关键问题（如果有）
-        critical_results = [r for r in results if r.severity == SeverityLevel.CRITICAL]
-        if critical_results and self.config.include_details:
-            content_parts.append(
-                self._get_html_critical_issues_section(critical_results)
-            )
-
-        # 修复建议汇总
-        if self.config.include_fix_suggestions:
-            content_parts.append(self._get_html_fix_suggestions_section(results))
-
-        # 注入简报数据和按钮
-        import json
-
-        brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
-
-        # 生成简报按钮的 HTML
-        brief_buttons_html = ""
-        if len(brief_texts) == 1:
-            brief_buttons_html = """
-                <button onclick="copyBrief(0)" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                    📋 复制简报
-                </button>
-            """
-        else:
-            for i in range(len(brief_texts)):
-                label = "📋 复制简报" if i == 0 else f"📋 复制简报 ({i + 1})"
-                brief_buttons_html += f"""
-                <button onclick="copyBrief({i})" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                    {label}
-                </button>
-                """
-
-        brief_injection_script = f"""
-        <script>
-            // 注入简报数据
-            window.briefTexts = {brief_texts_json};
-            
-            // 注入简报按钮
-            (function() {{
-                const container = document.getElementById('brief-buttons-container');
-                if (container) {{
-                    const buttonsHtml = `{brief_buttons_html}`;
-                    container.insertAdjacentHTML('afterbegin', buttonsHtml);
-                }}
-            }})();
-        </script>
-        """
-        content_parts.append(brief_injection_script)
-
-        # 底部
-        content_parts.append(self.templates["html"]["footer"])
-
-        return "\n".join(content_parts)
+        return renderer.render_full_report(
+            results,
+            project_name,
+            summary,
+            system_info,
+            oops_version,
+            brief_texts,
+            yaml_path,
+            project_config,
+        )
 
     def _generate_json_report(
         self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
@@ -284,950 +242,6 @@ class ReportGenerator:
 
         return "\n".join(content_parts)
 
-    def _get_html_header(self) -> str:
-        """获取HTML头部模板"""
-        return """<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OOPS 运行预检报告</title>
-    <style>
-        :root {
-            --primary-color: #2563eb;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --error-color: #ef4444;
-            --critical-color: #dc2626;
-            --info-color: #6b7280;
-            --bg-color: #ffffff;
-            --text-color: #1f2937;
-            --border-color: #e5e7eb;
-        }
-        
-        .dark-mode {
-            --bg-color: #1f2937;
-            --text-color: #f9fafb;
-            --border-color: #374151;
-        }
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            line-height: 1.6;
-            color: var(--text-color);
-            background-color: var(--bg-color);
-            transition: all 0.3s ease;
-        }
-        
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid var(--border-color);
-        }
-        
-        .header h1 {
-            color: var(--primary-color);
-            margin-bottom: 10px;
-        }
-        
-        .summary-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        
-        .card {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .card.critical { border-left: 4px solid var(--critical-color); }
-        .card.error { border-left: 4px solid var(--error-color); }
-        .card.warning { border-left: 4px solid var(--warning-color); }
-        .card.success { border-left: 4px solid var(--success-color); }
-        .card.info { border-left: 4px solid var(--info-color); }
-        
-        .card-number {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .critical .card-number { color: var(--critical-color); }
-        .error .card-number { color: var(--error-color); }
-        .warning .card-number { color: var(--warning-color); }
-        .success .card-number { color: var(--success-color); }
-        .info .card-number { color: var(--info-color); }
-        
-        .check-item {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        }
-        
-        .check-item.critical { border-left: 4px solid var(--critical-color); }
-        .check-item.error { border-left: 4px solid var(--error-color); }
-        .check-item.warning { border-left: 4px solid var(--warning-color); }
-        .check-item.success { border-left: 4px solid var(--success-color); }
-        .check-item.info { border-left: 4px solid var(--info-color); }
-        
-        .check-details-list {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f9fafb;
-            border-radius: 4px;
-        }
-        
-        .check-details-list ul {
-            margin: 5px 0;
-            padding-left: 20px;
-        }
-        
-        .check-details-list li {
-            margin: 5px 0;
-            line-height: 1.5;
-        }
-        
-        .failed-items {
-            margin-bottom: 10px;
-        }
-        
-        .failed-items strong {
-            color: var(--error-color);
-        }
-        
-        .warning-items {
-            margin-bottom: 10px;
-        }
-        
-        .warning-items strong {
-            color: var(--warning-color);
-        }
-        
-        .success-items {
-            margin-bottom: 10px;
-        }
-        
-        .success-items strong {
-            color: var(--success-color);
-        }
-        
-        .check-meta {
-            margin-top: 10px;
-            color: var(--info-color);
-        }
-        
-        .check-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-        
-        .check-name {
-            font-weight: bold;
-            font-size: 1.1rem;
-        }
-        
-        .check-status {
-            padding: 4px 8px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            font-weight: bold;
-        }
-        
-        .status-success { background: var(--success-color); color: white; }
-        .status-warning { background: var(--warning-color); color: white; }
-        .status-error { background: var(--error-color); color: white; }
-        .status-critical { background: var(--critical-color); color: white; }
-        .status-pending { background: var(--info-color); color: white; }
-        
-        .fix-suggestion {
-            background: #fef3c7;
-            border-left: 4px solid var(--warning-color);
-            padding: 10px 15px;
-            margin-top: 10px;
-            border-radius: 4px;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .section {
-            margin-bottom: 30px;
-        }
-        
-        .section-title {
-            font-size: 1.5rem;
-            margin-bottom: 15px;
-            color: var(--primary-color);
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 5px;
-        }
-        
-        .timestamp {
-            color: var(--info-color);
-            font-size: 0.9rem;
-        }
-        
-        @media (max-width: 768px) {
-            .summary-cards {
-                grid-template-columns: 1fr;
-            }
-            
-            .check-header {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-            
-            .check-status {
-                margin-top: 5px;
-            }
-        }
-        
-        /* 系统信息样式 */
-        .system-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
-        }
-        
-        .info-group {
-            background: #f9fafb;
-            border-radius: 8px;
-            padding: 20px;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .info-group h3 {
-            margin: 0 0 15px 0;
-            color: var(--primary-color);
-            font-size: 1.1em;
-            font-weight: 600;
-        }
-        
-        .info-items {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-        
-        .info-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .info-item:last-child {
-            border-bottom: none;
-        }
-        
-        .info-label {
-            font-weight: 500;
-            color: #374151;
-            min-width: 120px;
-        }
-        
-        .info-value {
-            color: #6b7280;
-            text-align: right;
-            font-family: 'Consolas', 'Monaco', monospace;
-            word-break: break-all;
-        }
-        
-        .summary-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .summary-item {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-        }
-        
-        .summary-number {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-        
-        .summary-label {
-            color: var(--info-color);
-            font-size: 0.9rem;
-        }
-        
-        /* 折叠按钮样式 */
-        .collapse-button {
-            background: none;
-            border: none;
-            color: var(--primary-color);
-            cursor: pointer;
-            font-size: 0.9em;
-            padding: 5px 10px;
-            margin-left: 10px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-        
-        .collapse-button:hover {
-            background: var(--border-color);
-        }
-        
-        .collapsible-content {
-            margin-top: 15px;
-        }
-        
-        .section-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        
-        /* 统一检测结果样式 */
-        .detection-results {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-        
-        .detection-result {
-            background: var(--bg-color);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        
-        .detection-result.warning {
-            border-left: 4px solid var(--warning-color);
-        }
-        
-        .detection-result.error {
-            border-left: 4px solid var(--error-color);
-        }
-        
-        .detection-result.critical {
-            border-left: 4px solid var(--critical-color);
-        }
-        
-        .detection-result.info {
-            border-left: 4px solid var(--info-color);
-        }
-        
-        .detection-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        
-        .detection-title {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-        
-        .detection-summary {
-            color: var(--info-color);
-            font-size: 0.9em;
-        }
-        
-        .detection-message {
-            margin-bottom: 15px;
-            font-weight: 500;
-        }
-        
-        .detection-issues {
-            margin-bottom: 15px;
-        }
-        
-        .issue-group {
-            margin-bottom: 15px;
-        }
-        
-        .issue-group h4 {
-            margin: 0 0 8px 0;
-            font-size: 1em;
-        }
-        
-        .issue-group.error h4 {
-            color: var(--error-color);
-        }
-        
-        .issue-group.warning h4 {
-            color: var(--warning-color);
-        }
-        
-        .issue-group.success h4 {
-            color: var(--success-color);
-        }
-        
-        .issue-group ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-        
-        .issue-group li {
-            margin-bottom: 5px;
-            line-height: 1.4;
-        }
-        
-        .detection-details {
-            background: #f9fafb;
-            border-radius: 6px;
-            padding: 15px;
-            margin-top: 10px;
-        }
-        
-        .fix-suggestion {
-            background: #fef3c7;
-            border-left: 4px solid var(--warning-color);
-            padding: 15px;
-            border-radius: 6px;
-            margin-top: 15px;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .fix-suggestion h4 {
-            margin: 0 0 10px 0;
-            color: var(--warning-color);
-        }
-        
-        .fix-suggestion p {
-            margin: 0;
-            line-height: 1.6;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .raw-details {
-            margin-top: 15px;
-        }
-        
-        .raw-details h4 {
-            margin: 0 0 10px 0;
-            color: var(--primary-color);
-        }
-        
-        .details-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-        }
-        
-        .detail-group {
-            background: white;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            padding: 12px;
-        }
-        
-        .detail-group ul {
-            margin: 5px 0;
-            padding-left: 20px;
-            list-style-type: disc;
-            list-style-position: inside;
-        }
-        
-        .detail-group li {
-            margin-bottom: 3px;
-            line-height: 1.4;
-            padding-left: 0;
-        }
-        
-        .detail-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 6px 0;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .detail-item:last-child {
-            border-bottom: none;
-        }
-        
-        .detail-label {
-            font-weight: 500;
-            color: #374151;
-            min-width: 100px;
-            flex-shrink: 0;
-        }
-        
-        .detail-value {
-            color: #6b7280;
-            text-align: right;
-            word-break: break-word;
-            margin-left: 10px;
-        }
-        
-        /* 通过项折叠样式 */
-        .success-items-section {
-            margin: 15px 0;
-        }
-        
-        .success-toggle {
-            background: #f0f9ff;
-            border: 1px solid var(--success-color);
-            color: var(--success-color);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .success-toggle:hover {
-            background: var(--success-color);
-            color: white;
-        }
-        
-        /* 详细数据折叠样式 */
-        .raw-details-section {
-            margin: 15px 0;
-        }
-        
-        .raw-details-toggle {
-            background: #fef3c7;
-            border: 1px solid var(--warning-color);
-            color: var(--warning-color);
-            padding: 8px 12px;
-            border-radius: 6px;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        
-        .raw-details-toggle:hover {
-            background: var(--warning-color);
-            color: white;
-        }
-        
-        .raw-details-section .collapsible-content {
-            margin-top: 10px;
-            padding: 10px;
-            background: #fffbeb;
-            border-radius: 6px;
-            border: 1px solid #fef3c7;
-        }
-        
-        .raw-details-section .raw-details {
-            margin: 0;
-        }
-        
-        .success-items-section .collapsible-content {
-            margin-top: 10px;
-            padding: 10px;
-            background: #f0f9ff;
-            border-radius: 6px;
-            border: 1px solid #e0f2fe;
-        }
-        
-        .success-items-section .issue-group {
-            margin-bottom: 0;
-        }
-        
-        .success-items-section .issue-group ul {
-            margin: 0;
-            padding-left: 20px;
-        }
-        
-        .success-items-section .issue-group li {
-            color: var(--success-color);
-            margin-bottom: 4px;
-            line-height: 1.4;
-        }
-        
-        /* 优化间距和布局 */
-        .detection-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            margin-bottom: 15px;
-            gap: 15px;
-        }
-        
-        .detection-title {
-            font-size: 1.2em;
-            font-weight: 600;
-            color: var(--primary-color);
-            flex: 1;
-        }
-        
-        .detection-summary {
-            color: var(--info-color);
-            font-size: 0.9em;
-            flex-shrink: 0;
-            text-align: right;
-        }
-        
-        .detection-header .collapse-button {
-            margin-left: 0;
-            flex-shrink: 0;
-        }
-        
-        /* 修复文字重叠问题 */
-        .detection-message {
-            margin-bottom: 15px;
-            font-weight: 500;
-            line-height: 1.5;
-            padding: 5px 0;
-            word-wrap: break-word;
-            word-break: break-word;
-            overflow-wrap: break-word;
-        }
-        
-        .detection-issues {
-            margin-bottom: 15px;
-            clear: both;
-        }
-        
-        .issue-group {
-            margin-bottom: 15px;
-            padding: 10px 0;
-        }
-        
-        .issue-group h4 {
-            margin: 0 0 10px 0;
-            font-size: 1em;
-            line-height: 1.3;
-        }
-        
-        .issue-group ul {
-            margin: 0;
-            padding-left: 25px;
-            list-style-type: none;
-        }
-        
-        .issue-group li {
-            margin-bottom: 6px;
-            line-height: 1.5;
-            padding-left: 5px;
-            position: relative;
-        }
-        
-        .issue-group.error li::before {
-            content: "•";
-            color: var(--error-color);
-            font-weight: bold;
-            position: absolute;
-            left: -20px;
-        }
-        
-        .issue-group.warning li::before {
-            content: "•";
-            color: var(--warning-color);
-            font-weight: bold;
-            position: absolute;
-            left: -20px;
-        }
-        
-        .issue-group.success li::before {
-            content: "•";
-            color: var(--success-color);
-            font-weight: bold;
-            position: absolute;
-            left: -20px;
-        }
-        
-        /* 缩进项样式（用于网络检测的子项） */
-        .issue-group li.indent-item {
-            margin-left: 20px;
-            font-size: 0.95em;
-            color: #6b7280;
-        }
-        
-        .issue-group li.indent-item::before {
-            content: "└─";
-            left: -25px;
-            font-weight: normal;
-        }
-        
-        /* 响应式优化 */
-        @media (max-width: 768px) {
-            .detection-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .detection-summary {
-                text-align: left;
-            }
-            
-            .detection-header .collapse-button {
-                align-self: flex-end;
-            }
-            
-            .details-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .system-info-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-    <script>
-        // 折叠/展开功能
-        function toggleCollapse(id) {
-            const content = document.getElementById(id);
-            const button = event.target;
-            
-            if (content.style.display === 'none') {
-                content.style.display = 'block';
-                button.textContent = button.textContent.replace('▶', '▼');
-            } else {
-                content.style.display = 'none';
-                button.textContent = button.textContent.replace('▼', '▶');
-            }
-        }
-        
-        // 页面加载后默认折叠系统信息
-        document.addEventListener('DOMContentLoaded', function() {
-            const systemInfoContent = document.getElementById('system-info-content');
-            if (systemInfoContent) {
-                systemInfoContent.style.display = 'none';
-            }
-        });
-        
-        // 初始化简报按钮
-        function initBriefButtons() {
-            const container = document.getElementById('brief-buttons-container');
-            if (!container) return;
-            
-            // 如果没有简报数据，不显示按钮
-            if (!window.briefTexts || window.briefTexts.length === 0) {
-                return;
-            }
-            
-            // 创建简报按钮
-            const briefTexts = window.briefTexts;
-            if (briefTexts.length === 1) {
-                // 只有一段简报，显示单个按钮
-                const btn = document.createElement('button');
-                btn.id = 'copy-brief-btn';
-                btn.onclick = () => copyBrief(0);
-                btn.style.cssText = 'background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;';
-                btn.innerHTML = '📋 复制简报';
-                container.insertBefore(btn, container.firstChild);
-            } else {
-                // 多段简报，显示多个按钮
-                for (let i = 0; i < briefTexts.length; i++) {
-                    const btn = document.createElement('button');
-                    btn.id = `copy-brief-btn-${i}`;
-                    btn.onclick = () => copyBrief(i);
-                    btn.style.cssText = 'background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;';
-                    btn.innerHTML = `📋 复制简报${i === 0 ? '' : ` (${i + 1})`}`;
-                    container.insertBefore(btn, container.firstChild);
-                }
-            }
-        }
-    </script>
-</head>
-<body>
-    <div class="container">
-        <div class="report-info" style="background: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 6px; padding: 12px 15px; margin-bottom: 20px; font-size: 14px;">
-            <p style="margin: 0 0 8px 0; color: #1e40af;">
-                💡 <strong>提示</strong>：提交问题时可复制简报快速描述，或附带 YAML 报告文件以便开发者准确分析。
-            </p>
-            <div id="brief-buttons-container" style="display: flex; gap: 8px; flex-wrap: wrap;">
-                <!-- 简报按钮将由 JavaScript 动态生成 -->
-                <button onclick="showYamlPath()" style="background: #3b82f6; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 13px;">
-                    📄 显示 YAML 报告路径
-                </button>
-            </div>
-            <div id="copy-success" style="display: none; margin-top: 8px; color: #059669; font-size: 13px;">
-                ✅ 简报已复制到剪贴板！
-            </div>
-            <div id="yaml-info" style="margin-top: 12px; padding: 12px; background: #f3f4f6; border-radius: 6px; border-left: 3px solid #3b82f6; display: none;">
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: #374151;">YAML 报告文件：</strong>
-                    <code id="yaml-filename" style="background: white; padding: 2px 6px; border-radius: 3px; color: #1f2937; font-size: 13px;"></code>
-                </div>
-                <div style="margin-bottom: 8px;">
-                    <strong style="color: #374151;">完整路径：</strong>
-                    <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
-                        <input id="yaml-path" readonly style="flex: 1; padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-family: monospace; font-size: 12px; background: white;" />
-                        <button onclick="copyYamlPath()" style="background: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; white-space: nowrap;">
-                            📋 复制路径
-                        </button>
-                    </div>
-                </div>
-                <div style="color: #6b7280; font-size: 12px; margin-top: 8px;">
-                    💡 提示：复制路径后可直接粘贴到文件管理器地址栏打开
-                </div>
-            </div>
-        </div>
-        <script>
-            function showYamlPath() {
-                const htmlPath = window.location.pathname;
-                if (window.location.protocol === 'file:') {
-                    // 获取 YAML 文件路径
-                    const yamlPath = htmlPath.replace('.html', '.yaml');
-                    const yamlFilename = yamlPath.split('/').pop().split('\\\\').pop();
-                    
-                    // 显示信息区域
-                    document.getElementById('yaml-info').style.display = 'block';
-                    document.getElementById('yaml-filename').textContent = yamlFilename;
-                    document.getElementById('yaml-path').value = decodeURIComponent(yamlPath);
-                    
-                    // 滚动到信息区域
-                    document.getElementById('yaml-info').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    document.getElementById('yaml-info').style.display = 'block';
-                    document.getElementById('yaml-info').innerHTML = '<div style="color: #dc2626;">⚠️ 请在本地打开此报告以访问 YAML 文件</div>';
-                }
-            }
-            
-            function copyYamlPath() {
-                const pathInput = document.getElementById('yaml-path');
-                pathInput.select();
-                
-                try {
-                    // 尝试使用现代 API
-                    navigator.clipboard.writeText(pathInput.value).then(() => {
-                        showCopySuccess();
-                    }).catch(() => {
-                        // 降级到传统方法
-                        document.execCommand('copy');
-                        showCopySuccess();
-                    });
-                } catch (err) {
-                    // 最后的降级方案
-                    document.execCommand('copy');
-                    showCopySuccess();
-                }
-            }
-            
-            function showCopySuccess() {
-                const btn = event.target;
-                const originalText = btn.innerHTML;
-                btn.innerHTML = '✅ 已复制';
-                btn.style.background = '#059669';
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.style.background = '#10b981';
-                }, 2000);
-            }
-            
-            // 简报数据（将在页面底部注入）
-            let briefTexts = [];
-            
-            function copyBrief(index) {
-                if (!window.briefTexts || window.briefTexts.length === 0) {
-                    alert('简报数据不可用');
-                    return;
-                }
-                
-                const textToCopy = window.briefTexts[index] || window.briefTexts[0];
-                
-                try {
-                    // 尝试使用现代 API
-                    navigator.clipboard.writeText(textToCopy).then(() => {
-                        showBriefCopySuccess(index);
-                    }).catch(() => {
-                        // 降级到传统方法
-                        const textarea = document.createElement('textarea');
-                        textarea.value = textToCopy;
-                        textarea.style.position = 'fixed';
-                        textarea.style.opacity = '0';
-                        document.body.appendChild(textarea);
-                        textarea.select();
-                        document.execCommand('copy');
-                        document.body.removeChild(textarea);
-                        showBriefCopySuccess(index);
-                    });
-                } catch (err) {
-                    alert('复制失败，请手动复制');
-                }
-            }
-            
-            function showBriefCopySuccess(index) {
-                const successDiv = document.getElementById('copy-success');
-                if (successDiv) {
-                    successDiv.style.display = 'block';
-                    setTimeout(() => {
-                        successDiv.style.display = 'none';
-                    }, 2000);
-                }
-                
-                // 更新按钮文本
-                const btnId = window.briefTexts.length === 1 ? 'copy-brief-btn' : `copy-brief-btn-${index}`;
-                const btn = document.getElementById(btnId);
-                if (btn) {
-                    const originalText = btn.innerHTML;
-                    btn.innerHTML = '✅ 已复制';
-                    btn.style.background = '#059669';
-                    
-                    setTimeout(() => {
-                        btn.innerHTML = originalText;
-                        btn.style.background = '#10b981';
-                    }, 2000);
-                }
-            }
-        </script>
-"""
-
-    def _get_html_footer(self) -> str:
-        """获取HTML底部模板"""
-        return """
-        <div class="about-section" style="margin-top: 40px; padding: 20px; background: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
-            <h3 style="margin: 0 0 15px 0; color: #374151; font-size: 18px;">ℹ️ 关于 OOPS</h3>
-            <p style="margin: 0 0 10px 0; color: #6b7280; line-height: 1.6;">
-                <strong>OOPS</strong> (One-click Operating Pre-check System) - 一键运行预检系统
-            </p>
-            <p style="margin: 0 0 10px 0; color: #6b7280; line-height: 1.6;">
-                让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly
-            </p>
-            <div style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e5e7eb;">
-                <p style="margin: 0 0 8px 0; color: #6b7280;">
-                    🔗 <strong>项目地址</strong>: <a href="https://github.com/idk500/OOPS" target="_blank" style="color: #3b82f6; text-decoration: none;">https://github.com/idk500/OOPS</a>
-                </p>
-                <p style="margin: 0 0 8px 0; color: #6b7280;">
-                    🐛 <strong>问题反馈</strong>: <a href="https://github.com/idk500/OOPS/issues" target="_blank" style="color: #3b82f6; text-decoration: none;">提交 Issue</a>
-                </p>
-                <p style="margin: 0; color: #9ca3af; font-size: 13px;">
-                    如有问题或建议，欢迎在 GitHub 上提交 Issue
-                </p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>"""
-
     def _extract_system_info(self, results: List[CheckResult]) -> Dict[str, Any]:
         """从检测结果中提取系统信息 - 支持新旧检测器"""
         system_info = {}
@@ -1312,337 +326,6 @@ class ReportGenerator:
                     return system_info
 
         return system_info
-
-    def _get_html_title_section(self, project_name: str) -> str:
-        """获取HTML标题部分"""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        return f"""
-        <div class="header">
-            <h1>🚀 OOPS 运行预检报告</h1>
-            <p style="color: #6b7280; margin: 5px 0;">让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly</p>
-            <h2>项目: {html.escape(project_name)}</h2>
-            <div class="timestamp">生成时间: {timestamp}</div>
-        </div>"""
-
-    def _get_html_title_section_with_brief(
-        self, project_name: str, brief_texts: list, oops_version: str
-    ) -> str:
-        """获取HTML标题部分（包含复制简报按钮）"""
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        # 转义简报内容用于 JavaScript
-        import json
-
-        brief_texts_json = json.dumps(brief_texts, ensure_ascii=False)
-
-        return f"""
-        <div class="header">
-            <h1>🚀 OOPS 运行预检报告</h1>
-            <p style="color: #6b7280; margin: 5px 0;">让游戏脚本运行更顺畅 | Run Your Game Scripts Smoothly</p>
-            <p style="color: #9ca3af; margin: 5px 0; font-size: 14px;">版本: {html.escape(oops_version)}</p>
-            <h2>项目: {html.escape(project_name)}</h2>
-            <div class="timestamp">生成时间: {timestamp}</div>
-        </div>
-        """
-
-    def _get_html_summary_section(self, summary: Dict[str, Any]) -> str:
-        """获取HTML摘要部分"""
-        success_rate = summary.get("success_rate", 0)
-
-        return f"""
-        <div class="section">
-            <h2 class="section-title">📊 检测摘要</h2>
-            <div class="summary-cards">
-                <div class="card critical">
-                    <div class="card-number">{summary.get('critical_issues', 0)}</div>
-                    <div>关键问题</div>
-                </div>
-                <div class="card error">
-                    <div class="card-number">{summary.get('error_issues', 0)}</div>
-                    <div>错误问题</div>
-                </div>
-                <div class="card warning">
-                    <div class="card-number">{summary.get('warning_issues', 0)}</div>
-                    <div>警告问题</div>
-                </div>
-                <div class="card success">
-                    <div class="card-number">{summary.get('completed', 0)}/{summary.get('total_checks', 0)}</div>
-                    <div>完成检测</div>
-                </div>
-                <div class="card info">
-                    <div class="card-number">{success_rate:.1f}%</div>
-                    <div>成功率</div>
-                </div>
-            </div>
-        </div>"""
-
-    def _get_html_critical_issues_section(
-        self, critical_results: List[CheckResult]
-    ) -> str:
-        """获取HTML关键问题部分"""
-        content = """
-        <div class="section">
-            <h2 class="section-title">🚨 关键问题</h2>"""
-
-        for result in critical_results:
-            content += self._get_html_check_item(result)
-
-        content += "\n        </div>"
-        return content
-
-    def _get_html_detailed_results_section(self, results: List[CheckResult]) -> str:
-        """获取HTML详细结果部分"""
-        content = """
-        <div class="section">
-            <h2 class="section-title">🔍 详细检测结果</h2>
-            <p style="color: #6b7280; margin-bottom: 20px;">
-                以下是每个检测项的详细信息，包括具体的失败项和警告项。
-            </p>"""
-
-        # 按严重程度排序：critical > error > warning > info
-        severity_order = {
-            SeverityLevel.CRITICAL: 0,
-            SeverityLevel.ERROR: 1,
-            SeverityLevel.WARNING: 2,
-            SeverityLevel.INFO: 3,
-        }
-
-        sorted_results = sorted(
-            results, key=lambda r: severity_order.get(r.severity, 4)
-        )
-
-        for result in sorted_results:
-            content += self._get_html_check_item(result)
-
-        content += "\n        </div>"
-        return content
-
-    def _get_html_check_item(self, result: CheckResult) -> str:
-        """获取HTML检测项模板"""
-        status_class = f"status-{result.status.value}"
-        severity_class = f"check-item {result.severity.value}"
-
-        # 提取详细信息中的失败项
-        details_html = ""
-        if result.details:
-            failed_items = []
-            warning_items = []
-            success_items = []
-
-            # 处理特殊的检测器数据结构
-            if result.check_name == "system_settings":
-                # system_settings 有特殊的数据结构
-                issues = result.details.get("issues", [])
-                warnings = result.details.get("warnings", [])
-                settings = result.details.get("settings", {})
-
-                # 添加错误项
-                for issue in issues:
-                    failed_items.append(f"<li>{html.escape(issue)}</li>")
-
-                # 添加警告项
-                for warning in warnings:
-                    warning_items.append(f"<li>{html.escape(warning)}</li>")
-
-                # 显示检测的设置项
-                if settings:
-                    settings_info = []
-                    for setting_key, setting_value in settings.items():
-                        if setting_key == "hdr_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"HDR: {status}")
-                        elif setting_key == "night_light_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"夜间模式: {status}")
-                        elif setting_key == "color_filter_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"颜色滤镜: {status}")
-                        elif setting_key == "primary_resolution":
-                            settings_info.append(f"主显示器分辨率: {setting_value}")
-
-                    if settings_info:
-                        success_items.extend(
-                            [f"<li>{info}</li>" for info in settings_info]
-                        )
-            elif result.check_name == "system_settings":
-                # system_settings 可能包含游戏内设置提醒
-                issues = result.details.get("issues", [])
-                warnings = result.details.get("warnings", [])
-                settings = result.details.get("settings", {})
-                game_reminder = result.details.get("game_settings_reminder", [])
-
-                # 添加错误项
-                for issue in issues:
-                    failed_items.append(f"<li>{html.escape(issue)}</li>")
-
-                # 添加警告项
-                for warning in warnings:
-                    warning_items.append(f"<li>{html.escape(warning)}</li>")
-
-                # 显示检测的设置项
-                if settings:
-                    settings_info = []
-                    for setting_key, setting_value in settings.items():
-                        if setting_key == "is_admin":
-                            status = "✅ 是" if setting_value else "❌ 否"
-                            settings_info.append(f"管理员权限: {status}")
-                        elif setting_key == "hdr_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"HDR: {status}")
-                        elif setting_key == "night_light_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"夜间模式: {status}")
-                        elif setting_key == "color_filter_enabled":
-                            status = "启用" if setting_value else "禁用"
-                            settings_info.append(f"颜色滤镜: {status}")
-                        elif setting_key == "primary_resolution":
-                            settings_info.append(f"主显示器分辨率: {setting_value}")
-
-                    if settings_info:
-                        success_items.extend(
-                            [f"<li>{info}</li>" for info in settings_info]
-                        )
-
-                # 如果有游戏内设置提醒，添加到详情中
-                if game_reminder:
-                    success_items.append(
-                        "<li><strong>📋 游戏内设置要求</strong>（请在游戏中手动配置）:<ul style='margin-top: 8px;'>"
-                        + "".join(
-                            [
-                                f"<li style='color: #2563eb;'>{html.escape(item)}</li>"
-                                for item in game_reminder
-                            ]
-                        )
-                        + "</ul></li>"
-                    )
-            elif result.check_name == "environment_dependencies":
-                # environment_dependencies 有嵌套的数据结构
-                for key, value in result.details.items():
-                    if isinstance(value, dict):
-                        item_status = value.get("status", "unknown")
-                        item_message = value.get("message", "")
-
-                        # 特殊处理 project_dependencies
-                        if key == "project_dependencies" and "details" in value:
-                            proj_details = value.get("details", {})
-
-                            # Git 工具检测
-                            if "git" in proj_details:
-                                git_info = proj_details["git"]
-                                git_status = git_info.get("status", "unknown")
-                                git_msg = git_info.get("message", "")
-
-                                if git_status == "success":
-                                    git_details = git_info.get("details", {})
-                                    git_version = git_details.get(
-                                        "git_version", "未知版本"
-                                    )
-                                    success_items.append(
-                                        f"<li><strong>Git 工具</strong>: ✅ {html.escape(git_msg)} ({html.escape(git_version)})</li>"
-                                    )
-                                elif git_status == "warning":
-                                    warning_items.append(
-                                        f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>"
-                                    )
-                                elif git_status == "error":
-                                    failed_items.append(
-                                        f"<li><strong>Git 工具</strong>: {html.escape(git_msg)}</li>"
-                                    )
-
-                            # 嵌入式 Python 检测
-                            if "embedded_python" in proj_details:
-                                py_info = proj_details["embedded_python"]
-                                py_status = py_info.get("status", "unknown")
-                                py_msg = py_info.get("message", "")
-
-                                if py_status == "success":
-                                    success_items.append(
-                                        f"<li><strong>嵌入式 Python</strong>: ✅ {html.escape(py_msg)}</li>"
-                                    )
-                                elif py_status == "warning":
-                                    warning_items.append(
-                                        f"<li><strong>嵌入式 Python</strong>: {html.escape(py_msg)}</li>"
-                                    )
-                        else:
-                            # 其他标准项
-                            if item_status == "error":
-                                failed_items.append(
-                                    f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                                )
-                            elif item_status == "warning":
-                                warning_items.append(
-                                    f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                                )
-                            elif item_status == "success":
-                                success_items.append(
-                                    f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
-                                )
-            else:
-                # 处理其他检测器的标准数据结构
-                for key, value in result.details.items():
-                    if isinstance(value, dict):
-                        item_status = value.get("status", "unknown")
-                        item_message = value.get("message", value.get("error", ""))
-
-                        if item_status in ["error", "failure", "timeout"]:
-                            failed_items.append(
-                                f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                            )
-                        elif item_status == "warning":
-                            warning_items.append(
-                                f"<li><strong>{html.escape(key)}</strong>: {html.escape(item_message)}</li>"
-                            )
-                        elif item_status == "success":
-                            success_items.append(
-                                f"<li><strong>{html.escape(key)}</strong>: ✅ {html.escape(item_message)}</li>"
-                            )
-
-            if failed_items or warning_items:
-                details_html = "<div class='check-details-list'>"
-
-                if failed_items:
-                    details_html += (
-                        "<div class='failed-items'><strong>❌ 失败项:</strong><ul>"
-                    )
-                    details_html += "".join(failed_items)
-                    details_html += "</ul></div>"
-
-                if warning_items:
-                    details_html += (
-                        "<div class='warning-items'><strong>⚠️ 警告项:</strong><ul>"
-                    )
-                    details_html += "".join(warning_items)
-                    details_html += "</ul></div>"
-
-                if success_items and len(success_items) <= 5:  # 只显示少量成功项
-                    details_html += (
-                        "<div class='success-items'><strong>✅ 通过项:</strong><ul>"
-                    )
-                    details_html += "".join(success_items)
-                    details_html += "</ul></div>"
-
-                details_html += "</div>"
-
-        fix_suggestion_html = ""
-        if result.fix_suggestion and self.config.include_fix_suggestions:
-            fix_suggestion_html = f"""
-                <div class="fix-suggestion">
-                    <strong>💡 修复建议:</strong> {html.escape(result.fix_suggestion)}
-                </div>"""
-
-        return f"""
-            <div class="{severity_class}">
-                <div class="check-header">
-                    <div class="check-name">{html.escape(result.check_name)}</div>
-                    <div class="check-status {status_class}">{result.status.value.upper()}</div>
-                </div>
-                <div class="check-message">{html.escape(result.message)}</div>
-                {details_html}
-                <div class="check-meta">
-                    <small>执行时间: {result.execution_time:.2f}s | 严重程度: {result.severity.value}</small>
-                </div>
-                {fix_suggestion_html}
-            </div>"""
 
     def _get_html_fix_suggestions_section(self, results: List[CheckResult]) -> str:
         """获取HTML修复建议部分"""
@@ -1760,7 +443,11 @@ class ReportManager:
         self.output_dir = output_dir
 
     def generate_comprehensive_report(
-        self, results: List[CheckResult], project_name: str, summary: Dict[str, Any]
+        self,
+        results: List[CheckResult],
+        project_name: str,
+        summary: Dict[str, Any],
+        project_config: Optional[Dict[str, Any]] = None,
     ) -> Dict[str, str]:
         """生成综合报告（多种格式）"""
         report_paths = {}
@@ -1770,7 +457,9 @@ class ReportManager:
             format="html", output_dir=self.output_dir, include_timestamp=True
         )
         html_generator = ReportGenerator(html_config)
-        html_report = html_generator.generate_report(results, project_name, summary)
+        html_report = html_generator.generate_report(
+            results, project_name, summary, project_config=project_config
+        )
         html_path = html_generator.save_report(html_report, project_name)
         report_paths["html"] = html_path
 
@@ -1779,7 +468,9 @@ class ReportManager:
             format="json", output_dir=self.output_dir, include_timestamp=True
         )
         json_generator = ReportGenerator(json_config)
-        json_report = json_generator.generate_report(results, project_name, summary)
+        json_report = json_generator.generate_report(
+            results, project_name, summary, project_config=project_config
+        )
         json_path = json_generator.save_report(json_report, project_name)
         report_paths["json"] = json_path
 
@@ -1788,7 +479,9 @@ class ReportManager:
             format="markdown", output_dir=self.output_dir, include_timestamp=True
         )
         md_generator = ReportGenerator(md_config)
-        md_report = md_generator.generate_report(results, project_name, summary)
+        md_report = md_generator.generate_report(
+            results, project_name, summary, project_config=project_config
+        )
         md_path = md_generator.save_report(md_report, project_name)
         report_paths["markdown"] = md_path
 

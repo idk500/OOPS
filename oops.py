@@ -162,8 +162,11 @@ def list_projects(config_manager: ConfigManager):
     for i, project_name in enumerate(projects, 1):
         project_config = config_manager.get_project_config(project_name)
         if project_config:
+            # 优先从顶层 project_name 获取，如果没有则从 project.name 获取
+            name = project_config.get("project_name") or project_config.get(
+                "project", {}
+            ).get("name", project_name)
             project_info = project_config.get("project", {})
-            name = project_info.get("name", project_name)
             description = project_info.get("description", "暂无描述")
             print(f"  {i}. {name} ({project_name})")
             print(f"     {description}")
@@ -235,7 +238,7 @@ def create_default_configs(config_dir: str):
 
 
 async def display_diagnostic_results(
-    results, summary, diagnostic_suite, args, project_name
+    results, summary, diagnostic_suite, args, project_name, config_manager=None
 ):
     """显示诊断结果的通用函数"""
     # 显示简化摘要信息
@@ -341,22 +344,23 @@ async def display_diagnostic_results(
     if not args.no_report:
         from oops.core.report import ReportGenerator, ReportConfig
 
-        # 生成 HTML 报告（用于用户查看）
-        html_config = ReportConfig(
-            format="html", output_dir=args.output_dir, include_timestamp=True
-        )
-        html_generator = ReportGenerator(html_config)
-        html_content = html_generator.generate_report(results, project_name, summary)
-        html_path = html_generator.save_report(html_content, project_name)
+        # 获取项目配置（用于报告中的项目名称显示）
+        project_config = None
+        if config_manager:
+            project_config = config_manager.get_project_config(
+                project_name, silent=True
+            )
 
-        # 生成 YAML 报告（用于提交给开发者）
+        yaml_path = None
+
+        # 先生成 YAML 报告（用于提交给开发者）
         try:
             yaml_config = ReportConfig(
                 format="yaml", output_dir=args.output_dir, include_timestamp=True
             )
             yaml_generator = ReportGenerator(yaml_config)
             yaml_content = yaml_generator.generate_report(
-                results, project_name, summary
+                results, project_name, summary, project_config=project_config
             )
             yaml_path = yaml_generator.save_report(yaml_content, project_name)
         except Exception as e:
@@ -365,7 +369,22 @@ async def display_diagnostic_results(
             import traceback
 
             traceback.print_exc()
-            yaml_path = None
+
+        # 生成 HTML 报告（用于用户查看），传入 YAML 路径
+        html_config = ReportConfig(
+            format="html", output_dir=args.output_dir, include_timestamp=True
+        )
+        html_generator = ReportGenerator(html_config)
+        # 将 YAML 路径传递给 HTML 报告
+        yaml_abs_path = str(Path(yaml_path).absolute()) if yaml_path else ""
+        html_content = html_generator.generate_report(
+            results,
+            project_name,
+            summary,
+            yaml_path=yaml_abs_path,
+            project_config=project_config,
+        )
+        html_path = html_generator.save_report(html_content, project_name)
 
         print(f"\n📄 HTML报告已生成: {html_path}")
         if yaml_path:
@@ -408,7 +427,7 @@ async def run_diagnostic_for_project(
 
     # 使用通用显示函数
     await display_diagnostic_results(
-        results, summary, diagnostic_suite, args, project_name
+        results, summary, diagnostic_suite, args, project_name, config_manager
     )
 
     return summary
@@ -470,7 +489,12 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
 
         # 显示结果
         await display_diagnostic_results(
-            results, summary, diagnostic_suite, args, detected_project["project_id"]
+            results,
+            summary,
+            diagnostic_suite,
+            args,
+            detected_project["project_id"],
+            config_manager,
         )
         return
 
@@ -500,8 +524,10 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
 
     # 依次检测所有有效项目
     for i, (project_name, project_config) in enumerate(valid_projects, 1):
-        project_info = project_config.get("project", {})
-        name = project_info.get("name", project_name)
+        # 优先从顶层 project_name 获取，如果没有则从 project.name 获取
+        name = project_config.get("project_name") or project_config.get(
+            "project", {}
+        ).get("name", project_name)
 
         if len(valid_projects) > 1:
             print(f"\n{'='*60}")
@@ -546,6 +572,23 @@ async def main():
 
 if __name__ == "__main__":
     try:
+        # 在 Windows 上使用 WindowsSelectorEventLoopPolicy 避免 ProactorEventLoop 的资源清理警告
+        # 参考: https://github.com/aio-libs/aiohttp/issues/4324
+        if sys.platform == "win32":
+            # 设置事件循环策略以避免 ProactorEventLoop 在 aiohttp 场景下的资源清理警告
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+
+            # 仅抑制已知的 aiohttp 相关资源警告（Windows + ProactorEventLoop 的已知问题）
+            # TODO: 在 aiohttp 修复此问题后移除此变通方案
+            import warnings
+
+            warnings.filterwarnings(
+                "ignore",
+                category=ResourceWarning,
+                message="unclosed transport",
+                module="asyncio"
+            )
+
         asyncio.run(main())
         # 运行完成后暂停，让用户有机会复制日志
         print("\n" + "=" * 60)
