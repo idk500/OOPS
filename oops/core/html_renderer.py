@@ -17,12 +17,12 @@ from oops.core.styles import ReportStyles
 
 class HTMLRenderer:
     """HTML 渲染器 - 从数据模型生成 HTML"""
-    
+
     # 默认友情链接
     DEFAULT_FRIEND_LINKS = {
         "DeepSeek Chat": "https://chat.deepseek.com/",
         "Kimi AI": "https://www.kimi.com/",
-        "通义千问": "https://www.qianwen.com/"
+        "通义千问": "https://www.qianwen.com/",
     }
 
     def __init__(
@@ -823,17 +823,21 @@ class HTMLRenderer:
 
         return suggestions
 
-    def _get_html_friend_links_section(self, project_friend_links: Optional[Dict[str, str]] = None, project_name: Optional[str] = None) -> str:
+    def _get_html_friend_links_section(
+        self,
+        project_friend_links: Optional[Dict[str, str]] = None,
+        project_name: Optional[str] = None,
+    ) -> str:
         """获取HTML友情链接部分"""
         # 合并默认链接和项目自定义链接
         all_links = {
             "OOPS 推荐": self.DEFAULT_FRIEND_LINKS,
         }
-        
+
         if project_friend_links:
             project_group_name = f"{project_name} 专属" if project_name else "项目专属"
             all_links[project_group_name] = project_friend_links
-        
+
         content = """
         <div class="section">
             <h2 class="section-title">🔗 友情链接</h2>
@@ -841,27 +845,27 @@ class HTMLRenderer:
             <div class="ai-assistant-tip">
                 <strong>💡 OOPS 力荐</strong>：您可以直接将报告发送给AI助手以快速解决问题, 万事不求人!
             </div>"""
-        
+
         for group_name, links in all_links.items():
             if not links:
                 continue
-            
+
             content += f"""
             <div class="friend-link-group">
                 <h3>{html.escape(group_name)}</h3>
                 <div class="friend-links-grid">"""
-            
+
             for link_name, link_url in links.items():
                 content += f"""
                 <a href="{html.escape(link_url)}" target="_blank" class="friend-link-item">
                     <span class="friend-link-name">{html.escape(link_name)}</span>
                     <span class="friend-link-url">{html.escape(link_url)}</span>
                 </a>"""
-            
+
             content += """
                 </div>
             </div>"""
-        
+
         content += """
             </div>
         </div>"""
@@ -1019,12 +1023,16 @@ class HTMLRenderer:
         # 修复建议汇总
         if self.include_fix_suggestions:
             content_parts.append(self._get_html_fix_suggestions_section(results))
-        
+
         # 友情链接
         project_friend_links = None
         if project_config and "report" in project_config:
             project_friend_links = project_config["report"].get("friend_links")
-        content_parts.append(self._get_html_friend_links_section(project_friend_links, display_project_name))
+        content_parts.append(
+            self._get_html_friend_links_section(
+                project_friend_links, display_project_name
+            )
+        )
 
         # 底部
         content_parts.append(self._get_html_footer())
