@@ -395,58 +395,80 @@ class PythonEnvironmentDetector(DetectionRule):
                     if not line or line.startswith("#"):
                         continue
                     
-                    # 处理递归包含
-                    if line.startswith("-r "):
-                        include_file = line[3:].strip()
-                        include_path = os.path.join(os.path.dirname(requirements_file), include_file)
-                        if os.path.exists(include_path):
-                            included_packages = self._parse_requirements(include_path)
-                            packages.update(included_packages)
-                        continue
-                    
-                    # 处理可编辑安装
-                    if line.startswith("-e "):
-                        continue
-                    
-                    # 处理带有额外依赖的包
-                    if "[" in line and "]" in line:
-                        # 提取包名，移除额外依赖
-                        pkg_part = line.split("[", 1)[0]
-                        version_part = line.split("]", 1)[1] if "]" in line else ""
-                        full_line = pkg_part + version_part
-                    else:
-                        full_line = line
-                    
-                    # 提取版本约束
-                    pkg_name = None
-                    version = None
-                    
-                    # 处理各种版本约束格式
-                    if "==" in full_line:
-                        pkg_name, version = full_line.split("==", 1)
-                    elif ">=" in full_line:
-                        pkg_name, version = full_line.split(">=", 1)
-                        version = ">=" + version
-                    elif "<=" in full_line:
-                        pkg_name, version = full_line.split("<=", 1)
-                        version = "<=" + version
-                    elif ">" in full_line and not full_line.startswith(">="):
-                        pkg_name, version = full_line.split(">", 1)
-                        version = ">" + version
-                    elif "<" in full_line and not full_line.startswith("<="):
-                        pkg_name, version = full_line.split("<", 1)
-                        version = "<" + version
-                    elif "~=" in full_line:
-                        pkg_name, version = full_line.split("~", 1)
-                        version = "~=" + version
-                    else:
-                        pkg_name = full_line
-                    
-                    if pkg_name:
-                        packages[pkg_name.strip()] = version.strip() if version else None
+                    parsed_packages = self._handle_requirements_line(line, requirements_file)
+                    packages.update(parsed_packages)
         except Exception as e:
             logger.error(f"解析 requirements.txt 失败: {e}")
         return packages
+
+    def _handle_requirements_line(self, line: str, requirements_file: str) -> Dict[str, Optional[str]]:
+        """处理单行 requirements 内容"""
+        packages = {}
+        
+        # 处理递归包含
+        if line.startswith("-r "):
+            return self._handle_include_line(line, requirements_file)
+        
+        # 处理可编辑安装
+        if line.startswith("-e "):
+            return packages
+        
+        # 处理带有额外依赖的包
+        if "[" in line and "]" in line:
+            # 提取包名，移除额外依赖
+            pkg_part = line.split("[", 1)[0]
+            version_part = line.split("]", 1)[1] if "]" in line else ""
+            full_line = pkg_part + version_part
+        else:
+            full_line = line
+        
+        # 解析包名和版本约束
+        pkg_name, version = self._parse_package_version(full_line)
+        if pkg_name:
+            packages[pkg_name.strip()] = version.strip() if version else None
+        
+        return packages
+
+    def _handle_include_line(self, line: str, requirements_file: str) -> Dict[str, Optional[str]]:
+        """处理 requirements 中的 include 行"""
+        packages = {}
+        include_file = line[3:].strip()
+        include_path = os.path.join(os.path.dirname(requirements_file), include_file)
+        if os.path.exists(include_path):
+            included_packages = self._parse_requirements(include_path)
+            packages.update(included_packages)
+        return packages
+
+    def _parse_package_version(self, line: str) -> tuple[str, Optional[str]]:
+        """解析包名和版本约束"""
+        pkg_name = None
+        version = None
+        
+        # 处理各种版本约束格式
+        version_constraints = [
+            ("==", "=="),
+            (">=", ">="),
+            ("<=", "<="),
+            ("~", "~="),
+            (">", ">"),
+            ("<", "<"),
+        ]
+        
+        for sep, full_sep in version_constraints:
+            if sep in line and not (sep == ">" and line.startswith(">=")) and not (sep == "<" and line.startswith("<=")):
+                if full_sep == "~=":
+                    # 特殊处理 ~= 情况
+                    pkg_name, version_part = line.split("~", 1)
+                    version = "~=" + version_part
+                else:
+                    pkg_name, version_part = line.split(sep, 1)
+                    version = full_sep + version_part
+                break
+        else:
+            # 没有版本约束
+            pkg_name = line
+        
+        return pkg_name, version
 
     def _get_installed_packages(self, venv_path: str) -> Dict[str, str]:
         """获取虚拟环境中已安装的包"""
