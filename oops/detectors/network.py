@@ -694,7 +694,21 @@ class NetworkConnectivityDetector(DetectionRule):
         ]
 
         if proxy_failed and proxy_success:
-            failed_urls = [url.split("//")[1].split("/")[0] for url in proxy_failed[:2]]
+            # 安全处理URL，避免split导致的索引错误
+            failed_urls = []
+            for url in proxy_failed[:2]:
+                try:
+                    # 提取域名部分，处理各种URL格式
+                    if "//" in url:
+                        domain = url.split("//")[1].split("/")[0]
+                    elif "_" in url:
+                        # 处理动态代理格式 like "dynamic_(proxy)"
+                        domain = url.split("_")[0]
+                    else:
+                        domain = url
+                    failed_urls.append(domain)
+                except Exception:
+                    failed_urls.append(url)
             suggestions.append(f"GitHub代理: 避免使用 {', '.join(failed_urls)}")
         elif proxy_failed and not proxy_success and len(proxy_failed) > 0:
             suggestions.append("GitHub代理: 全部失败，建议直连或使用其他代理")
