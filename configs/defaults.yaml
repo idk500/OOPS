@@ -81,6 +81,6 @@ network_defaults:
     - url: https://ghfast.top
       name: ghfast.top
       type: github_proxy
-    - url: https://mirror.ghproxy.com
-      name: mirror.ghproxy.com
+    - url: https://ghproxy.net
+      name: ghproxy.net
       type: github_proxy

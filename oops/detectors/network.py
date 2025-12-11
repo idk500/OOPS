@@ -709,7 +709,10 @@ class NetworkConnectivityDetector(DetectionRule):
                     failed_urls.append(domain)
                 except Exception:
                     failed_urls.append(url)
-            suggestions.append(f"GitHub代理: 避免使用 {', '.join(failed_urls)}")
+            
+            # 去重，避免重复显示相同的域名
+            unique_failed_urls = list(set(failed_urls))
+            suggestions.append(f"GitHub代理: 避免使用 {', '.join(unique_failed_urls)}")
         elif proxy_failed and not proxy_success and len(proxy_failed) > 0:
             suggestions.append("GitHub代理: 全部失败，建议直连或使用其他代理")
 
