@@ -236,59 +236,67 @@ class PythonEnvironmentDetector(DetectionRule):
         venv_path = None
 
         if project_path:
-            # 检查常见的虚拟环境目录
             common_venv_names = [".venv", "venv", "env", ".env"]
+            project_path_obj = Path(project_path)
 
             # 首先在项目路径中查找
-            for venv_name in common_venv_names:
-                potential_venv = Path(project_path) / venv_name
-                if potential_venv.exists() and potential_venv.is_dir():
-                    if self._is_valid_venv(potential_venv):
+            venv_path = self._find_venv_in_directory(project_path_obj, common_venv_names)
+            if venv_path:
+                venv_exists = True
+            else:
+                # 如果没找到，向上查找父目录（最多3层）
+                venv_path = self._find_venv_in_parent_directories(project_path_obj, common_venv_names, max_levels=3)
+                if venv_path:
+                    venv_exists = True
+                else:
+                    # 如果还没找到，扫描项目根目录中的所有目录
+                    venv_path = self._scan_directory_for_venv(project_path_obj)
+                    if venv_path:
                         venv_exists = True
-                        venv_path = str(potential_venv)
-                        break
-
-            # 如果没找到，向上查找父目录（最多3层）
-            if not venv_exists:
-                current_path = Path(project_path)
-                for _ in range(3):
-                    try:
-                        parent = current_path.parent
-                        if parent == current_path:  # 已到根目录
-                            break
-
-                        for venv_name in common_venv_names:
-                            potential_venv = parent / venv_name
-                            if potential_venv.exists() and potential_venv.is_dir():
-                                if self._is_valid_venv(potential_venv):
-                                    venv_exists = True
-                                    venv_path = str(potential_venv)
-                                    logger.info(f"在父目录找到虚拟环境: {venv_path}")
-                                    break
-
-                        if venv_exists:
-                            break
-
-                        current_path = parent
-                    except (PermissionError, OSError):
-                        break
-
-            # 如果还没找到，扫描项目根目录中的所有目录
-            if not venv_exists:
-                try:
-                    for item in Path(project_path).iterdir():
-                        if item.is_dir() and self._is_valid_venv(item):
-                            venv_exists = True
-                            venv_path = str(item)
-                            break
-                except (PermissionError, OSError):
-                    pass
 
         return {
             "in_venv": in_venv,
             "venv_exists": venv_exists,
             "venv_path": venv_path,
         }
+
+    def _find_venv_in_directory(self, directory: Path, venv_names: List[str]) -> Optional[str]:
+        """在指定目录中查找虚拟环境"""
+        for venv_name in venv_names:
+            potential_venv = directory / venv_name
+            if potential_venv.exists() and potential_venv.is_dir():
+                if self._is_valid_venv(potential_venv):
+                    return str(potential_venv)
+        return None
+
+    def _find_venv_in_parent_directories(self, start_path: Path, venv_names: List[str], max_levels: int = 3) -> Optional[str]:
+        """向上查找父目录中的虚拟环境"""
+        current_path = start_path
+        for _ in range(max_levels):
+            try:
+                parent = current_path.parent
+                if parent == current_path:  # 已到根目录
+                    break
+
+                venv_path = self._find_venv_in_directory(parent, venv_names)
+                if venv_path:
+                    logger.info(f"在父目录找到虚拟环境: {venv_path}")
+                    return venv_path
+
+                current_path = parent
+            except (PermissionError, OSError):
+                break
+        return None
+
+    def _scan_directory_for_venv(self, directory: Path) -> Optional[str]:
+        """扫描目录中的所有目录查找虚拟环境"""
+        try:
+            for item in directory.iterdir():
+                if item.is_dir() and self._is_valid_venv(item):
+                    return str(item)
+        except (PermissionError, OSError):
+            pass
+        return None
 
     def _is_valid_venv(self, venv_path: Path) -> bool:
         """验证是否是有效的虚拟环境"""
