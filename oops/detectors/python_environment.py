@@ -366,22 +366,76 @@ class PythonEnvironmentDetector(DetectionRule):
             return {"complete": False, "error": str(e)}
 
     def _parse_requirements(self, requirements_file: str) -> Dict[str, Optional[str]]:
-        """解析 requirements.txt"""
+        """解析 requirements.txt，支持多种格式
+        
+        支持的格式：
+        - package==1.0.0
+        - package>=1.0.0
+        - package<=1.0.0
+        - package>1.0.0
+        - package<1.0.0
+        - package~=1.0.0
+        - package[extra1,extra2]==1.0.0
+        - -r requirements-dev.txt (递归包含)
+        - -e . (可编辑安装)
+        """
         packages = {}
         try:
             with open(requirements_file, "r", encoding="utf-8") as f:
                 for line in f:
                     line = line.strip()
-                    if line and not line.startswith("#"):
-                        # 简单解析，支持 package==version 格式
-                        if "==" in line:
-                            pkg_name, version = line.split("==", 1)
-                            packages[pkg_name.strip()] = version.strip()
-                        elif ">=" in line:
-                            pkg_name = line.split(">=", 1)[0].strip()
-                            packages[pkg_name] = None  # 不检查具体版本
-                        else:
-                            packages[line] = None
+                    if not line or line.startswith("#"):
+                        continue
+                    
+                    # 处理递归包含
+                    if line.startswith("-r "):
+                        include_file = line[3:].strip()
+                        include_path = os.path.join(os.path.dirname(requirements_file), include_file)
+                        if os.path.exists(include_path):
+                            included_packages = self._parse_requirements(include_path)
+                            packages.update(included_packages)
+                        continue
+                    
+                    # 处理可编辑安装
+                    if line.startswith("-e "):
+                        continue
+                    
+                    # 处理带有额外依赖的包
+                    if "[" in line and "]" in line:
+                        # 提取包名，移除额外依赖
+                        pkg_part = line.split("[", 1)[0]
+                        version_part = line.split("]", 1)[1] if "]" in line else ""
+                        full_line = pkg_part + version_part
+                    else:
+                        full_line = line
+                    
+                    # 提取版本约束
+                    pkg_name = None
+                    version = None
+                    
+                    # 处理各种版本约束格式
+                    if "==" in full_line:
+                        pkg_name, version = full_line.split("==", 1)
+                    elif ">=" in full_line:
+                        pkg_name, version = full_line.split(">=", 1)
+                        version = ">=" + version
+                    elif "<=" in full_line:
+                        pkg_name, version = full_line.split("<=", 1)
+                        version = "<=" + version
+                    elif ">" in full_line and not full_line.startswith(">="):
+                        pkg_name, version = full_line.split(">", 1)
+                        version = ">" + version
+                    elif "<" in full_line and not full_line.startswith("<="):
+                        pkg_name, version = full_line.split("<", 1)
+                        version = "<" + version
+                    elif "~=" in full_line:
+                        pkg_name, version = full_line.split("~", 1)
+                        version = "~=" + version
+                    else:
+                        pkg_name = full_line
+                    
+                    if pkg_name:
+                        packages[pkg_name.strip()] = version.strip() if version else None
         except Exception as e:
             logger.error(f"解析 requirements.txt 失败: {e}")
         return packages
@@ -454,9 +508,56 @@ for dist in importlib.metadata.distributions():
         return packages
 
     def _version_matches(self, installed_version: str, required_version: str) -> bool:
-        """检查版本是否匹配"""
-        # 简单的版本比较，可以扩展为更复杂的版本匹配逻辑
-        return installed_version == required_version
+        """检查版本是否匹配，支持多种版本约束格式
+        
+        支持的版本约束格式：
+        - ==1.0.0 精确匹配
+        - >=1.0.0 大于等于
+        - <=1.0.0 小于等于
+        - >1.0.0 大于
+        - <1.0.0 小于
+        - ~=1.0.0 兼容版本
+        """
+        try:
+            from packaging.version import parse
+            
+            installed = parse(installed_version)
+            required = parse(required_version)
+            
+            # 精确匹配
+            if required_version.startswith("=="):
+                exact_version = parse(required_version[2:])
+                return installed == exact_version
+            # 大于等于
+            elif required_version.startswith(">="):
+                min_version = parse(required_version[2:])
+                return installed >= min_version
+            # 小于等于
+            elif required_version.startswith("<="):
+                max_version = parse(required_version[2:])
+                return installed <= max_version
+            # 大于
+            elif required_version.startswith(">"):
+                min_version = parse(required_version[1:])
+                return installed > min_version
+            # 小于
+            elif required_version.startswith("<"):
+                max_version = parse(required_version[1:])
+                return installed < max_version
+            # 兼容版本 (~=1.0.0 相当于 >=1.0.0, ==1.*)
+            elif required_version.startswith("~"):
+                # 简单实现：兼容主版本号
+                installed_parts = installed_version.split(".")
+                required_parts = required_version[2:].split(".")
+                if len(installed_parts) >= 2 and len(required_parts) >= 2:
+                    return (installed_parts[0] == required_parts[0] and 
+                            int(installed_parts[1]) >= int(required_parts[1]))
+            # 默认为精确匹配
+            return installed == required
+        except Exception as e:
+            logger.debug(f"版本比较失败: {e}")
+            # 回退到简单的字符串比较
+            return installed_version == required_version
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
         """获取修复建议"""

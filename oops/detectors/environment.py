@@ -1,6 +1,6 @@
 """
 环境依赖检测器
-检测Python环境、系统运行库、虚拟环境等依赖项
+检测系统级依赖，如MSVC、CUDA等
 """
 
 import logging
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class EnvironmentDependencyDetector(DetectionRule):
-    """环境依赖检测器"""
+    """环境依赖检测器，专注于系统级依赖"""
 
     def __init__(self):
         super().__init__(
@@ -27,22 +27,14 @@ class EnvironmentDependencyDetector(DetectionRule):
         )
 
     def check(self, config: Dict[str, Any]) -> Dict[str, Any]:
-        """执行环境依赖检测"""
+        """执行环境依赖检测，专注于系统级依赖"""
         env_config = config.get("checks", {}).get("environment", {})
         if not env_config.get("enabled", False):
             return {"status": "skipped", "message": "环境检测已禁用"}
 
         results = {}
 
-        # Python版本检测
-        python_version_check = self._check_python_version(env_config)
-        results["python_version"] = python_version_check
-
-        # 虚拟环境检测
-        virtual_env_check = self._check_virtual_environment(env_config)
-        results["virtual_environment"] = virtual_env_check
-
-        # 系统运行库检测
+        # 系统运行库检测（专注于系统级依赖，如MSVC、CUDA等）
         system_libraries_check = self._check_system_libraries(env_config)
         results["system_libraries"] = system_libraries_check
 
@@ -58,155 +50,6 @@ class EnvironmentDependencyDetector(DetectionRule):
             "message": f"环境检测完成，共执行 {len(results)} 项检查",
             "details": results,
         }
-
-    def _check_python_version(self, env_config: Dict[str, Any]) -> Dict[str, Any]:
-        """检测Python版本兼容性"""
-        try:
-            current_version = sys.version_info
-            required_version = env_config.get("python_version", ">=3.8")
-
-            # 解析版本要求
-            if required_version.startswith(">="):
-                min_version = tuple(map(int, required_version[2:].split(".")))
-                is_compatible = current_version >= min_version
-            elif required_version.startswith("=="):
-                exact_version = tuple(map(int, required_version[2:].split(".")))
-                is_compatible = (
-                    current_version[:2] == exact_version[:2]
-                )  # 只比较主次版本
-            else:
-                # 默认要求 >= 3.8
-                is_compatible = current_version >= (3, 8)
-
-            if is_compatible:
-                return {
-                    "status": "success",
-                    "current_version": f"{current_version.major}.{current_version.minor}.{current_version.micro}",
-                    "required_version": required_version,
-                    "message": f"Python版本兼容: {current_version.major}.{current_version.minor}.{current_version.micro}",
-                }
-            else:
-                return {
-                    "status": "error",
-                    "current_version": f"{current_version.major}.{current_version.minor}.{current_version.micro}",
-                    "required_version": required_version,
-                    "message": f"Python版本不兼容: 当前 {current_version.major}.{current_version.minor}.{current_version.micro}, 需要 {required_version}",
-                }
-
-        except Exception as e:
-            logger.error(f"Python版本检测失败: {e}")
-            return {"status": "error", "message": f"Python版本检测失败: {str(e)}"}
-
-    def _is_valid_venv(self, venv_path: Path) -> bool:
-        """验证目录是否是有效的虚拟环境
-
-        Args:
-            venv_path: 虚拟环境路径
-
-        Returns:
-            是否是有效的虚拟环境
-        """
-        try:
-            system = platform.system().lower()
-
-            if system == "windows":
-                # Windows: 检查 Scripts/activate.bat 或 Scripts/Activate.ps1
-                activate_bat = venv_path / "Scripts" / "activate.bat"
-                activate_ps1 = venv_path / "Scripts" / "Activate.ps1"
-                python_exe = venv_path / "Scripts" / "python.exe"
-
-                return (
-                    activate_bat.exists() or activate_ps1.exists()
-                ) and python_exe.exists()
-            else:
-                # Linux/macOS: 检查 bin/activate
-                activate_sh = venv_path / "bin" / "activate"
-                python_bin = venv_path / "bin" / "python"
-
-                return activate_sh.exists() and python_bin.exists()
-
-        except Exception as e:
-            logger.debug(f"验证虚拟环境失败: {e}")
-            return False
-
-    def _check_virtual_environment(self, env_config: Dict[str, Any]) -> Dict[str, Any]:
-        """检测虚拟环境"""
-        try:
-            # 检查是否在虚拟环境中运行
-            in_venv = hasattr(sys, "real_prefix") or (
-                hasattr(sys, "base_prefix") and sys.base_prefix != sys.prefix
-            )
-
-            if not env_config.get("virtual_env", True):
-                # 不要求虚拟环境
-                return {
-                    "status": "success",
-                    "in_virtual_env": in_venv,
-                    "message": "虚拟环境检测跳过（配置允许）",
-                }
-
-            # 检查项目目录下是否存在虚拟环境
-            project_path = env_config.get("project_path")
-            venv_exists = False
-            venv_path = None
-
-            if project_path:
-                # 方法1: 检查常见的虚拟环境目录名
-                common_venv_names = [".venv", "venv", "env", ".env"]
-                for venv_name in common_venv_names:
-                    potential_venv = Path(project_path) / venv_name
-                    logger.debug(
-                        f"检查虚拟环境: {potential_venv}, 存在: {potential_venv.exists()}"
-                    )
-                    if potential_venv.exists() and potential_venv.is_dir():
-                        # 验证是否真的是虚拟环境（检查activate脚本）
-                        is_valid = self._is_valid_venv(potential_venv)
-                        logger.debug(f"虚拟环境验证结果: {is_valid}")
-                        if is_valid:
-                            venv_exists = True
-                            venv_path = str(potential_venv)
-                            logger.info(f"找到虚拟环境: {venv_path}")
-                            break
-
-                # 方法2: 如果方法1没找到，扫描项目根目录查找任何包含activate脚本的目录
-                if not venv_exists:
-                    try:
-                        for item in Path(project_path).iterdir():
-                            if item.is_dir() and self._is_valid_venv(item):
-                                venv_exists = True
-                                venv_path = str(item)
-                                break
-                    except (PermissionError, OSError):
-                        pass
-
-            # 如果项目目录存在虚拟环境，认为配置正确
-            if venv_exists:
-                return {
-                    "status": "success",
-                    "in_virtual_env": in_venv,
-                    "venv_exists": True,
-                    "venv_path": venv_path,
-                    "message": f"项目已配置虚拟环境: {venv_path}",
-                }
-            elif in_venv:
-                # 当前在虚拟环境中运行
-                return {
-                    "status": "success",
-                    "in_virtual_env": True,
-                    "python_prefix": sys.prefix,
-                    "message": "运行在虚拟环境中",
-                }
-            else:
-                return {
-                    "status": "warning",
-                    "in_virtual_env": False,
-                    "venv_exists": False,
-                    "message": "未检测到虚拟环境，建议使用虚拟环境隔离依赖",
-                }
-
-        except Exception as e:
-            logger.error(f"虚拟环境检测失败: {e}")
-            return {"status": "error", "message": f"虚拟环境检测失败: {str(e)}"}
 
     def _check_system_libraries(self, env_config: Dict[str, Any]) -> Dict[str, Any]:
         """检测系统运行库"""
@@ -290,6 +133,11 @@ class EnvironmentDependencyDetector(DetectionRule):
                     r"C:\Windows\SysWOW64\vulkan-1.dll",
                 ],
                 "description": "Vulkan Runtime",
+            },
+            "cuda": {
+                "check_method": "registry",
+                "registry_path": r"SOFTWARE\NVIDIA Corporation\NVIDIA GPU Computing Toolkit\CUDA",
+                "description": "NVIDIA CUDA Toolkit",
             },
         }
 
@@ -546,18 +394,19 @@ class EnvironmentDependencyDetector(DetectionRule):
             return {"status": "error", "message": f"嵌入式 Python 检测失败: {str(e)}"}
 
     def _analyze_environment_status(self, results: Dict[str, Any]) -> str:
-        """分析整体环境状态"""
+        """分析整体环境状态，专注于系统级依赖"""
         if not results:
             return "unknown"
 
-        critical_checks = ["python_version", "virtual_environment"]
-
-        # 检查关键项目
-        for check_name in critical_checks:
-            if check_name in results:
-                check_result = results[check_name]
-                if check_result.get("status") == "error":
-                    return "error"
+        # 检查系统库状态
+        system_libs = results.get("system_libraries", {})
+        if system_libs.get("status") == "error":
+            return "error"
+        
+        # 检查项目依赖状态
+        project_deps = results.get("project_dependencies", {})
+        if project_deps.get("status") == "error":
+            return "error"
 
         # 检查其他项目
         error_count = sum(1 for r in results.values() if r.get("status") == "error")
@@ -571,7 +420,7 @@ class EnvironmentDependencyDetector(DetectionRule):
             return "success"
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
-        """获取环境问题修复建议"""
+        """获取环境问题修复建议，专注于系统级依赖"""
         status = result.get("status", "unknown")
         details = result.get("details", {})
 
@@ -581,13 +430,21 @@ class EnvironmentDependencyDetector(DetectionRule):
         elif status == "warning":
             suggestions = []
 
-            # Python版本警告
-            if details.get("python_version", {}).get("status") == "warning":
-                suggestions.append("建议升级Python版本以满足项目要求")
+            # 系统库警告
+            system_libs_detail = details.get("system_libraries", {})
+            if system_libs_detail.get("status") == "warning":
+                warning_libs = [
+                    lib
+                    for lib, result in system_libs_detail.get("details", {}).items()
+                    if result.get("status") == "warning"
+                ]
+                if warning_libs:
+                    suggestions.append(f"系统库警告: {', '.join(warning_libs)}")
 
-            # 虚拟环境警告
-            if details.get("virtual_environment", {}).get("status") == "warning":
-                suggestions.append("建议使用虚拟环境隔离项目依赖")
+            # 项目依赖警告
+            project_deps_detail = details.get("project_dependencies", {})
+            if project_deps_detail.get("status") == "warning":
+                suggestions.append("项目依赖存在警告，建议检查相关配置")
 
             return (
                 "；".join(suggestions)
@@ -597,13 +454,6 @@ class EnvironmentDependencyDetector(DetectionRule):
 
         elif status == "error":
             suggestions = []
-
-            # Python版本错误
-            python_version_detail = details.get("python_version", {})
-            if python_version_detail.get("status") == "error":
-                current = python_version_detail.get("current_version", "未知")
-                required = python_version_detail.get("required_version", "未知")
-                suggestions.append(f"需要安装Python {required}（当前: {current}）")
 
             # 系统库错误
             system_libs_detail = details.get("system_libraries", {})
@@ -615,6 +465,11 @@ class EnvironmentDependencyDetector(DetectionRule):
                 ]
                 if failed_libs:
                     suggestions.append(f"需要安装系统库: {', '.join(failed_libs)}")
+
+            # 项目依赖错误
+            project_deps_detail = details.get("project_dependencies", {})
+            if project_deps_detail.get("status") == "error":
+                suggestions.append("项目依赖存在错误，建议检查相关配置")
 
             return (
                 "；".join(suggestions)
