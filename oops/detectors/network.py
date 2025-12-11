@@ -87,6 +87,7 @@ class NetworkConnectivityDetector(DetectionRule):
             repo_url = (
                 repo_item.get("url") if isinstance(repo_item, dict) else repo_item
             )
+            # Git检测暂时不支持代理控制
             task = self._check_git_repo(repo_url)
             tasks.append(task)
 
@@ -96,8 +97,9 @@ class NetworkConnectivityDetector(DetectionRule):
             source_url = (
                 source_item.get("url") if isinstance(source_item, dict) else source_item
             )
-            task = self._check_pypi_source(source_url)
-            tasks.append(task)
+            # 创建两个任务：一个使用代理，一个不使用代理
+            tasks.append(self._check_pypi_source(source_url, use_proxy=True))
+            tasks.append(self._check_pypi_source(source_url, use_proxy=False))
 
         # 镜像源检测
         mirror_sites = merged_config.get("mirror_sites", [])
@@ -105,8 +107,9 @@ class NetworkConnectivityDetector(DetectionRule):
             mirror_url = (
                 mirror_item.get("url") if isinstance(mirror_item, dict) else mirror_item
             )
-            task = self._check_mirror_site(mirror_url)
-            tasks.append(task)
+            # 创建两个任务：一个使用代理，一个不使用代理
+            tasks.append(self._check_mirror_site(mirror_url, use_proxy=True))
+            tasks.append(self._check_mirror_site(mirror_url, use_proxy=False))
 
         # 项目官网检测
         project_websites = merged_config.get("project_websites", [])
@@ -116,8 +119,9 @@ class NetworkConnectivityDetector(DetectionRule):
                 if isinstance(website_item, dict)
                 else website_item
             )
-            task = self._check_website(website_url)
-            tasks.append(task)
+            # 创建两个任务：一个使用代理，一个不使用代理
+            tasks.append(self._check_website(website_url, use_proxy=True))
+            tasks.append(self._check_website(website_url, use_proxy=False))
 
         # GitHub代理检测
         github_proxies = merged_config.get("github_proxies", [])
@@ -142,15 +146,17 @@ class NetworkConnectivityDetector(DetectionRule):
             proxy_url = (
                 proxy_item.get("url") if isinstance(proxy_item, dict) else proxy_item
             )
-            task = self._check_github_proxy(proxy_url)
-            tasks.append(task)
+            # 创建两个任务：一个使用代理，一个不使用代理
+            tasks.append(self._check_github_proxy(proxy_url, use_proxy=True))
+            tasks.append(self._check_github_proxy(proxy_url, use_proxy=False))
 
         # 米哈游API检测（可选）
         mihoyo_api = merged_config.get("mihoyo_api", [])
         for api_item in mihoyo_api:
             api_url = api_item.get("url") if isinstance(api_item, dict) else api_item
-            task = self._check_website(api_url)
-            tasks.append(task)
+            # 创建两个任务：一个使用代理，一个不使用代理
+            tasks.append(self._check_website(api_url, use_proxy=True))
+            tasks.append(self._check_website(api_url, use_proxy=False))
 
         # 并行执行所有检测
         if tasks:
@@ -292,7 +298,7 @@ class NetworkConnectivityDetector(DetectionRule):
                 }
             }
 
-    async def _check_pypi_source(self, source_url: str) -> Dict[str, Any]:
+    async def _check_pypi_source(self, source_url: str, use_proxy: bool = False) -> Dict[str, Any]:
         """检测PyPI源连通性"""
         start_time = time.time()
         try:
@@ -301,197 +307,265 @@ class NetworkConnectivityDetector(DetectionRule):
                 source_url += "/"
             test_url = f"{source_url}pip/"
 
-            async with aiohttp.ClientSession() as session:
+            # 创建客户端会话配置
+            session_kwargs = {}
+            if use_proxy:
+                # 使用系统代理
+                session_kwargs["trust_env"] = True
+            else:
+                # 不使用代理
+                session_kwargs["trust_env"] = False
+                session_kwargs["connector"] = aiohttp.TCPConnector(force_close=True)
+
+            async with aiohttp.ClientSession(**session_kwargs) as session:
                 async with session.get(
                     test_url, timeout=aiohttp.ClientTimeout(total=self.timeout)
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
 
+                    key = f"{source_url}_(proxy)" if use_proxy else f"{source_url}_(direct)"
                     if response.status == 200:
                         content_length = response.headers.get("Content-Length", 0)
                         return {
-                            source_url: {
+                            key: {
                                 "status": "success",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "content_length": int(content_length),
                                 "type": "pypi_source",
+                                "proxy": use_proxy,
                             }
                         }
                     else:
                         return {
-                            source_url: {
+                            key: {
                                 "status": "failure",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "type": "pypi_source",
+                                "proxy": use_proxy,
                             }
                         }
 
         except asyncio.TimeoutError:
+            key = f"{source_url}_(proxy)" if use_proxy else f"{source_url}_(direct)"
             return {
-                source_url: {
+                key: {
                     "status": "timeout",
                     "error": f"请求超时 ({self.timeout}秒)",
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "pypi_source",
+                    "proxy": use_proxy,
                 }
             }
         except Exception as e:
+            key = f"{source_url}_(proxy)" if use_proxy else f"{source_url}_(direct)"
             return {
-                source_url: {
+                key: {
                     "status": "error",
                     "error": str(e),
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "pypi_source",
+                    "proxy": use_proxy,
                 }
             }
 
-    async def _check_mirror_site(self, mirror_url: str) -> Dict[str, Any]:
+    async def _check_mirror_site(self, mirror_url: str, use_proxy: bool = False) -> Dict[str, Any]:
         """检测镜像站点连通性"""
         start_time = time.time()
         try:
-            async with aiohttp.ClientSession() as session:
+            # 创建客户端会话配置
+            session_kwargs = {}
+            if use_proxy:
+                # 使用系统代理
+                session_kwargs["trust_env"] = True
+            else:
+                # 不使用代理
+                session_kwargs["trust_env"] = False
+                session_kwargs["connector"] = aiohttp.TCPConnector(force_close=True)
+
+            async with aiohttp.ClientSession(**session_kwargs) as session:
                 async with session.get(
                     mirror_url, timeout=aiohttp.ClientTimeout(total=self.timeout)
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
 
+                    key = f"{mirror_url}_(proxy)" if use_proxy else f"{mirror_url}_(direct)"
                     if response.status == 200:
                         content_length = response.headers.get("Content-Length", 0)
                         return {
-                            mirror_url: {
+                            key: {
                                 "status": "success",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "content_length": int(content_length),
                                 "type": "mirror_site",
+                                "proxy": use_proxy,
                             }
                         }
                     else:
                         return {
-                            mirror_url: {
+                            key: {
                                 "status": "failure",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "type": "mirror_site",
+                                "proxy": use_proxy,
                             }
                         }
 
         except asyncio.TimeoutError:
+            key = f"{mirror_url}_(proxy)" if use_proxy else f"{mirror_url}_(direct)"
             return {
-                mirror_url: {
+                key: {
                     "status": "timeout",
                     "error": f"请求超时 ({self.timeout}秒)",
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "mirror_site",
+                    "proxy": use_proxy,
                 }
             }
         except Exception as e:
+            key = f"{mirror_url}_(proxy)" if use_proxy else f"{mirror_url}_(direct)"
             return {
-                mirror_url: {
+                key: {
                     "status": "error",
                     "error": str(e),
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "mirror_site",
+                    "proxy": use_proxy,
                 }
             }
 
-    async def _check_website(self, website_url: str) -> Dict[str, Any]:
+    async def _check_website(self, website_url: str, use_proxy: bool = False) -> Dict[str, Any]:
         """检测项目官网连通性"""
         start_time = time.time()
         try:
-            async with aiohttp.ClientSession() as session:
+            # 创建客户端会话配置
+            session_kwargs = {}
+            if use_proxy:
+                # 使用系统代理
+                session_kwargs["trust_env"] = True
+            else:
+                # 不使用代理
+                session_kwargs["trust_env"] = False
+                session_kwargs["connector"] = aiohttp.TCPConnector(force_close=True)
+
+            async with aiohttp.ClientSession(**session_kwargs) as session:
                 async with session.get(
                     website_url, timeout=aiohttp.ClientTimeout(total=self.timeout)
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
 
+                    key = f"{website_url}_(proxy)" if use_proxy else f"{website_url}_(direct)"
                     if response.status == 200:
                         content_length = response.headers.get("Content-Length", 0)
                         return {
-                            website_url: {
+                            key: {
                                 "status": "success",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "content_length": int(content_length),
                                 "type": "project_website",
+                                "proxy": use_proxy,
                             }
                         }
                     else:
                         return {
-                            website_url: {
+                            key: {
                                 "status": "failure",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "type": "project_website",
+                                "proxy": use_proxy,
                             }
                         }
 
         except asyncio.TimeoutError:
+            key = f"{website_url}_(proxy)" if use_proxy else f"{website_url}_(direct)"
             return {
-                website_url: {
+                key: {
                     "status": "timeout",
                     "error": f"请求超时 ({self.timeout}秒)",
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "project_website",
+                    "proxy": use_proxy,
                 }
             }
         except Exception as e:
+            key = f"{website_url}_(proxy)" if use_proxy else f"{website_url}_(direct)"
             return {
-                website_url: {
+                key: {
                     "status": "error",
                     "error": str(e),
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "project_website",
+                    "proxy": use_proxy,
                 }
             }
 
-    async def _check_github_proxy(self, proxy_url: str) -> Dict[str, Any]:
+    async def _check_github_proxy(self, proxy_url: str, use_proxy: bool = False) -> Dict[str, Any]:
         """检测GitHub代理连通性"""
         start_time = time.time()
         try:
-            async with aiohttp.ClientSession() as session:
+            # 创建客户端会话配置
+            session_kwargs = {}
+            if use_proxy:
+                # 使用系统代理
+                session_kwargs["trust_env"] = True
+            else:
+                # 不使用代理
+                session_kwargs["trust_env"] = False
+                session_kwargs["connector"] = aiohttp.TCPConnector(force_close=True)
+
+            async with aiohttp.ClientSession(**session_kwargs) as session:
                 async with session.get(
                     proxy_url, timeout=aiohttp.ClientTimeout(total=self.timeout)
                 ) as response:
                     response_time = (time.time() - start_time) * 1000
 
+                    key = f"{proxy_url}_(proxy)" if use_proxy else f"{proxy_url}_(direct)"
                     if response.status == 200:
                         return {
-                            proxy_url: {
+                            key: {
                                 "status": "success",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "type": "github_proxy",
+                                "proxy": use_proxy,
                             }
                         }
                     else:
                         return {
-                            proxy_url: {
+                            key: {
                                 "status": "failure",
                                 "response_time_ms": response_time,
                                 "status_code": response.status,
                                 "type": "github_proxy",
+                                "proxy": use_proxy,
                             }
                         }
 
         except asyncio.TimeoutError:
+            key = f"{proxy_url}_(proxy)" if use_proxy else f"{proxy_url}_(direct)"
             return {
-                proxy_url: {
+                key: {
                     "status": "timeout",
                     "error": f"请求超时 ({self.timeout}秒)",
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "github_proxy",
+                    "proxy": use_proxy,
                 }
             }
         except Exception as e:
+            key = f"{proxy_url}_(proxy)" if use_proxy else f"{proxy_url}_(direct)"
             return {
-                proxy_url: {
+                key: {
                     "status": "error",
                     "error": str(e),
                     "response_time_ms": (time.time() - start_time) * 1000,
                     "type": "github_proxy",
+                    "proxy": use_proxy,
                 }
             }
 
