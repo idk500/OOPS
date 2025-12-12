@@ -67,21 +67,62 @@ class NetworkConnectivityDetector(DetectionRule):
 
     async def check_async(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """异步执行网络检测"""
-        # 检查是否启用
-        network_config = config.get("checks", {}).get("network", {})
-        if not network_config.get("enabled", False):
-            return {"status": "skipped", "message": "网络检测已禁用"}
-
+        # 检查配置
+        config_result = self._check_config(config)
+        if config_result:
+            return config_result
+        
         # 合并默认配置和项目配置
         merged_config = self.default_loader.merge_network_config(config)
 
-        if not merged_config:
-            return {"status": "skipped", "message": "网络检测配置为空"}
-
-        results = {}
+        # 创建检测任务
+        tasks = await self._create_detection_tasks(merged_config)
+        
+        # 执行任务并处理结果
+        results = await self._execute_tasks(tasks)
+        
+        # 分析整体网络状态
+        overall_status = self._analyze_network_status(results)
+        
+        # 生成详细消息
+        message = self._generate_message(results)
+        
+        return {"status": overall_status, "message": message, "details": results}
+    
+    def _check_config(self, config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+        """检查配置是否启用和有效"""
+        network_config = config.get("checks", {}).get("network", {})
+        if not network_config.get("enabled", False):
+            return {"status": "skipped", "message": "网络检测已禁用"}
+        return None
+    
+    async def _create_detection_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建所有检测任务"""
         tasks = []
-
-        # Git仓库检测
+        
+        # Git仓库检测任务
+        tasks.extend(await self._create_git_repo_tasks(merged_config))
+        
+        # PyPI源检测任务
+        tasks.extend(await self._create_pypi_source_tasks(merged_config))
+        
+        # 镜像源检测任务
+        tasks.extend(await self._create_mirror_site_tasks(merged_config))
+        
+        # 项目官网检测任务
+        tasks.extend(await self._create_project_website_tasks(merged_config))
+        
+        # GitHub代理检测任务
+        tasks.extend(await self._create_github_proxy_tasks(merged_config))
+        
+        # 米哈游API检测任务
+        tasks.extend(await self._create_mihoyo_api_tasks(merged_config))
+        
+        return tasks
+    
+    async def _create_git_repo_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建Git仓库检测任务"""
+        tasks = []
         git_repos = merged_config.get("git_repos", [])
         for repo_item in git_repos:
             repo_url = (
@@ -90,8 +131,11 @@ class NetworkConnectivityDetector(DetectionRule):
             # Git检测暂时不支持代理控制
             task = self._check_git_repo(repo_url)
             tasks.append(task)
-
-        # PyPI源检测
+        return tasks
+    
+    async def _create_pypi_source_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建PyPI源检测任务"""
+        tasks = []
         pypi_sources = merged_config.get("pypi_sources", [])
         for source_item in pypi_sources:
             source_url = (
@@ -100,8 +144,11 @@ class NetworkConnectivityDetector(DetectionRule):
             # 创建两个任务：一个使用代理，一个不使用代理
             tasks.append(self._check_pypi_source(source_url, use_proxy=True))
             tasks.append(self._check_pypi_source(source_url, use_proxy=False))
-
-        # 镜像源检测
+        return tasks
+    
+    async def _create_mirror_site_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建镜像源检测任务"""
+        tasks = []
         mirror_sites = merged_config.get("mirror_sites", [])
         for mirror_item in mirror_sites:
             mirror_url = (
@@ -110,8 +157,11 @@ class NetworkConnectivityDetector(DetectionRule):
             # 创建两个任务：一个使用代理，一个不使用代理
             tasks.append(self._check_mirror_site(mirror_url, use_proxy=True))
             tasks.append(self._check_mirror_site(mirror_url, use_proxy=False))
-
-        # 项目官网检测
+        return tasks
+    
+    async def _create_project_website_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建项目官网检测任务"""
+        tasks = []
         project_websites = merged_config.get("project_websites", [])
         for website_item in project_websites:
             website_url = (
@@ -122,43 +172,83 @@ class NetworkConnectivityDetector(DetectionRule):
             # 创建两个任务：一个使用代理，一个不使用代理
             tasks.append(self._check_website(website_url, use_proxy=True))
             tasks.append(self._check_website(website_url, use_proxy=False))
-
-        # GitHub代理检测
+        return tasks
+    
+    async def _create_github_proxy_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建GitHub代理检测任务"""
+        tasks = []
         github_proxies = merged_config.get("github_proxies", [])
 
-        # 动态获取 GitHub 代理地址
-        dynamic_proxies = [
-            p for p in github_proxies if isinstance(p, dict) and p.get("dynamic")
-        ]
+        # 处理动态代理
+        github_proxies = await self._process_dynamic_proxies(github_proxies)
+        
+        # 为每个代理创建检测任务
+        for proxy_item in github_proxies:
+            proxy_url = self._get_proxy_url(proxy_item)
+            tasks.extend(self._create_proxy_detection_tasks(proxy_url))
+        
+        return tasks
+    
+    async def _process_dynamic_proxies(self, github_proxies: List[Any]) -> List[Any]:
+        """处理动态代理配置"""
+        dynamic_proxies = self._get_dynamic_proxies(github_proxies)
+        
         if dynamic_proxies:
             latest_proxy = await GhProxyUpdater.fetch_latest_proxy()
             if latest_proxy:
                 # 将动态获取的代理添加到检测列表
-                github_proxies = [
+                return [
                     {"url": latest_proxy, "name": "动态代理", "type": "github_proxy"}
-                ] + [
-                    p
-                    for p in github_proxies
-                    if not (isinstance(p, dict) and p.get("dynamic"))
-                ]
-
-        for proxy_item in github_proxies:
-            proxy_url = (
-                proxy_item.get("url") if isinstance(proxy_item, dict) else proxy_item
-            )
-            # 创建两个任务：一个使用代理，一个不使用代理
-            tasks.append(self._check_github_proxy(proxy_url, use_proxy=True))
-            tasks.append(self._check_github_proxy(proxy_url, use_proxy=False))
-
-        # 米哈游API检测（可选）
+                ] + self._filter_out_dynamic_proxies(github_proxies)
+            else:
+                # 动态获取代理失败，过滤掉原始的dynamic代理
+                return self._filter_out_dynamic_proxies(github_proxies)
+        
+        return github_proxies
+    
+    def _get_dynamic_proxies(self, github_proxies: List[Any]) -> List[Any]:
+        """获取动态代理配置"""
+        return [
+            p for p in github_proxies if isinstance(p, dict) and p.get("dynamic")
+        ]
+    
+    def _filter_out_dynamic_proxies(self, github_proxies: List[Any]) -> List[Any]:
+        """过滤掉动态代理配置"""
+        return [
+            p
+            for p in github_proxies
+            if not (isinstance(p, dict) and p.get("dynamic"))
+        ]
+    
+    def _get_proxy_url(self, proxy_item: Any) -> str:
+        """获取代理URL"""
+        if isinstance(proxy_item, dict):
+            return proxy_item.get("url", "")
+        return proxy_item
+    
+    def _create_proxy_detection_tasks(self, proxy_url: str) -> List[asyncio.Task]:
+        """为单个代理创建检测任务"""
+        # 创建两个任务：一个使用代理，一个不使用代理
+        return [
+            self._check_github_proxy(proxy_url, use_proxy=True),
+            self._check_github_proxy(proxy_url, use_proxy=False)
+        ]
+    
+    async def _create_mihoyo_api_tasks(self, merged_config: Dict[str, Any]) -> List[asyncio.Task]:
+        """创建米哈游API检测任务"""
+        tasks = []
         mihoyo_api = merged_config.get("mihoyo_api", [])
         for api_item in mihoyo_api:
             api_url = api_item.get("url") if isinstance(api_item, dict) else api_item
             # 创建两个任务：一个使用代理，一个不使用代理
             tasks.append(self._check_website(api_url, use_proxy=True))
             tasks.append(self._check_website(api_url, use_proxy=False))
-
-        # 并行执行所有检测
+        return tasks
+    
+    async def _execute_tasks(self, tasks: List[asyncio.Task]) -> Dict[str, Any]:
+        """并行执行任务并处理结果"""
+        results = {}
+        
         if tasks:
             check_results = await asyncio.gather(*tasks, return_exceptions=True)
             for i, result in enumerate(check_results):
@@ -167,13 +257,13 @@ class NetworkConnectivityDetector(DetectionRule):
                     results[f"check_{i}"] = {"status": "error", "error": str(result)}
                 else:
                     results.update(result)
-
-        # 分析整体网络状态
-        overall_status = self._analyze_network_status(results)
-
-        # 生成详细消息
+        
+        return results
+    
+    def _generate_message(self, results: Dict[str, Any]) -> str:
+        """生成检测结果消息"""
         message_parts = [f"网络检测完成，共检测 {len(results)} 个目标"]
-
+        
         # 按类型统计
         type_stats = {}
         for result in results.values():
@@ -227,9 +317,7 @@ class NetworkConnectivityDetector(DetectionRule):
                             f"{type_name}: ⚠️ 全部失败 ({stats['total']}个，可选)"
                         )
 
-        message = "\n".join(message_parts)
-
-        return {"status": overall_status, "message": message, "details": results}
+        return "\n".join(message_parts)
 
     def check(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """同步执行网络检测（包装异步方法）"""
@@ -581,7 +669,20 @@ class NetworkConnectivityDetector(DetectionRule):
         if not results:
             return "unknown"
 
-        # 按类型分组
+        groups = self._group_results_by_type_for_analysis(results)
+        
+        # 检查关键组（必须至少有一个可用）
+        if self._has_critical_issue(groups):
+            return "error"
+
+        # 检查可选组（全部失败才警告）
+        if self._has_warning_issue(groups):
+            return "warning"
+
+        return "success"
+    
+    def _group_results_by_type_for_analysis(self, results: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+        """按类型分组结果用于分析"""
         groups = {
             "git_repo": [],
             "pypi_source": [],
@@ -593,61 +694,76 @@ class NetworkConnectivityDetector(DetectionRule):
         for url, result in results.items():
             result_type = result.get("type", "unknown")
             groups[result_type].append(result)
-
-        # 检查关键组（必须至少有一个可用）
+        
+        return groups
+    
+    def _has_critical_issue(self, groups: Dict[str, List[Dict[str, Any]]]) -> bool:
+        """检查关键组是否有问题"""
         critical_groups = ["git_repo", "pypi_source"]
-        has_critical_issue = False
-
+        
         for group_name in critical_groups:
             group_results = groups[group_name]
-            if group_results:
-                # 检查是否至少有一个成功
-                has_success = any(r.get("status") == "success" for r in group_results)
-                if not has_success:
-                    has_critical_issue = True
-                    break
-
-        if has_critical_issue:
-            return "error"
-
-        # 检查可选组（全部失败才警告）
+            if group_results and not self._has_any_success(group_results):
+                return True
+        
+        return False
+    
+    def _has_warning_issue(self, groups: Dict[str, List[Dict[str, Any]]]) -> bool:
+        """检查可选组是否有问题"""
         optional_groups = [
             "github_proxy",
             "mirror_site",
             "project_website",
         ]
-        has_warning = False
-
+        
         for group_name in optional_groups:
             group_results = groups[group_name]
-            if group_results:
-                # 检查是否全部失败
-                all_failed = all(
-                    r.get("status") in ["failure", "timeout", "error"]
-                    for r in group_results
-                )
-                if all_failed:
-                    has_warning = True
-                    break
-
-        if has_warning:
-            return "warning"
-
-        return "success"
+            if group_results and self._has_all_failed(group_results):
+                return True
+        
+        return False
+    
+    def _has_any_success(self, results: List[Dict[str, Any]]) -> bool:
+        """检查是否至少有一个成功结果"""
+        return any(r.get("status") == "success" for r in results)
+    
+    def _has_all_failed(self, results: List[Dict[str, Any]]) -> bool:
+        """检查是否全部失败"""
+        return all(
+            r.get("status") in ["failure", "timeout", "error"]
+            for r in results
+        )
 
     def get_fix_suggestion(self, result: Dict[str, Any]) -> str:
         """获取网络问题修复建议"""
         status = result.get("status", "unknown")
-        details = result.get("details", {})
-
+        
         # 如果状态正常，返回空字符串（不显示建议）
         if status == "success":
             return ""
 
-        # 分析具体问题
+        details = result.get("details", {})
+        groups = self._group_results_by_type(details)
         suggestions = []
 
-        # 按类型分组分析
+        # 获取各类型的修复建议
+        suggestions.extend(self._get_git_repo_suggestion(groups))
+        suggestions.extend(self._get_pypi_source_suggestion(groups))
+        suggestions.extend(self._get_github_proxy_suggestion(groups))
+
+        if suggestions:
+            return "; ".join(suggestions)
+
+        # 通用建议
+        if status == "warning":
+            return "部分网络连接存在问题，建议使用可用的源"
+        elif status == "error":
+            return "网络连接存在严重问题，请检查网络连接、防火墙设置或DNS配置"
+        else:
+            return "网络状态未知，建议检查网络连接"
+    
+    def _group_results_by_type(self, details: Dict[str, Any]) -> Dict[str, List[tuple]]:
+        """按类型分组结果"""
         groups = {
             "git_repo": [],
             "pypi_source": [],
@@ -658,8 +774,11 @@ class NetworkConnectivityDetector(DetectionRule):
             result_type = detail.get("type", "unknown")
             if result_type in groups:
                 groups[result_type].append((url, detail))
-
-        # Git仓库建议
+        
+        return groups
+    
+    def _get_git_repo_suggestion(self, groups: Dict[str, List[tuple]]) -> List[str]:
+        """获取Git仓库修复建议"""
         git_failed = [
             url for url, d in groups["git_repo"] if d.get("status") != "success"
         ]
@@ -667,12 +786,15 @@ class NetworkConnectivityDetector(DetectionRule):
             url for url, d in groups["git_repo"] if d.get("status") == "success"
         ]
 
+        suggestions = []
         if git_failed and git_success:
             suggestions.append(f"Git仓库: 建议使用可用的源 ({len(git_success)}个可用)")
         elif git_failed and not git_success:
             suggestions.append("Git仓库: 全部失败，请检查网络连接或使用代理")
-
-        # PyPI源建议
+        return suggestions
+    
+    def _get_pypi_source_suggestion(self, groups: Dict[str, List[tuple]]) -> List[str]:
+        """获取PyPI源修复建议"""
         pypi_failed = [
             url for url, d in groups["pypi_source"] if d.get("status") != "success"
         ]
@@ -680,48 +802,71 @@ class NetworkConnectivityDetector(DetectionRule):
             url for url, d in groups["pypi_source"] if d.get("status") == "success"
         ]
 
+        suggestions = []
         if pypi_failed and pypi_success:
             suggestions.append(f"PyPI源: 建议使用可用的源 ({len(pypi_success)}个可用)")
         elif pypi_failed and not pypi_success:
             suggestions.append("PyPI源: 全部失败，请检查网络连接或更换镜像源")
-
-        # GitHub代理建议
+        return suggestions
+    
+    def _get_github_proxy_suggestion(self, groups: Dict[str, List[tuple]]) -> List[str]:
+        """获取GitHub代理修复建议"""
+        proxy_failed, proxy_success = self._get_proxy_status_lists(groups)
+        return self._generate_proxy_suggestions(proxy_failed, proxy_success)
+    
+    def _get_proxy_status_lists(self, groups: Dict[str, List[tuple]]) -> tuple[List[str], List[str]]:
+        """获取代理失败和成功的URL列表"""
         proxy_failed = [
             url for url, d in groups["github_proxy"] if d.get("status") != "success"
         ]
         proxy_success = [
             url for url, d in groups["github_proxy"] if d.get("status") == "success"
         ]
-
+        return proxy_failed, proxy_success
+    
+    def _generate_proxy_suggestions(self, proxy_failed: List[str], proxy_success: List[str]) -> List[str]:
+        """根据代理状态生成建议"""
+        suggestions = []
         if proxy_failed and proxy_success:
-            # 安全处理URL，避免split导致的索引错误
-            failed_urls = []
-            for url in proxy_failed[:2]:
-                try:
-                    # 提取域名部分，处理各种URL格式
-                    if "//" in url:
-                        domain = url.split("//")[1].split("/")[0]
-                    elif "_" in url:
-                        # 处理动态代理格式 like "dynamic_(proxy)"
-                        domain = url.split("_")[0]
-                    else:
-                        domain = url
-                    failed_urls.append(domain)
-                except Exception:
-                    failed_urls.append(url)
-            
-            # 去重，避免重复显示相同的域名
-            unique_failed_urls = list(set(failed_urls))
-            suggestions.append(f"GitHub代理: 避免使用 {', '.join(unique_failed_urls)}")
+            self._add_partial_failure_suggestions(proxy_failed, suggestions)
         elif proxy_failed and not proxy_success and len(proxy_failed) > 0:
-            suggestions.append("GitHub代理: 全部失败，建议直连或使用其他代理")
-
-        if suggestions:
-            return "; ".join(suggestions)
-
-        if status == "warning":
-            return "部分网络连接存在问题，建议使用可用的源"
-        elif status == "error":
-            return "网络连接存在严重问题，请检查网络连接、防火墙设置或DNS配置"
-        else:
-            return "网络状态未知，建议检查网络连接"
+            self._add_total_failure_suggestions(suggestions)
+        return suggestions
+    
+    def _add_partial_failure_suggestions(self, proxy_failed: List[str], suggestions: List[str]) -> None:
+        """添加部分失败的建议"""
+        failed_domains = self._extract_unique_failed_domains(proxy_failed[:2])
+        if failed_domains:
+            suggestions.append(f"GitHub代理: 避免使用 {', '.join(failed_domains)}")
+    
+    def _add_total_failure_suggestions(self, suggestions: List[str]) -> None:
+        """添加全部失败的建议"""
+        suggestions.append("GitHub代理: 全部失败，建议直连或使用其他代理")
+    
+    def _extract_unique_failed_domains(self, proxy_failed: List[str]) -> List[str]:
+        """从失败的代理URL中提取唯一域名"""
+        failed_domains = []
+        for url in proxy_failed:
+            domain = self._extract_domain_safely(url)
+            if domain and domain != "dynamic":
+                failed_domains.append(domain)
+        return list(set(failed_domains))
+    
+    def _extract_domain_safely(self, url: str) -> Optional[str]:
+        """安全地从URL中提取域名"""
+        try:
+            # 跳过任何包含"dynamic"的URL
+            if "dynamic" in url.lower():
+                return None
+            
+            # 提取域名部分，处理各种URL格式
+            if "//" in url:
+                return url.split("//")[1].split("/")[0]
+            elif "_" in url:
+                # 处理格式 like "domain_(proxy)"
+                return url.split("_")[0]
+            else:
+                return url
+        except Exception:
+            # 跳过异常情况，避免显示无意义的内容
+            return None

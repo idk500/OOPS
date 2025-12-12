@@ -424,6 +424,7 @@ class DiagnosticSuite:
                 "total_checks": 0,
                 "completed": 0,
                 "failed": 0,
+                "skipped": 0,
                 "critical_issues": 0,
                 "error_issues": 0,
                 "warning_issues": 0,
@@ -432,6 +433,7 @@ class DiagnosticSuite:
         total = len(self.results)
         completed = len([r for r in self.results if r.status == CheckStatus.COMPLETED])
         failed = len([r for r in self.results if r.status == CheckStatus.FAILED])
+        skipped = len([r for r in self.results if r.status == CheckStatus.SKIPPED])
 
         # 统计问题严重程度
         critical_issues = len(
@@ -444,14 +446,20 @@ class DiagnosticSuite:
             [r for r in self.results if r.severity == SeverityLevel.WARNING]
         )
 
+        # 计算成功率时排除跳过的项目
+        successful = completed
+        total_for_success_rate = completed + failed
+        success_rate = (successful / total_for_success_rate * 100) if total_for_success_rate > 0 else 0
+
         return {
             "total_checks": total,
             "completed": completed,
             "failed": failed,
+            "skipped": skipped,
             "critical_issues": critical_issues,
             "error_issues": error_issues,
             "warning_issues": warning_issues,
-            "success_rate": (completed / total * 100) if total > 0 else 0,
+            "success_rate": success_rate,
         }
 
     def get_results_by_severity(self, severity: SeverityLevel) -> List[CheckResult]:

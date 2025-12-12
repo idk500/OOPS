@@ -90,3 +90,4 @@ build/dist/
 
 ZenlessZoneZero-OneDragon-v2.3.3-Full-Environment/
 *.zip
+.trae/

@@ -439,6 +439,10 @@ class SummaryModule(ReportModule):
                     <span class="stat-value">{summary.get('failed', 0)}</span>
                 </div>
                 <div class="stat-item">
+                    <span class="stat-label">跳过项目</span>
+                    <span class="stat-value">{summary.get('skipped', 0)}</span>
+                </div>
+                <div class="stat-item">
                     <span class="stat-label">关键问题</span>
                     <span class="stat-value">{summary.get('critical_issues', 0)}</span>
                 </div>

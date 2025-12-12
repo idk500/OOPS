@@ -24,14 +24,14 @@ checks:
     
     # 项目官网和相关网站
     project_websites:
-    - url: https://one-dragon.org
+    - url: https://one-dragon.com
       name: 一条龙官网
     - url: https://one-dragon.com/zzz/zh/home.html
-      name: 一条龙项目主页
+      name: 绝区零一条龙项目主页
     - url: https://one-dragon.com/notice/zzz/notice.json
-      name: 公告系统
+      name: 绝区零一条龙项目公告系统
     - url: https://zzz.mihoyo.com
-      name: 绝区零官网
+      name: 米哈游绝区零官网
     
     # 米哈游 API（可选检测）
     mihoyo_api:

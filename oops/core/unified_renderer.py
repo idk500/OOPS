@@ -303,23 +303,20 @@ class UnifiedDetectionRenderer:
 
                 if total_count > 0:
                     type_name = group_data["name"]
-                    if success_count > 0:
-                        # 主分类项
-                        success_items.append(
-                            f"【{type_name}】{success_count}/{total_count} 可用"
-                        )
-                        # 添加具体的成功项（使用特殊标记，后续渲染时处理）
-                        for item in group_data["success"]:
-                            success_items.append(f"INDENT:{item}")
-
+                    # 只生成一个摘要，显示成功/总数 可用
+                    success_items.append(
+                        f"【{type_name}】{success_count}/{total_count} 可用"
+                    )
+                    
+                    # 添加具体的成功项到详细信息
+                    for item in group_data["success"]:
+                        success_items.append(f"INDENT:{item}")
+                    
+                    # 添加具体的失败项到详细信息
                     if failed_count > 0:
-                        # 主分类项
-                        error_items.append(f"【{type_name}】{failed_count} 项不可用")
-                        # 只添加前3个失败项到错误列表，避免过长
-                        for item in group_data["failed"][:3]:
+                        # 只在详细信息中显示失败项，不生成单独的失败摘要
+                        for item in group_data["failed"]:
                             error_items.append(f"INDENT:{item}")
-                        if failed_count > 3:
-                            error_items.append(f"INDENT:... 还有 {failed_count - 3} 项")
 
         else:
             # 通用处理：遍历details中的所有项

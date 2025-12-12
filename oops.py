@@ -245,6 +245,7 @@ async def display_diagnostic_results(
     print(f"\n[*] 检测完成!")
     print(f"   [+] 成功: {summary['completed']} 项")
     print(f"   [-] 失败: {summary['failed']} 项")
+    print(f"   [~] 跳过: {summary.get('skipped', 0)} 项")
     total_issues = (
         summary["critical_issues"] + summary["error_issues"] + summary["warning_issues"]
     )
