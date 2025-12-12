@@ -298,6 +298,9 @@ class DiagnosticSuite:
             elif check_status == "critical":
                 result.status = CheckStatus.FAILED
                 result.severity = SeverityLevel.CRITICAL
+            elif check_status == "skipped":
+                result.status = CheckStatus.SKIPPED
+                result.severity = SeverityLevel.INFO
             else:
                 result.status = CheckStatus.COMPLETED
                 result.severity = SeverityLevel.INFO
@@ -449,7 +452,11 @@ class DiagnosticSuite:
         # 计算成功率时排除跳过的项目
         successful = completed
         total_for_success_rate = completed + failed
-        success_rate = (successful / total_for_success_rate * 100) if total_for_success_rate > 0 else 0
+        success_rate = (
+            (successful / total_for_success_rate * 100)
+            if total_for_success_rate > 0
+            else 0
+        )
 
         return {
             "total_checks": total,

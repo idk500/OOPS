@@ -34,7 +34,9 @@ class ProjectVersionDetector(DetectionRule):
             if check_result:
                 return check_result
 
-            project_path = config.get("project", {}).get("paths", {}).get("install_path", "")
+            project_path = (
+                config.get("project", {}).get("paths", {}).get("install_path", "")
+            )
             version_config = config.get("checks", {}).get("project_version", {})
 
             # 收集版本信息
@@ -43,7 +45,9 @@ class ProjectVersionDetector(DetectionRule):
             remote_version = await self._get_remote_version(version_config)
 
             # 分析版本信息并生成结果
-            return self._analyze_version_info(local_version, launcher_version, remote_version)
+            return self._analyze_version_info(
+                local_version, launcher_version, remote_version
+            )
 
         except Exception as e:
             logger.error(f"项目版本检测失败: {e}")
@@ -55,12 +59,16 @@ class ProjectVersionDetector(DetectionRule):
         if not version_config.get("enabled", False):
             return {"status": "skipped", "message": "项目版本检测未启用"}
 
-        project_path = config.get("project", {}).get("paths", {}).get("install_path", "")
+        project_path = (
+            config.get("project", {}).get("paths", {}).get("install_path", "")
+        )
         if not project_path:
             return {"status": "skipped", "message": "未配置项目路径"}
         return None
 
-    async def _get_remote_version(self, version_config: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    async def _get_remote_version(
+        self, version_config: Dict[str, Any]
+    ) -> Optional[Dict[str, Any]]:
         """获取远程版本信息"""
         remote_version = None
         gitee_repo = version_config.get("gitee_repo", "")
@@ -69,26 +77,39 @@ class ProjectVersionDetector(DetectionRule):
         if gitee_repo:
             parts = gitee_repo.split("/")
             if len(parts) == 2:
-                remote_version = await self._get_remote_version_gitee(parts[0], parts[1])
+                remote_version = await self._get_remote_version_gitee(
+                    parts[0], parts[1]
+                )
 
         if not remote_version and github_repo:
             parts = github_repo.split("/")
             if len(parts) == 2:
-                remote_version = await self._get_remote_version_github(parts[0], parts[1])
+                remote_version = await self._get_remote_version_github(
+                    parts[0], parts[1]
+                )
 
         return remote_version
 
-    def _analyze_version_info(self, local_version: Dict[str, Any], launcher_version: Dict[str, Any], remote_version: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+    def _analyze_version_info(
+        self,
+        local_version: Dict[str, Any],
+        launcher_version: Dict[str, Any],
+        remote_version: Optional[Dict[str, Any]],
+    ) -> Dict[str, Any]:
         """分析版本信息并生成检测结果"""
         issues = []
         warnings = []
         recommendations = []
 
         if not local_version.get("is_git_repo"):
-            return self._generate_non_git_result(local_version, launcher_version, issues, warnings, recommendations)
+            return self._generate_non_git_result(
+                local_version, launcher_version, issues, warnings, recommendations
+            )
 
         # 如果本地版本信息不完整
-        if not local_version.get("current_tag") and not local_version.get("current_commit"):
+        if not local_version.get("current_tag") and not local_version.get(
+            "current_commit"
+        ):
             warnings.append("无法获取本地版本信息")
 
         # 检查启动器版本
@@ -96,7 +117,13 @@ class ProjectVersionDetector(DetectionRule):
 
         # 比较版本并生成警告和建议
         if remote_version:
-            self._compare_versions(local_version, launcher_version, remote_version, warnings, recommendations)
+            self._compare_versions(
+                local_version,
+                launcher_version,
+                remote_version,
+                warnings,
+                recommendations,
+            )
 
         version_info = {
             "local": local_version,
@@ -120,7 +147,14 @@ class ProjectVersionDetector(DetectionRule):
             },
         }
 
-    def _generate_non_git_result(self, local_version: Dict[str, Any], launcher_version: Dict[str, Any], issues: List[str], warnings: List[str], recommendations: List[str]) -> Dict[str, Any]:
+    def _generate_non_git_result(
+        self,
+        local_version: Dict[str, Any],
+        launcher_version: Dict[str, Any],
+        issues: List[str],
+        warnings: List[str],
+        recommendations: List[str],
+    ) -> Dict[str, Any]:
         """生成非Git仓库的检测结果"""
         return {
             "status": "info",
@@ -134,7 +168,9 @@ class ProjectVersionDetector(DetectionRule):
             },
         }
 
-    def _check_launcher_version(self, launcher_version: Dict[str, Any], warnings: List[str]) -> None:
+    def _check_launcher_version(
+        self, launcher_version: Dict[str, Any], warnings: List[str]
+    ) -> None:
         """检查启动器版本并生成警告"""
         launcher_ver = launcher_version.get("version", "")
         if not launcher_version.get("exists"):
@@ -143,7 +179,14 @@ class ProjectVersionDetector(DetectionRule):
             error_msg = launcher_version.get("error", "未知错误")
             warnings.append(f"无法获取启动器版本: {error_msg}")
 
-    def _compare_versions(self, local_version: Dict[str, Any], launcher_version: Dict[str, Any], remote_version: Dict[str, Any], warnings: List[str], recommendations: List[str]) -> None:
+    def _compare_versions(
+        self,
+        local_version: Dict[str, Any],
+        launcher_version: Dict[str, Any],
+        remote_version: Dict[str, Any],
+        warnings: List[str],
+        recommendations: List[str],
+    ) -> None:
         """比较版本并生成警告和建议"""
         remote_tag = remote_version.get("tag_name", "")
         launcher_ver = launcher_version.get("version", "")
@@ -151,19 +194,25 @@ class ProjectVersionDetector(DetectionRule):
         # 优先使用启动器版本进行比对
         if launcher_ver:
             if launcher_ver != remote_tag:
-                warnings.append(f"启动器版本 ({launcher_ver}) 与远程最新版本 ({remote_tag}) 不一致")
+                warnings.append(
+                    f"启动器版本 ({launcher_ver}) 与远程最新版本 ({remote_tag}) 不一致"
+                )
                 recommendations.append(f"建议更新到最新版本 {remote_tag}")
         else:
             # 如果没有启动器版本，使用 Git tag 进行比对
             local_tag = local_version.get("current_tag", "")
             if local_tag:
                 if local_tag != remote_tag:
-                    warnings.append(f"本地 Git 标签 ({local_tag}) 与远程最新版本 ({remote_tag}) 不一致")
+                    warnings.append(
+                        f"本地 Git 标签 ({local_tag}) 与远程最新版本 ({remote_tag}) 不一致"
+                    )
                     recommendations.append(f"建议更新到最新版本 {remote_tag}")
             else:
                 # 既没有启动器版本，也没有 Git tag
                 warnings.append("无法确定本地版本（未找到启动器或 Git 标签）")
-                recommendations.append(f"远程最新版本: {remote_tag}，建议检查是否需要更新")
+                recommendations.append(
+                    f"远程最新版本: {remote_tag}，建议检查是否需要更新"
+                )
 
     def check(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """执行项目版本检测（同步版本，用于兼容）"""

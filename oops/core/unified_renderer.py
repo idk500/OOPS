@@ -307,11 +307,11 @@ class UnifiedDetectionRenderer:
                     success_items.append(
                         f"【{type_name}】{success_count}/{total_count} 可用"
                     )
-                    
+
                     # 添加具体的成功项到详细信息
                     for item in group_data["success"]:
                         success_items.append(f"INDENT:{item}")
-                    
+
                     # 添加具体的失败项到详细信息
                     if failed_count > 0:
                         # 只在详细信息中显示失败项，不生成单独的失败摘要

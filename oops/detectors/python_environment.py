@@ -240,12 +240,16 @@ class PythonEnvironmentDetector(DetectionRule):
             project_path_obj = Path(project_path)
 
             # 首先在项目路径中查找
-            venv_path = self._find_venv_in_directory(project_path_obj, common_venv_names)
+            venv_path = self._find_venv_in_directory(
+                project_path_obj, common_venv_names
+            )
             if venv_path:
                 venv_exists = True
             else:
                 # 如果没找到，向上查找父目录（最多3层）
-                venv_path = self._find_venv_in_parent_directories(project_path_obj, common_venv_names, max_levels=3)
+                venv_path = self._find_venv_in_parent_directories(
+                    project_path_obj, common_venv_names, max_levels=3
+                )
                 if venv_path:
                     venv_exists = True
                 else:
@@ -260,7 +264,9 @@ class PythonEnvironmentDetector(DetectionRule):
             "venv_path": venv_path,
         }
 
-    def _find_venv_in_directory(self, directory: Path, venv_names: List[str]) -> Optional[str]:
+    def _find_venv_in_directory(
+        self, directory: Path, venv_names: List[str]
+    ) -> Optional[str]:
         """在指定目录中查找虚拟环境"""
         for venv_name in venv_names:
             potential_venv = directory / venv_name
@@ -269,7 +275,9 @@ class PythonEnvironmentDetector(DetectionRule):
                     return str(potential_venv)
         return None
 
-    def _find_venv_in_parent_directories(self, start_path: Path, venv_names: List[str], max_levels: int = 3) -> Optional[str]:
+    def _find_venv_in_parent_directories(
+        self, start_path: Path, venv_names: List[str], max_levels: int = 3
+    ) -> Optional[str]:
         """向上查找父目录中的虚拟环境"""
         current_path = start_path
         for _ in range(max_levels):
@@ -375,7 +383,7 @@ class PythonEnvironmentDetector(DetectionRule):
 
     def _parse_requirements(self, requirements_file: str) -> Dict[str, Optional[str]]:
         """解析 requirements.txt，支持多种格式
-        
+
         支持的格式：
         - package==1.0.0
         - package>=1.0.0
@@ -394,25 +402,29 @@ class PythonEnvironmentDetector(DetectionRule):
                     line = line.strip()
                     if not line or line.startswith("#"):
                         continue
-                    
-                    parsed_packages = self._handle_requirements_line(line, requirements_file)
+
+                    parsed_packages = self._handle_requirements_line(
+                        line, requirements_file
+                    )
                     packages.update(parsed_packages)
         except Exception as e:
             logger.error(f"解析 requirements.txt 失败: {e}")
         return packages
 
-    def _handle_requirements_line(self, line: str, requirements_file: str) -> Dict[str, Optional[str]]:
+    def _handle_requirements_line(
+        self, line: str, requirements_file: str
+    ) -> Dict[str, Optional[str]]:
         """处理单行 requirements 内容"""
         packages = {}
-        
+
         # 处理递归包含
         if line.startswith("-r "):
             return self._handle_include_line(line, requirements_file)
-        
+
         # 处理可编辑安装
         if line.startswith("-e "):
             return packages
-        
+
         # 处理带有额外依赖的包
         if "[" in line and "]" in line:
             # 提取包名，移除额外依赖
@@ -421,15 +433,17 @@ class PythonEnvironmentDetector(DetectionRule):
             full_line = pkg_part + version_part
         else:
             full_line = line
-        
+
         # 解析包名和版本约束
         pkg_name, version = self._parse_package_version(full_line)
         if pkg_name:
             packages[pkg_name.strip()] = version.strip() if version else None
-        
+
         return packages
 
-    def _handle_include_line(self, line: str, requirements_file: str) -> Dict[str, Optional[str]]:
+    def _handle_include_line(
+        self, line: str, requirements_file: str
+    ) -> Dict[str, Optional[str]]:
         """处理 requirements 中的 include 行"""
         packages = {}
         include_file = line[3:].strip()
@@ -443,7 +457,7 @@ class PythonEnvironmentDetector(DetectionRule):
         """解析包名和版本约束"""
         pkg_name = None
         version = None
-        
+
         # 处理各种版本约束格式
         version_constraints = [
             ("==", "=="),
@@ -453,9 +467,13 @@ class PythonEnvironmentDetector(DetectionRule):
             (">", ">"),
             ("<", "<"),
         ]
-        
+
         for sep, full_sep in version_constraints:
-            if sep in line and not (sep == ">" and line.startswith(">=")) and not (sep == "<" and line.startswith("<=")):
+            if (
+                sep in line
+                and not (sep == ">" and line.startswith(">="))
+                and not (sep == "<" and line.startswith("<="))
+            ):
                 if full_sep == "~=":
                     # 特殊处理 ~= 情况
                     pkg_name, version_part = line.split("~", 1)
@@ -467,7 +485,7 @@ class PythonEnvironmentDetector(DetectionRule):
         else:
             # 没有版本约束
             pkg_name = line
-        
+
         return pkg_name, version
 
     def _get_installed_packages(self, venv_path: str) -> Dict[str, str]:
@@ -539,7 +557,7 @@ for dist in importlib.metadata.distributions():
 
     def _version_matches(self, installed_version: str, required_version: str) -> bool:
         """检查版本是否匹配，支持多种版本约束格式
-        
+
         支持的版本约束格式：
         - ==1.0.0 精确匹配
         - >=1.0.0 大于等于
@@ -550,10 +568,10 @@ for dist in importlib.metadata.distributions():
         """
         try:
             from packaging.version import parse
-            
+
             installed = parse(installed_version)
             required = parse(required_version)
-            
+
             # 精确匹配
             if required_version.startswith("=="):
                 exact_version = parse(required_version[2:])
@@ -580,8 +598,9 @@ for dist in importlib.metadata.distributions():
                 installed_parts = installed_version.split(".")
                 required_parts = required_version[2:].split(".")
                 if len(installed_parts) >= 2 and len(required_parts) >= 2:
-                    return (installed_parts[0] == required_parts[0] and 
-                            int(installed_parts[1]) >= int(required_parts[1]))
+                    return installed_parts[0] == required_parts[0] and int(
+                        installed_parts[1]
+                    ) >= int(required_parts[1])
             # 默认为精确匹配
             return installed == required
         except Exception as e:

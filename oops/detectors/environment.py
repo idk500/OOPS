@@ -402,7 +402,7 @@ class EnvironmentDependencyDetector(DetectionRule):
         system_libs = results.get("system_libraries", {})
         if system_libs.get("status") == "error":
             return "error"
-        
+
         # 检查项目依赖状态
         project_deps = results.get("project_dependencies", {})
         if project_deps.get("status") == "error":
