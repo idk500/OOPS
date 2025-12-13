@@ -8,7 +8,7 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from oops.core.config import DetectionRule
 
@@ -76,7 +76,8 @@ class PythonEnvironmentDetector(DetectionRule):
             python_check = environment_info["python_version"]
             if not python_check.get("compatible", True):
                 issues.append(
-                    f"Python 版本不兼容: {python_check.get('current')} (需要 {python_check.get('required')})"
+                    f"Python 版本不兼容: {python_check.get('current')} "
+                    f"(需要 {python_check.get('required')})"
                 )
                 recommendations.append(
                     f"请安装 Python {python_check.get('required')} 或更高版本"
@@ -96,7 +97,7 @@ class PythonEnvironmentDetector(DetectionRule):
                     if missing:
                         issues.append(f"缺失 {len(missing)} 个依赖包")
                         recommendations.append(
-                            f"运行 pip install -r requirements.txt 安装缺失的包"
+                            "运行 pip install -r requirements.txt 安装缺失的包"
                         )
 
                     version_mismatch = deps.get("version_mismatch", [])
@@ -133,7 +134,9 @@ class PythonEnvironmentDetector(DetectionRule):
         """获取 Python 版本信息"""
         current_version = sys.version_info
         return {
-            "current": f"{current_version.major}.{current_version.minor}.{current_version.micro}",
+            "current": "{}.{}.{}".format(
+                current_version.major, current_version.minor, current_version.micro
+            ),
             "major": current_version.major,
             "minor": current_version.minor,
             "micro": current_version.micro,
@@ -158,7 +161,7 @@ class PythonEnvironmentDetector(DetectionRule):
                     )
                     if result.returncode == 0:
                         manager_version = result.stdout.strip()
-                except:
+                except subprocess.SubprocessError:
                     pass
 
             # 检查项目特定文件和工具
@@ -177,7 +180,7 @@ class PythonEnvironmentDetector(DetectionRule):
                         )
                         if result.returncode == 0:
                             manager_version = result.stdout.strip()
-                    except:
+                    except subprocess.SubprocessError:
                         pass
                 # 检查 uv.lock 文件
                 elif os.path.exists(os.path.join(project_path, "uv.lock")):
@@ -192,7 +195,7 @@ class PythonEnvironmentDetector(DetectionRule):
                         )
                         if result.returncode == 0:
                             manager_version = result.stdout.strip()
-                    except:
+                    except subprocess.SubprocessError:
                         pass
                 elif os.path.exists(os.path.join(project_path, "poetry.lock")):
                     manager_type = "poetry"
@@ -211,7 +214,7 @@ class PythonEnvironmentDetector(DetectionRule):
                     if result.returncode == 0:
                         manager_type = "pip"
                         manager_version = result.stdout.strip()
-                except:
+                except subprocess.SubprocessError:
                     pass
 
         except Exception as e:
@@ -345,7 +348,10 @@ class PythonEnvironmentDetector(DetectionRule):
                     "complete": True,  # 假设完整（无法精确检查）
                     "dependency_file": dependency_type,
                     "total_installed": len(installed_packages),
-                    "message": f"检测到 {dependency_type}，已安装 {len(installed_packages)} 个包",
+                    "message": (
+                        f"检测到 {dependency_type}，已安装 "
+                        f"{len(installed_packages)} 个包"
+                    ),
                 }
 
             # 解析 requirements.txt

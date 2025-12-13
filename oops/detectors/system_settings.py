@@ -6,7 +6,7 @@
 import logging
 import platform
 import subprocess
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 from oops.core.config import DetectionRule
 
@@ -190,23 +190,20 @@ class SystemSettingsDetector(DetectionRule):
         """检测Windows HDR状态"""
         try:
             # 正确的HDR检测方法：读取注册表
-            ps_command = """
-            $hdrKey = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\VideoSettings'
+            ps_command = r"""
+            $hdrKey = 'HKCU:\Software\Microsoft\Windows\'
+            'CurrentVersion\VideoSettings'
             if (Test-Path $hdrKey) {
-                $hdrValue = Get-ItemProperty -Path $hdrKey -Name 'EnableHDR' -ErrorAction SilentlyContinue
-                if ($hdrValue -and $hdrValue.EnableHDR -eq 1) {
-                    $true
-                } else {
-                    $false
-                }
-            } else {
-                $false
-            }
+                $hdrValue = Get-ItemProperty -Path $hdrKey -Name 'EnableHDR' `
+                -ErrorAction SilentlyContinue
+                if ($hdrValue -and $hdrValue.EnableHDR -eq 1) { $true } else { $false }
+            } else { $false }
             """
             result = subprocess.run(
                 ["powershell", "-Command", ps_command],
                 capture_output=True,
                 text=True,
+                encoding="utf-8",
                 timeout=self.timeout,
                 creationflags=subprocess.CREATE_NO_WINDOW,
             )
@@ -220,23 +217,23 @@ class SystemSettingsDetector(DetectionRule):
         """检测Windows夜间模式状态"""
         try:
             # 正确的夜间模式检测：检查Data字段的第18个字节
-            ps_command = """
-            $path = 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\CloudStore\\Store\\DefaultAccount\\Current\\default$windows.data.bluelightreduction.bluelightreductionstate\\windows.data.bluelightreduction.bluelightreductionstate'
-            if (Test-Path $path) {
-                $value = Get-ItemProperty -Path $path -Name Data -ErrorAction SilentlyContinue
-                if ($value -and $value.Data -and $value.Data.Length -gt 18) {
-                    # 第18个字节为0x15表示启用，0x13表示禁用
-                    if ($value.Data[18] -eq 0x15) {
-                        $true
-                    } else {
-                        $false
-                    }
-                } else {
-                    $false
-                }
-            } else {
-                $false
-            }
+            ps_path = (
+                r"HKCU:\Software\Microsoft\Windows\CurrentVersion\CloudStore"
+                r"\Store\DefaultAccount\Current"
+                r"\default$windows.data.bluelightreduction."
+                r"bluelightreductionstate"
+                r"\windows.data.bluelightreduction."
+                r"bluelightreductionstate"
+            )
+            ps_command = rf"""
+            $path = '{ps_path}'
+            if (Test-Path $path) {{
+                $value = Get-ItemProperty -Path $path -Name Data `
+                -ErrorAction SilentlyContinue
+                if ($value -and $value.Data -and $value.Data.Length -gt 18) {{
+                    if ($value.Data[18] -eq 0x15) {{ $true }} else {{ $false }}
+                }} else {{ $false }}
+            }} else {{ $false }}
             """
             result = subprocess.run(
                 ["powershell", "-Command", ps_command],
@@ -254,10 +251,11 @@ class SystemSettingsDetector(DetectionRule):
     def _check_color_filter_windows(self) -> Optional[bool]:
         """检测Windows颜色滤镜状态"""
         try:
-            ps_command = """
-            $path = 'HKCU:\\Software\\Microsoft\\ColorFiltering'
+            ps_command = r"""
+            $path = 'HKCU:\Software\Microsoft\ColorFiltering'
             if (Test-Path $path) {
-                $value = Get-ItemProperty -Path $path -Name Active -ErrorAction SilentlyContinue
+                $value = Get-ItemProperty -Path $path `
+                -Name Active -ErrorAction SilentlyContinue
                 if ($value.Active -eq 1) { $true } else { $false }
             } else { $false }
             """
@@ -278,16 +276,20 @@ class SystemSettingsDetector(DetectionRule):
         """获取Windows主显示器分辨率"""
         try:
             # 使用更可靠的方法获取分辨率
-            ps_command = """
-            $monitors = Get-WmiObject -Namespace root\\wmi -Class WmiMonitorBasicDisplayParams
-            $primary = $monitors | Where-Object { $_.IsPrimary -eq $true } | Select-Object -First 1
+            ps_command = r"""
+            $monitors = Get-WmiObject -Namespace root\wmi `
+            -Class WmiMonitorBasicDisplayParams
+            $primary = $monitors | Where-Object `
+            { $_.IsPrimary -eq $true } | Select-Object -First 1
             if ($primary) {
-                "$($primary.MaxHorizontalImageSize)00 x $($primary.MaxVerticalImageSize)00"
+                "$($primary.MaxHorizontalImageSize)00 x `
+                $($primary.MaxVerticalImageSize)00"
             } else {
-                # 备用方法：使用CIM类
-                $display = Get-CimInstance -Namespace root\\cimv2 -ClassName Win32_VideoController | Select-Object -First 1
+                $display = Get-CimInstance -Namespace `
+                root\cimv2 -ClassName Win32_VideoController | Select-Object -First 1
                 if ($display) {
-                    "$($display.CurrentHorizontalResolution) x $($display.CurrentVerticalResolution)"
+                    "$($display.CurrentHorizontalResolution) x `
+                    $($display.CurrentVerticalResolution)"
                 }
             }
             """
@@ -349,14 +351,17 @@ class SystemSettingsDetector(DetectionRule):
     def _get_scaling_windows(self) -> Optional[int]:
         """获取Windows屏幕缩放比例"""
         try:
-            ps_command = """
-            $dpi = Get-ItemProperty -Path 'HKCU:\\Control Panel\\Desktop\\WindowMetrics' -Name 'AppliedDPI' -ErrorAction SilentlyContinue
+            ps_command = r"""
+            $dpi = Get-ItemProperty -Path `
+            'HKCU:\Control Panel\Desktop\WindowMetrics' `
+            -Name 'AppliedDPI' -ErrorAction SilentlyContinue
             if ($dpi -and $dpi.AppliedDPI) {
                 # AppliedDPI值为96表示100%，120表示125%，144表示150%，等等
                 [math]::Round(($dpi.AppliedDPI / 96) * 100)
             } else {
                 # 备用方法：使用WMI
-                $display = Get-WmiObject -Namespace root\\cimv2 -Class Win32_DesktopMonitor | Select-Object -First 1
+                $display = Get-WmiObject -Namespace `
+                root\cimv2 -Class Win32_DesktopMonitor | Select-Object -First 1
                 if ($display -and $display.PixelsPerXLogicalInch) {
                     [math]::Round(($display.PixelsPerXLogicalInch / 96) * 100)
                 }
@@ -382,8 +387,9 @@ class SystemSettingsDetector(DetectionRule):
         """获取Windows显示方向"""
         try:
             # 首先尝试使用WMI
-            ps_command = """
-            $display = Get-WmiObject -Namespace root\\cimv2 -Class Win32_DesktopMonitor | Select-Object -First 1
+            ps_command = r"""
+            $display = Get-WmiObject -Namespace root\cimv2 `
+            -Class Win32_DesktopMonitor | Select-Object -First 1
             if ($display -and $display.DisplayOrientation -ne $null) {
                 switch ($display.DisplayOrientation) {
                     0 { "Landscape (横向)" }
@@ -394,7 +400,8 @@ class SystemSettingsDetector(DetectionRule):
                 }
             } else {
                 # 备用方法：使用CIM类获取分辨率
-                $cimDisplay = Get-CimInstance -Namespace root\\cimv2 -ClassName Win32_VideoController | Select-Object -First 1
+                $cimDisplay = Get-CimInstance -Namespace root\cimv2 `
+                -ClassName Win32_VideoController | Select-Object -First 1
                 if ($cimDisplay) {
                     $width = $cimDisplay.CurrentHorizontalResolution
                     $height = $cimDisplay.CurrentVerticalResolution

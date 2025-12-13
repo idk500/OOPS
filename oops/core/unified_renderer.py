@@ -55,7 +55,8 @@ class UnifiedDetectionRenderer:
         <div class="detection-result {result.severity.value}">
             <div class="detection-header">
                 <div class="detection-title">
-                    {self.severity_icons[result.severity]} {self._get_display_name(result.check_name)}
+                    {self.severity_icons[result.severity]} 
+                    {self._get_display_name(result.check_name)}
                 </div>
                 <div class="detection-right">
                     <div class="detection-summary">{summary}</div>
@@ -64,7 +65,7 @@ class UnifiedDetectionRenderer:
                     </button>
                 </div>
             </div>
-            
+
             <div class="detection-message" style="color: {self.severity_colors[result.severity]};">
                 {html.escape(result.message)}
             </div>
@@ -401,7 +402,9 @@ class UnifiedDetectionRenderer:
                     <ul>
                 """
                 for sub_key, sub_value in value.items():
-                    html_content += f"<li>{self._get_display_name(sub_key)}: {html.escape(str(sub_value))}</li>"
+                    display_name = self._get_display_name(sub_key)
+                    escaped_value = html.escape(str(sub_value))
+                    html_content += f"<li>{display_name}: {escaped_value}</li>"
                 html_content += "</ul></div>"
             elif isinstance(value, list):
                 # 列表
@@ -454,13 +457,15 @@ class UnifiedDetectionRenderer:
                         f"<li>分支: {html.escape(local_version['current_branch'])}</li>"
                     )
                 if local_version.get("current_commit"):
-                    html_content += f"<li>Commit: {html.escape(local_version['current_commit'])}</li>"
+                    commit = html.escape(local_version['current_commit'])
+                    html_content += f"<li>Commit: {commit}</li>"
                 if local_version.get("current_tag"):
                     html_content += (
                         f"<li>标签: {html.escape(local_version['current_tag'])}</li>"
                     )
                 if local_version.get("last_update"):
-                    html_content += f"<li>最后更新: {html.escape(local_version['last_update'])}</li>"
+                    last_update = html.escape(local_version['last_update'])
+                    html_content += f"<li>最后更新: {last_update}</li>"
                 if local_version.get("has_uncommitted_changes") is not None:
                     status = "是" if local_version["has_uncommitted_changes"] else "否"
                     html_content += f"<li>未提交更改: {status}</li>"
@@ -517,11 +522,13 @@ class UnifiedDetectionRenderer:
                         f"<li>文件: {html.escape(launcher_info['file'])}</li>"
                     )
                 if launcher_info.get("error"):
-                    html_content += f"<li style='color: #ef4444;'>错误: {html.escape(launcher_info['error'])}</li>"
+                    error = html.escape(launcher_info['error'])
+                    html_content += f"<li style='color: #ef4444;'>错误: {error}</li>"
             else:
                 html_content += "<li>未找到启动器版本文件</li>"
                 if launcher_info.get("error"):
-                    html_content += f"<li style='color: #ef4444;'>错误: {html.escape(launcher_info['error'])}</li>"
+                    error = html.escape(launcher_info['error'])
+                    html_content += f"<li style='color: #ef4444;'>错误: {error}</li>"
             html_content += "</ul></div>"
 
         html_content += """
