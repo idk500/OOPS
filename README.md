@@ -1,5 +1,8 @@
 # OOPS  
-![OOPS Logo](oops.ico)
+<div align="center">
+  <img src="oops.ico" alt="OOPS Logo" width="200">
+</div>
+
 *One-click Operating Pre-check System*  
 *一键运行预检系统*
 
