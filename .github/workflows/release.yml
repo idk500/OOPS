@@ -128,7 +128,7 @@ jobs:
 
         ### 🚀 使用方法
 
-        1. 解压 ``oops-windows-x64.zip``
+        1. 解压 ``oops-windows-x64.zip``到 你想要的项目路径下, 例如 ``D:/ZZZ-1D``
         2. 双击运行 ``oops-windows-x64.exe``
         3. 自动检测所有可用项目并生成报告
         4. 查看自动打开的HTML报告

@@ -1,9 +1,12 @@
 # OOPS  
-![OOPS Logo](oops.ico)
+<div align="center">
+  <img src="oops.ico" alt="OOPS Logo" width="200">
+</div>
+
 *One-click Operating Pre-check System*  
 *一键运行预检系统*
 
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  |   [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)  |  [![GitHub](https://img.shields.io/badge/GitHub-idk500/OOPS-blue?logo=github)](https://github.com/idk500/OOPS)  |  [![Gitee](https://img.shields.io/badge/Gitee-idk500/OOPS-red?logo=gitee)](https://gitee.com/idk500/OOPS)
+[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  |   [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)  |  [![GitHub](https://img.shields.io/badge/GitHub-idk500/OOPS-blue?logo=github)](https://github.com/idk500/OOPS)  |  [![Gitee](https://img.shields.io/badge/Gitee-idk500/OOPS-red?logo=gitee)](https://gitee.com/idk500/OOPS)  |  [![DeepWiki](https://img.shields.io/badge/DeepWiki-idk500/OOPS-orange?logo=wikipedia)](https://deepwiki.com/idk500/OOPS)
 
 > 让游戏脚本运行更顺畅  
 > Run Your Game Scripts Smoothly  
