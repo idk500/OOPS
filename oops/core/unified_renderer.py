@@ -457,14 +457,14 @@ class UnifiedDetectionRenderer:
                         f"<li>分支: {html.escape(local_version['current_branch'])}</li>"
                     )
                 if local_version.get("current_commit"):
-                    commit = html.escape(local_version['current_commit'])
+                    commit = html.escape(local_version["current_commit"])
                     html_content += f"<li>Commit: {commit}</li>"
                 if local_version.get("current_tag"):
                     html_content += (
                         f"<li>标签: {html.escape(local_version['current_tag'])}</li>"
                     )
                 if local_version.get("last_update"):
-                    last_update = html.escape(local_version['last_update'])
+                    last_update = html.escape(local_version["last_update"])
                     html_content += f"<li>最后更新: {last_update}</li>"
                 if local_version.get("has_uncommitted_changes") is not None:
                     status = "是" if local_version["has_uncommitted_changes"] else "否"
@@ -522,12 +522,12 @@ class UnifiedDetectionRenderer:
                         f"<li>文件: {html.escape(launcher_info['file'])}</li>"
                     )
                 if launcher_info.get("error"):
-                    error = html.escape(launcher_info['error'])
+                    error = html.escape(launcher_info["error"])
                     html_content += f"<li style='color: #ef4444;'>错误: {error}</li>"
             else:
                 html_content += "<li>未找到启动器版本文件</li>"
                 if launcher_info.get("error"):
-                    error = html.escape(launcher_info['error'])
+                    error = html.escape(launcher_info["error"])
                     html_content += f"<li style='color: #ef4444;'>错误: {error}</li>"
             html_content += "</ul></div>"
 
