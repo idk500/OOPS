@@ -16,8 +16,8 @@ from pathlib import Path
 from oops.core.config import ConfigManager
 from oops.core.diagnostics import (
     DiagnosticSuite,
-    QuickDiagnosticSuite,
     FullDiagnosticSuite,
+    QuickDiagnosticSuite,
 )
 from oops.core.report import ReportManager
 
@@ -131,6 +131,52 @@ def parse_arguments():
     )
     other_group.add_argument("--version", action="store_true", help="显示版本信息")
 
+    # ===== 动作子命令(写操作) =====
+    # 无子命令时仍是默认只读预检;这些命令仅在显式调用时执行
+    sub = parser.add_subparsers(
+        dest="command", metavar="<动作子命令>", title="动作子命令(可选)"
+    )
+
+    p_mirror = sub.add_parser(
+        "mirror", help="切换目标项目 origin 到 CNB/GitHub/Gitee 镜像"
+    )
+    p_mirror.add_argument(
+        "--to",
+        choices=["cnb", "github", "gitee"],
+        default="cnb",
+        help="目标镜像源(默认 cnb)",
+    )
+    p_mirror.add_argument("--url", type=str, help="自定义目标 URL(覆盖 --to)")
+    p_mirror.add_argument("--path", type=str, help="目标项目路径(默认自动检测)")
+    p_mirror.add_argument(
+        "--no-verify", action="store_true", help="跳过 fetch 可达性验证"
+    )
+
+    p_sync = sub.add_parser(
+        "sync", help="把目标项目代码对齐到远程 HEAD(硬重置+自动备份)"
+    )
+    p_sync.add_argument(
+        "--remote", type=str, default="origin", help="使用的远程名(默认 origin)"
+    )
+    p_sync.add_argument("--branch", type=str, help="对齐到的分支(默认远程 HEAD)")
+    p_sync.add_argument("--path", type=str, help="目标项目路径(默认自动检测)")
+    p_sync.add_argument("--no-clean", action="store_true", help="不执行 git clean -fd")
+    p_sync.add_argument(
+        "--no-backup", action="store_true", help="不创建备份(危险:本地改动会丢失)"
+    )
+
+    p_self = sub.add_parser("self-update", help="更新 OOPS 自身到最新版本")
+    p_self.add_argument(
+        "--check", action="store_true", help="仅检查是否有新版本,不下载"
+    )
+    p_self.add_argument(
+        "--url", type=str, help="release API 或 zip 直链(可用 CNB 镜像 zzz1d/oops)"
+    )
+    p_self.add_argument(
+        "--remote", type=str, help="源码模式下 pull 的远程名(默认 origin)"
+    )
+    p_self.add_argument("--force", action="store_true", help="即使已是最新也强制更新")
+
     return parser.parse_args()
 
 
@@ -177,8 +223,9 @@ def list_projects(config_manager: ConfigManager):
 
 def create_default_configs(config_dir: str):
     """创建默认配置文件"""
-    from oops.core.config import create_default_master_config, ConfigManager
     import yaml
+
+    from oops.core.config import ConfigManager, create_default_master_config
 
     config_path = Path(config_dir)
     config_path.mkdir(exist_ok=True)
@@ -343,7 +390,7 @@ async def display_diagnostic_results(
 
     # 生成报告 - 默认同时生成 HTML 和 YAML
     if not args.no_report:
-        from oops.core.report import ReportGenerator, ReportConfig
+        from oops.core.report import ReportConfig, ReportGenerator
 
         # 获取项目配置（用于报告中的项目名称显示）
         project_config = None
@@ -455,6 +502,19 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
         print(f"[*] 📍 当前运行路径: {Path.cwd()}")
         print()
 
+        # 自动修复:检测到一条龙需要更新(origin 非CNB 或落后于 HEAD)时,
+        # 倒数 5 秒自动 mirror+sync。用户无需命令行/子命令,双击即更新。
+        print(f"[*] 🔄 检查一条龙更新状态...")
+        try:
+            from oops.actions.auto_fix import auto_fix
+
+            auto_fix(detected_project["install_path"])
+        except KeyboardInterrupt:
+            print("\n[*] 用户跳过自动修复。")
+        except Exception as e:
+            print(f"[!] 自动修复检查失败(不影响后续预检): {e}")
+        print()
+
         # 使用检测到的配置运行诊断
         print(f"[*] 🚀 开始自动诊断...")
 
@@ -549,6 +609,22 @@ async def main():
     # 设置日志
     setup_logging(args.verbose)
 
+    # 动作子命令(写操作):同步执行,完成后直接退出
+    # 默认无参运行 oops 仍是只读预检,不受影响
+    command = getattr(args, "command", None)
+    if command == "mirror":
+        from oops.actions.mirror import cmd_mirror
+
+        sys.exit(cmd_mirror(args))
+    if command == "sync":
+        from oops.actions.sync import cmd_sync
+
+        sys.exit(cmd_sync(args))
+    if command == "self-update":
+        from oops.actions.self_update import cmd_self_update
+
+        sys.exit(cmd_self_update(args))
+
     # 创建配置文件
     if args.create_config:
         create_default_configs(args.config_dir)
@@ -572,6 +648,13 @@ async def main():
 
 
 if __name__ == "__main__":
+    # Windows 控制台/重定向时强制 UTF-8 输出,避免中文与 emoji 触发 GBK 编码错误
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
     try:
         # 在 Windows 上使用 WindowsSelectorEventLoopPolicy 避免 ProactorEventLoop 的资源清理警告
         # 参考: https://github.com/aio-libs/aiohttp/issues/4324
@@ -587,7 +670,7 @@ if __name__ == "__main__":
                 "ignore",
                 category=ResourceWarning,
                 message="unclosed transport",
-                module="asyncio"
+                module="asyncio",
             )
 
         asyncio.run(main())

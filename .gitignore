@@ -91,3 +91,7 @@ build/dist/
 ZenlessZoneZero-OneDragon-v2.3.3-Full-Environment/
 *.zip
 .trae/
+
+# CNB 镜像凭据(本地令牌,绝不提交)
+cnb/.cnb-token
+.cnb-token

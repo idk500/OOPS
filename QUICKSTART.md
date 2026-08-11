@@ -31,6 +31,18 @@ python oops.py
 | `python oops.py --list-projects` | 列出所有项目 |
 | `python oops.py --help` | 查看帮助 |
 
+## 🛠️ 修复器(可选,v0.3.0+)
+
+启动器自更新坏了?在项目根目录执行(默认无参仍是只读检测,这些命令需显式调用):
+
+```bash
+python oops.py mirror      # 把项目 origin 切到 CNB 镜像(修自更新)
+python oops.py sync        # 对齐到最新 HEAD(自动备份,可回退)
+python oops.py self-update # 更新 OOPS 自身
+```
+
+详见 [命令行手册](USAGE.md) 与 [CNB 镜像制作](cnb/README.md)。
+
 ---
 
 ## 🎨 输出示例

@@ -97,6 +97,52 @@ python oops.py --version
 python oops.py --create-config
 ```
 
+### 动作子命令(修复器,v0.3.0+)
+
+> 默认无参运行仍是只读预检。下列子命令是**显式调用**的写操作,用于修复绝区零一条龙
+> 因 GitHub 慢/不通、blobless 部分克隆回源导致的启动器自更新失败。exe 用户把 `python oops.py` 换成 `oops.exe`。
+
+#### `mirror` —— 切换目标项目 origin 到镜像
+
+```bash
+python oops.py mirror                  # 切到 CNB(默认): cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon
+python oops.py mirror --to github      # 切回 GitHub
+python oops.py mirror --to gitee       # 切到 Gitee
+python oops.py mirror --url <URL>      # 自定义目标 URL
+python oops.py mirror --path <目录>     # 指定项目路径(默认自动检测)
+python oops.py mirror --no-verify      # 跳过 fetch 可达性验证
+```
+
+旧 origin 会被改名为 `github` 备份(可回退),不触碰个人 fork 远程。
+
+#### `sync` —— 对齐到远程 HEAD(硬重置 + 自动备份)
+
+```bash
+python oops.py sync                    # 默认对齐 origin/HEAD
+python oops.py sync --remote origin    # 指定远程
+python oops.py sync --branch main      # 指定分支
+python oops.py sync --path <目录>       # 指定项目路径
+python oops.py sync --no-clean         # 不执行 git clean -fd
+python oops.py sync --no-backup        # 不创建备份(危险:本地改动会丢失)
+```
+
+执行流程:`fetch` → 打备份分支 `oops-backup-<时间戳>`(+ 工作区有改动时再 `stash push -u`)→ `reset --hard <remote>/HEAD` → `clean -fd`。
+恢复:`git reset --hard oops-backup-<时间戳>` / `git stash pop`。
+blobless 部分克隆在 origin 切到完整 CNB 镜像后,`reset` 时按需从 CNB 拉 blob,自愈。
+
+#### `self-update` —— 更新 OOPS 自身
+
+```bash
+python oops.py self-update --check     # 仅检查版本
+python oops.py self-update             # exe: 下载最新 release 替换;源码: git pull
+python oops.py self-update --url <zip> # 指定 zip 直链(可用 CNB 镜像 zzz1d/oops)
+python oops.py self-update --force     # 即使已是最新也强制更新
+```
+
+exe 模式下,Windows 会先把当前 `oops.exe` 重命名为 `oops.exe.old`(下次启动清理),再写入新版。
+
+> 📦 CNB 镜像制作见 [`cnb/README.md`](cnb/README.md)。
+
 ---
 
 ## 🎯 常见使用场景

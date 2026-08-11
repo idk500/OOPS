@@ -1,0 +1,36 @@
+# .cnb.yml —— OneDragon(GitHub) → CNB 镜像同步驱动
+#
+# 【部署位置】在 CNB 上单独建一个「同步驱动仓」(例如 zzz1d/sync-onedragon),
+#   把本文件重命名为 .cnb.yml 推到该仓的 main 分支。
+#   不要把本文件放进镜像仓本身 —— 上游 force-push 会把它覆盖掉。
+#
+# 【前置】
+#   1. 已在 CNB 建好镜像仓:OneDragon-Anything/ZenlessZoneZero-OneDragon
+#      (空仓即可,后续由本流水线持续填充)。建仓:https://cnb.cool/org/new
+#   2. 在「同步驱动仓」的 设置 → 密钥/变量 中添加 CNB_PUSH_TOKEN
+#      (一个对镜像仓有写权限的 CNB 访问令牌)。
+#   3. 推送本文件后,CNB 会按 cron 自动触发。
+#
+# 【语法参考】https://docs.cnb.cool/zh/build/crontab.html
+#   定时触发以 `crontab: <POSIX cron>` 为键,置于 main: 下;时区 Asia/Shanghai。
+#
+# 【注意】`env`/`$CNB_PUSH_TOKEN` 的确切注入语法请对照 CNB 最新文档核实;
+#   CNB 通常会把仓库密钥作为同名环境变量注入流水线。
+
+main:
+  "crontab: 0 * * * *":   # 每小时整点同步;如需更频繁/更稀疏,修改 cron 表达式
+    - docker:
+        image: bitnami/git:2-debian-12
+      env:
+        CNB_PUSH_TOKEN: $CNB_PUSH_TOKEN
+      stages:
+        - name: mirror-from-github
+          script: |
+            set -e
+            UPSTREAM="https://github.com/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
+            MIRROR="https://cnb:${CNB_PUSH_TOKEN}@cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
+            rm -rf /tmp/m && mkdir -p /tmp/m && cd /tmp/m
+            git clone --mirror "${UPSTREAM}" repo.git
+            cd repo.git
+            git push --mirror "${MIRROR}"
+            echo "[done] OneDragon 镜像同步完成 $(date)"

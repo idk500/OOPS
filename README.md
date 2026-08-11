@@ -69,6 +69,37 @@ python oops.py
 
 ---
 
+## 🛠️ 修复器(动作子命令)
+
+v0.3.0 起,OOPS 在保持「默认无参 = 只读预检」的前提下,新增三个**显式调用**的动作子命令,
+用于修复绝区零一条龙(OneDragon)因 GitHub 慢/不通、blobless 部分克隆回源而导致的**启动器自更新失败**。
+
+> 默认双击运行 `oops.exe`(无参)仍是只读检测,不修改任何东西。下列命令需在命令行显式执行,
+> 且 `sync` 会先做备份分支 + stash 再硬重置,可回退。
+
+### `oops mirror` —— 切换 origin 到镜像
+把游戏项目 `origin` 切到 CNB / GitHub / Gitee 镜像;旧 origin 自动改名 `github` 备份,可回退;不触碰个人 fork。
+```bash
+oops mirror                 # 默认切到 CNB
+oops mirror --to github     # 切回 GitHub
+```
+
+### `oops sync` —— 对齐到 HEAD
+硬重置 + 自动备份后,把代码对齐到远程 HEAD(blobless 克隆在 origin 切到完整 CNB 镜像后,reset 时按需从 CNB 拉 blob,自愈)。
+```bash
+oops sync
+```
+
+### `oops self-update` —— 更新 OOPS 自身
+```bash
+oops self-update --check    # 仅检查版本
+oops self-update            # exe: 下载最新 release 替换;源码: git pull
+```
+
+📦 CNB 镜像制作见 [`cnb/README.md`](cnb/README.md)(OneDragon → `cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon`,OOPS → `cnb.cool/zzz1d/oops`)。
+
+---
+
 ## 📖 文档导航
 
 ### 用户文档
@@ -108,7 +139,7 @@ A: 网络检测需要联网，其他检测可离线进行。
 A: 主要支持Windows，Linux和macOS部分功能可用。
 
 ### Q: 检测会修改我的系统吗？
-A: 不会。OOPS只进行检测，不会修改任何系统设置。后续也许会增加修复器，在用户监视下协助修复。
+A: 默认双击运行(无参)**不会**——只进行检测,不修改任何系统设置。v0.3.0 起新增的 `mirror` / `sync` / `self-update` 三个动作子命令是显式的"修复器",需在命令行手动执行(见上方「修复器」小节),且 `sync` 会先备份再操作。
 
 ### Q: Why OOPS?
 A: OOPS 基于三个目的 开发

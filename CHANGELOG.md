@@ -2,6 +2,42 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.3.0 - 2026-08-11 🛠️
+
+### 🚀 新增:动作子命令(镜像 / 对齐 / 自更新)
+
+在保持「默认无参仍是只读预检」的前提下,新增三个显式调用的写操作子命令,
+用于修复绝区零一条龙(OneDragon)因 GitHub 慢/不通、blobless 部分克隆回源
+而导致的启动器自更新失败问题。
+
+1. **`oops mirror` —— 切换目标项目 origin**
+   - 一键把游戏项目 `origin` 切到 CNB / GitHub / Gitee 镜像(`--to`,默认 cnb)
+   - 旧 origin 自动改名为 `github` 备份,可回退;不触碰个人 fork 远程
+   - 默认 `git fetch --prune` 验证可达(`--no-verify` 跳过)
+
+2. **`oops sync` —— 对齐到远程 HEAD**
+   - 硬重置 + 自动备份:打备份分支 `oops-backup-<时间戳>`,dirty 时再 `stash push -u`
+   - `git fetch` + `reset --hard <remote>/HEAD` + `git clean -fd`
+   - 部分克隆(blobless)在 origin 切到完整 CNB 镜像后,reset 时按需从 CNB 拉 blob,链路自愈
+   - 输出 before/after commit 与恢复命令;`--no-backup` 可跳过备份(危险)
+
+3. **`oops self-update` —— 更新 OOPS 自身**
+   - 打包 exe 用户:从 GitHub release 下载最新 `oops-windows-x64_*.zip` 替换
+     (Windows 先把当前 exe 重命名为 `oops.exe.old`,下次启动清理);`--url` 可指向 CNB 镜像
+   - 源码用户:`git pull`;`--check` 仅检查版本
+
+### 📦 CNB 镜像支持
+
+- 新增 `cnb/` 目录: `.cnb.yml.template`(定时同步流水线)与 `cnb/README.md`(建仓 + 一次性 `git push --mirror` + 自动同步指引)
+- OneDragon 镜像:`cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon`
+- OOPS 自身镜像:`cnb.cool/zzz1d/oops`
+
+### 🧱 代码结构
+
+- 新增 `oops/actions/` 子包(`git_ops.py` / `mirror.py` / `sync.py` / `self_update.py`),
+  与 `detectors/` 平级,集中承载写操作,不污染只读检测逻辑
+- `oops.py` 用 argparse subparsers 接入子命令,无子命令时行为零变化
+
 ## v0.2.4 - 2025-12-01 🚀
 
 ### 🔧 代码优化
