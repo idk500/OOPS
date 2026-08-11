@@ -643,10 +643,20 @@ async def main():
 
         if boot(path) == 0:
             sys.exit(0)  # launcher 已启动,OOPS 退出(跳过"按 Enter 退出"暂停)
-        print("[*] boot 未启动 launcher,回退到预检模式。")
+        print("[*] boot 未启动 launcher。")
     else:
-        print("[*] 未检测到项目,进入预检模式。")
-    await interactive_project_selection(args, config_manager)
+        print("[*] 未检测到项目。")
+
+    # 回退预检——仅当本地有 configs/ 时;单 exe(无 configs)不预检,直接结束
+    cfg_dir = Path(args.config_dir)
+    if cfg_dir.is_dir() and any(cfg_dir.glob("*.yaml")):
+        print("[*] 进入预检模式。")
+        await interactive_project_selection(args, config_manager)
+    else:
+        print()
+        print("[*] 未找到 configs/(单 exe 模式),跳过预检。")
+        print("[*] 启动一条龙:把 oops.exe 放到含 OneDragon-Launcher.exe 的目录后双击。")
+        print("[*] 想要预检:把 configs/ 与 oops.exe 放一起,或运行 oops check。")
 
 
 if __name__ == "__main__":

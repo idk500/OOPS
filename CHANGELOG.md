@@ -2,6 +2,15 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.3.2 - 2026-08-11 🐛
+
+### 🐛 体验优化
+
+- **单 exe(无 configs/)不再强行预检**:boot 找不到 launcher / 未检测到项目时,
+  若本地无 `configs/` 目录,直接给清晰提示并结束,不再回退到报错的预检流程。
+- boot 主路径(找到 `OneDragon-Launcher.exe` → 自检/更新 → 启动)本就不依赖 `configs/`,
+  本次只是去掉"无 configs 时回退预检"的噪音。
+
 ## v0.3.1 - 2026-08-11 🚀
 
 ### 🎯 新增:boot 模式(作为一条龙启动器引导)
