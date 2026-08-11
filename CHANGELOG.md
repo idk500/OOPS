@@ -2,6 +2,22 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.3.1 - 2026-08-11 🚀
+
+### 🎯 新增:boot 模式(作为一条龙启动器引导)
+
+双击 `oops.exe` 不再只预检,而是**引导启动 OneDragon-Launcher.exe**:
+
+1. 新鲜度缓存命中(默认 6 小时内且 origin=CNB)→ **跳过自检,秒开 launcher**
+2. 否则自检/更新(复用 auto_fix:需要时倒数 5 秒 mirror+sync)→ 写缓存
+3. **detached 启动 OneDragon-Launcher.exe**,OOPS 随即退出
+
+- 默认双击 = boot;原预检移到 `oops check` 子命令(只读,不启动 launcher、不更新)
+- 找不到 launcher / 非项目目录 → 自动回退到预检
+- 新增 `oops/actions/boot.py`;`auto_fix` 返回状态字符串(latest/updated/cancelled/non-git)供 boot 决定是否写缓存
+
+> 用户现在只需:把 oops.exe 放进一条龙根目录 → 双击 → 自动保证最新后启动一条龙,全程零命令行。
+
 ## v0.3.0 - 2026-08-11 🛠️
 
 ### 🚀 新增:动作子命令(镜像 / 对齐 / 自更新)

@@ -210,5 +210,67 @@ def test_sync_dirty_stashes(tmp_path):
     assert "oops-backup-" in stash_list
 
 
+# ===== boot =====
+
+
+def test_boot_find_launcher(tmp_path):
+    from oops.actions.boot import find_launcher
+
+    assert find_launcher(str(tmp_path)) is None
+    (tmp_path / "OneDragon-Launcher.exe").write_bytes(b"")
+    found = find_launcher(str(tmp_path))
+    assert found is not None and found.name == "OneDragon-Launcher.exe"
+
+
+def test_boot_fresh_cache(tmp_path):
+    import time
+
+    from oops.actions.boot import _cache_path, is_fresh, mark_fresh
+
+    repo = tmp_path / "r"
+    _make_repo(repo, ["x"])
+    cnb = "https://cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
+    _git("remote", "add", "origin", cnb, cwd=str(repo))
+
+    assert is_fresh(str(repo)) is False  # 无缓存
+    mark_fresh(str(repo))
+    assert is_fresh(str(repo)) is True  # 写缓存后新鲜
+    _cache_path(str(repo)).write_text(str(time.time() - 99999), encoding="utf-8")
+    assert is_fresh(str(repo)) is False  # 过期
+    mark_fresh(str(repo))
+    _git("remote", "set-url", "origin", "https://github.com/x/y.git", cwd=str(repo))
+    assert is_fresh(str(repo)) is False  # origin 偏离 CNB
+
+
+def test_auto_fix_returns_status(tmp_path):
+    from oops.actions.auto_fix import auto_fix
+
+    notrepo = tmp_path / "empty"
+    notrepo.mkdir()
+    assert auto_fix(str(notrepo)) == "non-git"
+
+
+def test_boot_flow_skip_when_fresh(tmp_path, monkeypatch):
+    from oops.actions import boot as boot_mod
+
+    repo = tmp_path / "r"
+    _make_repo(repo, ["x"])
+    cnb = "https://cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
+    _git("remote", "add", "origin", cnb, cwd=str(repo))
+    (repo / "OneDragon-Launcher.exe").write_bytes(b"")
+    boot_mod.mark_fresh(str(repo))  # 命中新鲜度缓存 → 跳过自检
+
+    called = {}
+
+    def fake_launch(launcher):
+        called["launcher"] = str(launcher)
+        return True
+
+    monkeypatch.setattr(boot_mod, "launch", fake_launch)
+    rc = boot_mod.boot(str(repo))
+    assert rc == 0
+    assert "OneDragon-Launcher.exe" in called["launcher"]
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

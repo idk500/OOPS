@@ -46,19 +46,26 @@ def plan(path: str) -> Tuple[bool, bool, str]:
     return need_mirror, need_sync, origin
 
 
-def auto_fix(path: str) -> int:
-    """检测并在需要时自动 mirror+sync。返回 0=无需/完成,2=非 git。"""
+def auto_fix(path: str) -> str:
+    """检测并在需要时自动 mirror+sync。
+
+    返回状态:
+      "latest"    已是最新,无需操作
+      "updated"   已执行更新(mirror/sync)
+      "cancelled" 用户在倒数时取消
+      "non-git"   不是 git 仓库
+    """
     from oops.actions.mirror import cmd_mirror
     from oops.actions.self_update import _countdown_apply
     from oops.actions.sync import cmd_sync
 
     if not git_ops.is_git_repo(path):
-        return 2
+        return "non-git"
 
     need_mirror, need_sync, origin = plan(path)
     if not (need_mirror or need_sync):
         print("[*] 一条龙已是最新(origin=CNB 且已对齐 HEAD),无需自动修复。")
-        return 0
+        return "latest"
 
     print("[*] 检测到一条龙需要更新:")
     if need_mirror:
@@ -69,7 +76,7 @@ def auto_fix(path: str) -> int:
 
     if not _countdown_apply(5):
         print("[*] 已跳过自动修复。")
-        return 0
+        return "cancelled"
 
     if need_mirror:
         print()
@@ -89,4 +96,4 @@ def auto_fix(path: str) -> int:
         )
     print()
     print("[完成] 一条龙已更新到最新。")
-    return 0
+    return "updated"

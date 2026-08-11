@@ -177,6 +177,8 @@ def parse_arguments():
     )
     p_self.add_argument("--force", action="store_true", help="即使已是最新也强制更新")
 
+    sub.add_parser("check", help="只读预检(不启动 launcher、不更新;双击默认是 boot)")
+
     return parser.parse_args()
 
 
@@ -502,19 +504,6 @@ async def interactive_project_selection(args, config_manager: ConfigManager):
         print(f"[*] 📍 当前运行路径: {Path.cwd()}")
         print()
 
-        # 自动修复:检测到一条龙需要更新(origin 非CNB 或落后于 HEAD)时,
-        # 倒数 5 秒自动 mirror+sync。用户无需命令行/子命令,双击即更新。
-        print(f"[*] 🔄 检查一条龙更新状态...")
-        try:
-            from oops.actions.auto_fix import auto_fix
-
-            auto_fix(detected_project["install_path"])
-        except KeyboardInterrupt:
-            print("\n[*] 用户跳过自动修复。")
-        except Exception as e:
-            print(f"[!] 自动修复检查失败(不影响后续预检): {e}")
-        print()
-
         # 使用检测到的配置运行诊断
         print(f"[*] 🚀 开始自动诊断...")
 
@@ -610,7 +599,6 @@ async def main():
     setup_logging(args.verbose)
 
     # 动作子命令(写操作):同步执行,完成后直接退出
-    # 默认无参运行 oops 仍是只读预检,不受影响
     command = getattr(args, "command", None)
     if command == "mirror":
         from oops.actions.mirror import cmd_mirror
@@ -638,13 +626,27 @@ async def main():
         list_projects(config_manager)
         return
 
-    # 项目检测逻辑
-    if args.project:
-        # 检测指定项目
-        await run_diagnostic_for_project(args.project, args, config_manager)
+    # 预检路径: check 子命令、指定项目、或扫描模式标志(--quick-scan/--full-scan)
+    if command == "check" or args.project or args.quick_scan or args.full_scan:
+        if args.project:
+            await run_diagnostic_for_project(args.project, args, config_manager)
+        else:
+            await interactive_project_selection(args, config_manager)
+        return
+
+    # 默认(双击)→ boot:必要时自检/更新,然后启动 OneDragon-Launcher.exe
+    from oops.actions import git_ops
+
+    path = git_ops.resolve_target_path(getattr(args, "path", None))
+    if path:
+        from oops.actions.boot import boot
+
+        if boot(path) == 0:
+            sys.exit(0)  # launcher 已启动,OOPS 退出(跳过"按 Enter 退出"暂停)
+        print("[*] boot 未启动 launcher,回退到预检模式。")
     else:
-        # 交互式选择项目
-        await interactive_project_selection(args, config_manager)
+        print("[*] 未检测到项目,进入预检模式。")
+    await interactive_project_selection(args, config_manager)
 
 
 if __name__ == "__main__":
