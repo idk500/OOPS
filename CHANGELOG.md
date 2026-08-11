@@ -2,6 +2,21 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.4.0 - 2026-08-12 🚀
+
+### 🎯 单 exe 真正自包含:无需系统 git
+- **自动获取 MinGit**:机器上没有系统 git 时,OOPS 自动从国内镜像(华为云主 / npmmirror 备)下载 MinGit(~37MB)解压到 `~/.oops/mingit`,后续所有 git 操作用它;都拉不下来才提示用户装 git。
+  - 一条龙用户本就没有系统 git(一条龙用 pygit2),现在 OOPS 也能自愈。
+- **git_ops 解耦**:所有 git 调用走解析出的 git 路径(系统 git / 缓存 MinGit),不再硬编码 `git`。新增 `oops/actions/git_provider.py`。
+
+### 🐛 boot 修复:不再与启动器争夺 origin
+- 调查发现 OneDragon 启动器同步后会 `_restore_origin()` 把 origin 恢复成 primary(github);OOPS 用 `origin==CNB` 当信号 → 每次 boot 都误判重新 mirror。
+- **修复**:boot 改用专用 remote `oops-cnb` 指向 CNB,fetch/比对/对齐全走它,**完全不碰 origin**;新鲜度缓存只看时间戳。启动器想把 origin 拨到哪都行,互不干扰。
+
+### 🧪 测试
+- 新增 git 解析 / MinGit 资产选取 / boot 新鲜度(无 origin 耦合)等测试;全量 24 通过。
+- 实测:MinGit 从华为云下载 37MB + 解压 + 运行 git 全链路通过。
+
 ## v0.3.2 - 2026-08-11 🐛
 
 ### 🐛 体验优化

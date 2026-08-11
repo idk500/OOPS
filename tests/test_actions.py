@@ -229,8 +229,6 @@ def test_boot_fresh_cache(tmp_path):
 
     repo = tmp_path / "r"
     _make_repo(repo, ["x"])
-    cnb = "https://cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
-    _git("remote", "add", "origin", cnb, cwd=str(repo))
 
     assert is_fresh(str(repo)) is False  # 无缓存
     mark_fresh(str(repo))
@@ -238,8 +236,24 @@ def test_boot_fresh_cache(tmp_path):
     _cache_path(str(repo)).write_text(str(time.time() - 99999), encoding="utf-8")
     assert is_fresh(str(repo)) is False  # 过期
     mark_fresh(str(repo))
-    _git("remote", "set-url", "origin", "https://github.com/x/y.git", cwd=str(repo))
-    assert is_fresh(str(repo)) is False  # origin 偏离 CNB
+    assert is_fresh(str(repo)) is True  # 重新新鲜
+    # is_fresh 只看时间戳,不看 origin(与启动器解耦,启动器会把 origin 拨回 github)
+    _git("remote", "add", "origin", "https://github.com/x/y.git", cwd=str(repo))
+    assert is_fresh(str(repo)) is True
+
+
+def test_boot_ensure_cnb_remote(tmp_path):
+    from oops.actions import boot as boot_mod
+    from oops.actions.git_ops import get_remote_url, remote_exists
+
+    repo = tmp_path / "r"
+    _make_repo(repo, ["x"])
+    boot_mod.ensure_cnb_remote(str(repo))
+    assert remote_exists(str(repo), boot_mod.OOPS_CNB_REMOTE) is True
+    assert get_remote_url(str(repo), boot_mod.OOPS_CNB_REMOTE) == boot_mod.CNB_URL
+    # 幂等:再调一次,URL 不变、不报错
+    boot_mod.ensure_cnb_remote(str(repo))
+    assert get_remote_url(str(repo), boot_mod.OOPS_CNB_REMOTE) == boot_mod.CNB_URL
 
 
 def test_auto_fix_returns_status(tmp_path):
@@ -270,6 +284,40 @@ def test_boot_flow_skip_when_fresh(tmp_path, monkeypatch):
     rc = boot_mod.boot(str(repo))
     assert rc == 0
     assert "OneDragon-Launcher.exe" in called["launcher"]
+
+
+# ===== git 解析 / MinGit 提供 =====
+
+
+def test_mingit_bin_path():
+    from oops.actions import git_ops
+
+    p = git_ops.mingit_bin_path()
+    assert ".oops" in str(p)
+    assert p.name.startswith("git")
+
+
+def test_set_and_resolve_git_bin():
+    from oops.actions import git_ops
+
+    old = git_ops._resolved_bin
+    try:
+        git_ops.set_resolved_git("/some/custom/git")
+        assert git_ops._resolve_bin() == "/some/custom/git"
+    finally:
+        git_ops._resolved_bin = old
+
+
+def test_pick_mingit_asset():
+    from oops.actions.git_provider import _pick_mingit_asset
+
+    assets = [
+        "MinGit-2.43.0-32-bit.zip",
+        "MinGit-2.43.0-64-bit.zip",
+        "MinGit-2.43.0-busybox-64-bit.zip",
+        "Git-2.43.0-64-bit.exe",
+    ]
+    assert _pick_mingit_asset(assets) == "MinGit-2.43.0-64-bit.zip"
 
 
 if __name__ == "__main__":

@@ -114,6 +114,8 @@ def _run_source_pull(args: argparse.Namespace) -> int:
 
     repo_dir = install_dir()
     print(f"[*] 源码模式: git -C {repo_dir} pull")
+    if not git_ops.ensure_git_or_report():
+        return 3
     if not git_ops.is_git_repo(str(repo_dir)):
         print("[ERROR] 源码目录不是 git 仓库,无法 pull。")
         return 2

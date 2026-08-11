@@ -7,6 +7,7 @@ Git 操作底层工具
 
 import logging
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict, List, Optional
 
@@ -14,6 +15,67 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT = 60  # 普通 git 命令超时(秒)
 FETCH_TIMEOUT = 600  # fetch / pull 可能较慢,尤其首次补 blob
+
+
+# ===== git 二进制解析(系统 git 优先,其次缓存的自带 MinGit) =====
+_resolved_bin: Optional[str] = None
+
+
+def mingit_dir() -> Path:
+    """OOPS 自带的 MinGit 缓存目录(用户主目录下,跨项目共享)。"""
+    return Path.home() / ".oops" / "mingit"
+
+
+def mingit_bin_path() -> Path:
+    """缓存 MinGit 的 git 可执行路径。"""
+    if sys.platform == "win32":
+        return mingit_dir() / "cmd" / "git.exe"
+    return mingit_dir() / "bin" / "git"
+
+
+def set_resolved_git(path: str) -> None:
+    """记录已确认可用的 git 二进制路径(供 run_git 使用)。"""
+    global _resolved_bin
+    _resolved_bin = path
+
+
+def _resolve_bin() -> str:
+    """返回可用的 git 二进制路径:已记录 → 系统 git → 缓存 MinGit → 'git'(兜底)。
+
+    本函数不触发下载;下载由 git_provider.ensure_git() 在命令入口完成。
+    """
+    global _resolved_bin
+    if _resolved_bin:
+        return _resolved_bin
+    try:
+        r = subprocess.run(
+            ["git", "--version"], capture_output=True, text=True, timeout=8
+        )
+        if r.returncode == 0:
+            _resolved_bin = "git"
+            return _resolved_bin
+    except Exception:
+        pass
+    mb = mingit_bin_path()
+    if mb.exists():
+        _resolved_bin = str(mb)
+        return _resolved_bin
+    _resolved_bin = "git"  # 兜底(未 ensure_git 时可能失败)
+    return _resolved_bin
+
+
+def ensure_git_or_report() -> bool:
+    """确保 git 可用(系统 / 缓存 MinGit / 自动下载)。不可用则打印提示。
+
+    在每个需要 git 的命令入口调用。返回是否可用。
+    """
+    from oops.actions.git_provider import ensure_git
+
+    if ensure_git():
+        return True
+    print("[ERROR] 未找到 git,且 MinGit 自动下载失败。")
+    print("[*] 请手动安装 git (https://git-scm.com) 并加入 PATH 后重试。")
+    return False
 
 
 def run_git(
@@ -33,7 +95,7 @@ def run_git(
     Returns:
         subprocess.CompletedProcess
     """
-    cmd = ["git"] + args
+    cmd = [_resolve_bin()] + args
     logger.debug("run_git: %s (cwd=%s)", " ".join(cmd), cwd)
     result = subprocess.run(
         cmd,

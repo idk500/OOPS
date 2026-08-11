@@ -53,6 +53,8 @@ def version_tuple(v: str):
 
 
 def cmd_sync(args: argparse.Namespace) -> int:
+    if not git_ops.ensure_git_or_report():
+        return 3
     path = git_ops.resolve_target_path(getattr(args, "path", None))
     if not path:
         print("[ERROR] 未找到目标项目。请在项目目录中运行,或用 --path 指定。")
