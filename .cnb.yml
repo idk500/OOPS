@@ -1,0 +1,27 @@
+# .cnb.yml —— OOPS 在 CNB(cnb.cool/zzz1d/oops)上的 CI
+# 与 GitHub Actions (.github/workflows/ci.yml) 对齐:装依赖 → lint → test。
+# black/isort 钉到与仓库一致的版本,避免版本漂移导致 CI 抖动。
+# 语法参考: https://docs.cnb.cool/zh/build/
+
+main:
+  push:
+    - docker:
+        image: python:3.11-slim
+      stages:
+        - name: install-deps
+          script: |
+            set -e
+            apt-get update -qq && apt-get install -y -q git
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install -r requirements-dev.txt
+            pip install black==25.11.0 isort==5.13.2
+        - name: lint
+          script: |
+            set -e
+            black --check oops/ oops.py
+            isort --check-only oops/ oops.py
+            flake8 oops/ oops.py --select=E9,F63,F7,F82 --show-source --statistics
+        - name: test
+          script: |
+            pytest tests/ -v
