@@ -3,15 +3,15 @@
   <img src="oops.ico" alt="OOPS Logo" width="200">
 </div>
 
-*One-click Operating Pre-check System*  
-*一键运行预检系统*
+*One-dragon Rescue & Recovery Tool*
+*绝区零一条龙 · 兜底恢复工具*
 
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)  |   [![Python](https://img.shields.io/badge/python-≥3.8-blue)](https://python.org)  |  [![GitHub](https://img.shields.io/badge/GitHub-idk500/OOPS-blue?logo=github)](https://github.com/idk500/OOPS)  |  [![Gitee](https://img.shields.io/badge/Gitee-idk500/OOPS-red?logo=gitee)](https://gitee.com/idk500/OOPS)  |  [![DeepWiki](https://img.shields.io/badge/DeepWiki-idk500/OOPS-orange?logo=wikipedia)](https://deepwiki.com/idk500/OOPS)
 
-> 让游戏脚本运行更顺畅  
-> Run Your Game Scripts Smoothly  
+> 一条龙装不上 / 启不来 / 更不动?双击 OOPS,自动恢复到最新并启动;恢复不了就把问题怼到屏幕上。
+> 产品规格见 [SPEC.md](SPEC.md)。
 
-一键检测，运行前发现问题 | One-click check, find issues before running
+**定位**:这是「兜底恢复工具」,不是体检工具。当一条龙的安装/启动/更新失败时运行它——能更到最新就更(CNB 优先,Gitee/GitHub 兜底,绕过可能坏的原更新链路),更不了就用置顶弹窗把原因告诉用户(可拍屏)。
 
 ---
 

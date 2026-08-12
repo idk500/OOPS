@@ -364,32 +364,6 @@ async def display_diagnostic_results(
         print(f"💡 详细信息请查看HTML报告")
         print(f"{'='*60}")
 
-    # 基于知识库推荐解决方案
-    try:
-        from oops.knowledge import SolutionRecommender
-
-        recommender = SolutionRecommender()
-
-        # 转换结果格式
-        results_for_recommendation = []
-        for result in results:
-            results_for_recommendation.append(
-                {
-                    "check_name": result.check_name,
-                    "message": result.message,
-                    "details": result.details,
-                    "severity": result.severity.value,
-                }
-            )
-
-        recommendations = recommender.recommend_solutions(results_for_recommendation)
-
-        if recommendations and args.verbose:
-            print("\n" + recommender.format_recommendations(recommendations))
-    except Exception as e:
-        logger = logging.getLogger(__name__)
-        logger.debug(f"解决方案推荐失败: {e}")
-
     # 生成报告 - 默认同时生成 HTML 和 YAML
     if not args.no_report:
         from oops.core.report import ReportConfig, ReportGenerator
