@@ -1,42 +1,62 @@
-# .cnb.yml —— 把 GitHub release 的 Windows exe 镜像到 CNB release(国内下载快)
+# .cnb.yml —— CNB 原生构建 Windows exe 并发布到 CNB release
 #
-# 为什么这样:CNB(Linux runner)无法构建 Windows exe;exe 由 GitHub Actions 构建。
-# 这里在 tag 推送时,把同 tag 的 GitHub release exe 抓回来,用 cnbcool/attachments
-# 挂到 CNB release,让国内用户 / oops self-update 能从 CNB 高速下载。
+# 变更说明:
+#   以前(≤ v0.6.0)在 tag 推送时,从 GitHub release 抓取 exe 镜像到 CNB(依赖 GitHub CI)。
+#   现在改为 CNB 原生构建:用 Wine + Windows Python + PyInstaller 在 CNB Linux runner 上
+#   直接构建 Windows exe,打包 zip 并上传到 CNB release,不再依赖 GitHub。
 #
-# 不在 CNB 重复 lint/test(GitHub .github/workflows/ci.yml 已覆盖)。CNB 只做这件独有事。
-#
-# 说明: CNB 推送 tag 时不会自动创建 release,attachments 上传附件会因找不到 release 报 404。
-# 因此先加 git:release 内置任务显式创建/更新 release,再上传附件。
-$:  
+# 构建环境:build/win-build/Dockerfile(Wine + Windows Python 3.11 + PyInstaller)。
+#   docker.build 会缓存该镜像;Dockerfile 或 requirements.txt 变更时自动重建。
+
+$:
   tag_push:
-    - stages:
-        - name: fetch-exe-from-github
-          image: alpine:latest
+    - name: build-windows-exe-and-release
+      docker:
+        build:
+          dockerfile: build/win-build/Dockerfile
+          by:
+            - build/win-build/Dockerfile
+            - requirements.txt
+          versionBy:
+            - build/win-build/Dockerfile
+            - requirements.txt
+      stages:
+        - name: build-windows-exe
           script: |
             set -e
-            apk add --no-cache curl git
-            TAG="$(git describe --tags --exact-match HEAD 2>/dev/null)"
-            [ -n "$TAG" ] || { echo "无法解析 tag(git describe 失败)"; exit 1; }
-            echo "镜像 tag=$TAG 的 GitHub release exe"
-            ASSET="oops-windows-x64_${TAG}.zip"
-            # GitHub Actions 构建约需 1~2 分钟,带重试;GitHub 直链 + ghfast 代理兜底
-            for U in \
-              "https://github.com/idk500/OOPS/releases/download/${TAG}/${ASSET}" \
-              "https://ghfast.top/https://github.com/idk500/OOPS/releases/download/${TAG}/${ASSET}" ; do
-              echo "try: $U"
-              if curl -fL --retry 8 --retry-delay 15 --retry-connrefused -o "${ASSET}" "$U" ; then
-                break
-              fi
-            done
-            test -s "${ASSET}" || { echo "下载失败(GitHub release 可能还没构建完或不可达)"; exit 1; }
-            ls -la "${ASSET}"
-            echo "ASSET=${ASSET}" > workspace.env
+            echo "=== 构建 Windows exe (Wine + Windows Python) ==="
+            bash build/win-build/build-cnb.sh
+            echo "=== 构建产物 ==="
+            ls -la ./*.zip 2>/dev/null || true
+
         - name: create-cnb-release
           type: git:release
           options:
             tag: $CNB_BRANCH
-            description: "CNB release for $CNB_BRANCH (镜像 GitHub release exe)"
+            description: |
+              ## OOPS $CNB_BRANCH (CNB 原生构建)
+
+              ### 📦 下载
+
+              下载 `oops-windows-x64_*.zip`，解压后双击运行 `oops-windows-x64.exe`
+
+              ### 🚀 使用方法
+
+              1. 解压 zip 到项目路径下(如 `D:/ZZZ-1D`)
+              2. 双击运行 `oops-windows-x64.exe`
+              3. 自动检测所有可用项目并生成报告
+              4. 查看自动打开的 HTML 报告
+
+              **注意**: configs 文件夹包含了预配置的游戏检测规则，请保持在同一目录下
+
+              ---
+
+              ### 📚 文档
+
+              - [快速开始](https://cnb.cool/zzz1d/oops/-/blob/main/QUICKSTART.md)
+              - [用户指南](https://cnb.cool/zzz1d/oops/-/blob/main/USER_GUIDE.md)
+              - [完整更新日志](https://cnb.cool/zzz1d/oops/-/blob/main/CHANGELOG.md)
+
         - name: upload-to-cnb-release
           image: cnbcool/attachments:latest
           settings:
