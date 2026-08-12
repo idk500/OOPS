@@ -2,6 +2,17 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.7.0 - 2026-08-12 🩺
+
+### 按 SPEC 落地「诊断驱动」主流程
+- 新增 `oops/actions/diagnose.py`:秒级结构化诊断——系统(Windows≥10)、网络(CNB/Gitee/GitHub 三源可达性)、git(MinGit 自获取)、项目(launcher/是否 git 仓)、磁盘路径(中文/写权限/空间),产出 `blockers` + 可用源。
+- **boot 改诊断驱动**:先诊断,有硬阻塞(系统过低/全断网/无 git/放错位置/无写权限/路径含中文 等)→ 直接置顶弹窗讲清原因;否则用可达源里最优的(**CNB>Gitee>GitHub**)绕过原更新链路强更 + 启动。
+- 双击默认不再走旧"全文预检";未放到一条龙根目录时直接弹窗"请把 oops.exe 放到一条龙根目录"。
+- 旧全文预检降级为 `oops check`(可选)。
+
+### 测试
+- 全量 28 通过(+ diagnose 逻辑单测);实测 E:\ZZZ-1D:CNB/Gitee 可达、GitHub 不可达、best=CNB、无阻塞。
+
 ## v0.6.0 - 2026-08-12 🖥️
 
 ### 🖥️ GUI 引导窗(替代黑控制台)

@@ -659,18 +659,16 @@ async def main():
             report_error(install_dir(), f"启动一条龙时出错:\n{e}", e)
             sys.exit(1)
     else:
-        print("[*] 未检测到项目。")
+        # 未检测到一条龙项目(放错位置)→ 置顶弹窗提示,不走旧全文预检
+        from oops.actions.errors import report_error
+        from oops.actions.self_update import install_dir
 
-    # 回退预检——仅当本地有 configs/ 时;单 exe(无 configs)不预检,直接结束
-    cfg_dir = Path(args.config_dir)
-    if cfg_dir.is_dir() and any(cfg_dir.glob("*.yaml")):
-        print("[*] 进入预检模式。")
-        await interactive_project_selection(args, config_manager)
-    else:
-        print()
-        print("[*] 未找到 configs/(单 exe 模式),跳过预检。")
-        print("[*] 启动一条龙:把 oops.exe 放到含 OneDragon-Launcher.exe 的目录后双击。")
-        print("[*] 想要预检:把 configs/ 与 oops.exe 放一起,或运行 oops check。")
+        report_error(
+            install_dir(),
+            "未检测到一条龙项目。\n请把 oops.exe 放到【一条龙根目录】"
+            "(即和 OneDragon-Launcher.exe 同级)后,重新双击运行。",
+        )
+        sys.exit(1)
 
 
 if __name__ == "__main__":

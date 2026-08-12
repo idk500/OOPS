@@ -63,16 +63,16 @@ def mark_fresh(path: str) -> None:
         print(f"[!] 无法写入新鲜度缓存({CACHE_FILE}): {e}")
 
 
-def ensure_cnb_remote(path: str) -> None:
-    """确保 OOPS 专用 remote `oops-cnb` 指向 CNB;不碰 origin。"""
+def ensure_cnb_remote(path: str, url: str = CNB_URL) -> None:
+    """确保 OOPS 专用 remote `oops-cnb` 指向给定源(默认 CNB);不碰 origin。"""
     remotes = git_ops.list_remotes(path)
     cur = remotes.get(OOPS_CNB_REMOTE, {}).get("fetch")
-    if cur == CNB_URL:
+    if cur == url:
         return
     if OOPS_CNB_REMOTE in remotes:
-        git_ops.set_remote_url(path, OOPS_CNB_REMOTE, CNB_URL)
+        git_ops.set_remote_url(path, OOPS_CNB_REMOTE, url)
     else:
-        git_ops.set_remote_url(path, OOPS_CNB_REMOTE, CNB_URL, add=True)
+        git_ops.set_remote_url(path, OOPS_CNB_REMOTE, url, add=True)
 
 
 def cnb_behind(path: str, reporter: Reporter = print) -> Tuple[bool, Optional[str]]:
@@ -143,37 +143,35 @@ def launch(launcher: Path) -> bool:
 
 
 def boot(path: str, reporter: Reporter = print) -> int:
-    """引导:必要时经 CNB 自检/更新,然后启动 OneDragon-Launcher.exe。
+    """诊断驱动的兜底恢复:先快速诊断,硬阻塞→raise(上层弹窗);
 
+    否则用可达源里最优的一个(CNB>Gitee>GitHub)绕过原更新链路强更,然后启动一条龙。
     完全无人值守;失败抛 RuntimeError(顶层捕获 → 置顶错误窗 + 写日志)。
     """
-    if not git_ops.ensure_git_or_report():
+    from oops.actions.diagnose import run_diagnosis
+
+    reporter("快速诊断环境与网络…")
+    diag = run_diagnosis(path, reporter)
+    if not diag.ok:
         raise RuntimeError(
-            "未找到可用的 git,且自动下载 MinGit 失败。\n请检查网络连接后重试;"
-            "或手动安装 git (https://git-scm.com) 并加入 PATH。"
-        )
-    if not git_ops.is_git_repo(path):
-        raise RuntimeError(
-            f"{path} 不是 git 仓库。\n请确认 oops.exe 放在【一条龙项目根目录】"
-            "(即和 OneDragon-Launcher.exe 同级)。"
+            "无法继续,存在以下问题:\n\n" + "\n".join(f"• {b}" for b in diag.blockers)
         )
 
-    launcher = find_launcher(path)
-    if not launcher:
-        raise RuntimeError(
-            f"未在 {path} 找到 OneDragon-Launcher.exe。\n"
-            "请确认 oops.exe 与 OneDragon-Launcher.exe 在同一目录。"
-        )
+    launcher = diag.launcher  # 诊断已确认存在
+    source = diag.best_source()
+    if source is None:
+        raise RuntimeError("没有可用的代码源(网络诊断异常),请检查网络后重试。")
+    reporter(f"可用源:{source.upper()}。")
 
-    # 新鲜度缓存:窗口内直接启动
+    # 新鲜度缓存:窗口内、且无新阻塞 → 直接启动
     if is_fresh(path):
         reporter("近期已确认最新,直接启动一条龙。")
         if not launch(launcher):
             raise RuntimeError(f"启动 {launcher.name} 失败。")
         return 0
 
-    ensure_cnb_remote(path)
-    reporter("检查一条龙更新状态(源: CNB)…")
+    ensure_cnb_remote(path, MIRROR_URLS[source])
+    reporter(f"从 {source.upper()} 检查一条龙更新状态…")
     behind, target = cnb_behind(path, reporter)
     if not behind:
         reporter("一条龙已是最新。")

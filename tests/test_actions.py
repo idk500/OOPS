@@ -266,13 +266,24 @@ def test_auto_fix_returns_status(tmp_path):
 
 def test_boot_flow_skip_when_fresh(tmp_path, monkeypatch):
     from oops.actions import boot as boot_mod
+    from oops.actions import diagnose as diag_mod
+    from pathlib import Path
 
     repo = tmp_path / "r"
     _make_repo(repo, ["x"])
-    cnb = "https://cnb.cool/OneDragon-Anything/ZenlessZoneZero-OneDragon.git"
-    _git("remote", "add", "origin", cnb, cwd=str(repo))
     (repo / "OneDragon-Launcher.exe").write_bytes(b"")
-    boot_mod.mark_fresh(str(repo))  # 命中新鲜度缓存 → 跳过自检
+    boot_mod.mark_fresh(str(repo))  # 命中新鲜度缓存 → 直接启动
+
+    # mock 诊断:假装环境/网络/git 都 OK(单测不依赖真实网络)
+    launcher_path = Path(repo / "OneDragon-Launcher.exe")
+    fake_diag = diag_mod.Diagnosis(
+        blockers=[],
+        sources_reachable=["cnb"],
+        git_ok=True,
+        launcher=launcher_path,
+        is_git_repo=True,
+    )
+    monkeypatch.setattr(diag_mod, "run_diagnosis", lambda p, reporter=print: fake_diag)
 
     called = {}
 
@@ -284,6 +295,25 @@ def test_boot_flow_skip_when_fresh(tmp_path, monkeypatch):
     rc = boot_mod.boot(str(repo))
     assert rc == 0
     assert "OneDragon-Launcher.exe" in called["launcher"]
+
+
+# ===== diagnose =====
+
+
+def test_diagnosis_best_source_priority():
+    from oops.actions.diagnose import Diagnosis
+
+    assert Diagnosis(sources_reachable=["cnb", "gitee"]).best_source() == "cnb"
+    assert Diagnosis(sources_reachable=["gitee", "github"]).best_source() == "gitee"
+    assert Diagnosis(sources_reachable=["github"]).best_source() == "github"
+    assert Diagnosis(sources_reachable=[]).best_source() is None
+
+
+def test_diagnosis_ok_property():
+    from oops.actions.diagnose import Diagnosis
+
+    assert Diagnosis(blockers=[]).ok is True
+    assert Diagnosis(blockers=["网络不通"]).ok is False
 
 
 # ===== git 解析 / MinGit 提供 =====
