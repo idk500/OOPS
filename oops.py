@@ -640,10 +640,18 @@ async def main():
     path = git_ops.resolve_target_path(getattr(args, "path", None))
     if path:
         from oops.actions.boot import boot
+        from oops.actions.errors import report_error
+        from oops.actions.self_update import install_dir
 
-        if boot(path) == 0:
-            sys.exit(0)  # launcher 已启动,OOPS 退出(跳过"按 Enter 退出"暂停)
-        print("[*] boot 未启动 launcher。")
+        try:
+            boot(path)
+            sys.exit(0)  # launcher 已启动,OOPS 退出
+        except SystemExit:
+            raise
+        except Exception as e:
+            # 出错:置顶弹窗 + 写 oops-error.txt(方便用户手机拍照反馈)
+            report_error(install_dir(), f"启动一条龙时出错:\n{e}", e)
+            sys.exit(1)
     else:
         print("[*] 未检测到项目。")
 
@@ -671,11 +679,7 @@ if __name__ == "__main__":
         # 在 Windows 上使用 WindowsSelectorEventLoopPolicy 避免 ProactorEventLoop 的资源清理警告
         # 参考: https://github.com/aio-libs/aiohttp/issues/4324
         if sys.platform == "win32":
-            # 设置事件循环策略以避免 ProactorEventLoop 在 aiohttp 场景下的资源清理警告
             asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-            # 仅抑制已知的 aiohttp 相关资源警告（Windows + ProactorEventLoop 的已知问题）
-            # TODO: 在 aiohttp 修复此问题后移除此变通方案
             import warnings
 
             warnings.filterwarnings(
@@ -686,20 +690,15 @@ if __name__ == "__main__":
             )
 
         asyncio.run(main())
-        # 运行完成后暂停，让用户有机会复制日志
-        print("\n" + "=" * 60)
-        print("💡 提示：可以向上滚动查看完整日志")
-        print("=" * 60)
-        input("\n按 Enter 键退出...")
+    except SystemExit:
+        raise  # sys.exit(0)/sys.exit(1) 正常通过
     except KeyboardInterrupt:
-        print("\n[*] 用户中断程序")
+        print("\n[*] 用户中断")
         sys.exit(1)
     except Exception as e:
-        print(f"[ERROR] 程序执行出错: {e}")
-        # 检查是否有详细模式参数
-        if len(sys.argv) > 1 and ("-v" in sys.argv or "--verbose" in sys.argv):
-            import traceback
+        # 任何未捕获异常:置顶弹窗 + 写 oops-error.txt(方便手机拍照反馈)
+        from oops.actions.errors import report_error
+        from oops.actions.self_update import install_dir
 
-            traceback.print_exc()
-        input("\n按 Enter 键退出...")
+        report_error(install_dir(), f"OOPS 运行时出错:\n{e}", e)
         sys.exit(1)

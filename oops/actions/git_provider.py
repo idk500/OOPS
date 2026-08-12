@@ -27,6 +27,10 @@ from oops.actions import git_ops
 NPMMIRROR_BASE = "https://registry.npmmirror.com/-/binary/git-for-windows"
 HUAWEICLOUD_BASE = "https://mirrors.huaweicloud.com/git-for-windows"
 
+# 钉版回退:npmmirror 版本列表拿不到时,直接用已确认可下的版本+资产名。
+# 这样只要华为云/淘宝任一镜像通就能下到 git(不依赖列表接口)。
+PINNED_FALLBACK = ("v2.43.0.windows.1", "MinGit-2.43.0-64-bit.zip")
+
 
 def system_git_available() -> bool:
     try:
@@ -84,25 +88,22 @@ def _download_candidates(version: str, asset: str) -> List[str]:
 
 def download_mingit(progress=print) -> Optional[str]:
     """下载并解压最新稳定版 MinGit 到缓存。成功返回 git 二进制路径,失败 None。"""
+    version = None
+    asset = None
+    # 优先:npmmirror 列表自动取最新稳定版
     try:
         versions = _list_versions()
+        if versions:
+            version = versions[-1]
+            asset = _pick_mingit_asset(_list_assets(version))
     except Exception as e:
-        progress(f"[!] 获取 MinGit 版本列表失败: {e}")
-        return None
-    if not versions:
-        progress("[!] 未找到 MinGit 版本。")
-        return None
-    version = versions[-1]  # npmmirror 列表末尾通常是最新稳定版
-    try:
-        assets = _list_assets(version)
-    except Exception as e:
-        progress(f"[!] 获取 {version} 资产列表失败: {e}")
-        return None
-    asset = _pick_mingit_asset(assets)
-    if not asset:
-        progress(f"[!] {version} 下未找到 MinGit-*-64-bit.zip")
-        return None
-    progress(f"[*] 选用 MinGit: {version}/{asset}")
+        progress(f"[!] 自动获取 MinGit 版本失败({e}),改用固定版本。")
+    # 回退:钉版(不依赖列表接口)
+    if not version or not asset:
+        version, asset = PINNED_FALLBACK
+        progress(f"[*] 使用固定版本 {version}/{asset}")
+    else:
+        progress(f"[*] 选用 MinGit: {version}/{asset}")
 
     tmp_zip = None
     for url in _download_candidates(version, asset):

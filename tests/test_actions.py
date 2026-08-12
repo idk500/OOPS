@@ -320,5 +320,32 @@ def test_pick_mingit_asset():
     assert _pick_mingit_asset(assets) == "MinGit-2.43.0-64-bit.zip"
 
 
+# ===== 错误处理 =====
+
+
+def test_write_error_log(tmp_path):
+    from oops.actions.errors import error_log_path, write_error_log
+
+    try:
+        1 / 0
+    except ZeroDivisionError as e:
+        p = write_error_log(tmp_path, "测试错误", e)
+    assert p == error_log_path(tmp_path)
+    content = p.read_text(encoding="utf-8")
+    assert "测试错误" in content
+    assert "ZeroDivisionError" in content
+
+
+def test_report_error_writes_log(tmp_path, monkeypatch):
+    from oops.actions import errors
+
+    monkeypatch.setattr(errors, "show_error_dialog", lambda msg, lp: None)
+    try:
+        raise RuntimeError("boom")
+    except RuntimeError as e:
+        errors.report_error(tmp_path, "出错了", e)
+    assert errors.error_log_path(tmp_path).exists()
+
+
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])

@@ -2,6 +2,27 @@
 
 **OOPS - One-click Operating Pre-check System (一键运行预检系统)**
 
+## v0.5.0 - 2026-08-12 🛡️
+
+### 🎯 100% 自举 + 无人值守 + 出错可见
+
+**1. 完全无人值守(一次双击,全自动)**
+- boot 去掉倒数与所有交互;检测到更新自动应用(已备份可回退)→ 启动一条龙。
+- 移除所有"按 Enter 退出"暂停;成功直接启动、失败弹窗。
+
+**2. 出错可见(方便手机拍照反馈)**
+- 任何未捕获异常 / boot 失败 → 写 `oops-error.txt`(与 exe 同目录)+ 弹**置顶 tkinter 错误对话框**,显示原因 + 日志路径,用户点确定才关闭。
+- exe 打包带 tkinter(`--collect-all tkinter`,体积约 19MB)。
+
+**3. 自举加固(用户无 git/python/uv 也能跑)**
+- exe 自带 Python(PyInstaller);无系统 git 时自动下 MinGit。
+- MinGit 下载:npmmirror 版本列表拿不到时**回退钉版**(v2.43.0.windows.1),只要华为云/淘宝任一镜像通就能下到 git。
+
+### 🧱 其他
+- boot 失败改为抛 RuntimeError,带可操作提示(找不到 launcher / 非 git 仓 / 启动失败 等)。
+- 新增 `oops/actions/errors.py`;CI 构建命令加 `--collect-all tkinter`。
+- 测试 26 通过。
+
 ## v0.4.0 - 2026-08-12 🚀
 
 ### 🎯 单 exe 真正自包含:无需系统 git

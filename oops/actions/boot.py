@@ -101,11 +101,15 @@ def _align(path: str, target: str) -> None:
     from oops.actions.sync import backup_tag
 
     bk = backup_tag()
-    git_ops.run_git(["branch", bk], cwd=path, timeout=15)
+    git_ops.run_git(["branch", bk], cwd=path, timeout=15)  # 备份分支,失败不致命
     if git_ops.is_dirty(path):
         git_ops.run_git(["stash", "push", "-u", "-m", bk], cwd=path, timeout=60)
-    git_ops.run_git(["reset", "--hard", target], cwd=path, timeout=300)
-    git_ops.run_git(["clean", "-fd"], cwd=path, timeout=60)
+    rr = git_ops.run_git(["reset", "--hard", target], cwd=path, timeout=300)
+    if rr.returncode != 0:
+        raise RuntimeError(
+            f"对齐失败: git reset --hard {target} 未成功。\n{rr.stderr.strip() or rr.stdout.strip()}"
+        )
+    git_ops.run_git(["clean", "-fd"], cwd=path, timeout=60)  # clean 失败不致命
     print(f"[备份] 备份分支: {bk}(回滚: git reset --hard {bk})")
 
 
@@ -134,26 +138,33 @@ def launch(launcher: Path) -> bool:
 def boot(path: str) -> int:
     """引导:必要时经 CNB 自检/更新,然后启动 OneDragon-Launcher.exe。
 
-    返回: 0=已启动 launcher(OOPS 应退出); 1=未找到/未能启动 launcher; 2=非 git。
+    完全无人值守:无倒数、无交互;失败时抛 RuntimeError(由顶层捕获并置顶弹窗)。
+    成功启动 launcher 返回 0。
     """
-    from oops.actions.self_update import _countdown_apply
-
     if not git_ops.ensure_git_or_report():
-        return 3
+        raise RuntimeError(
+            "未找到可用的 git,且自动下载 MinGit 失败。\n请检查网络连接后重试;"
+            "或手动安装 git (https://git-scm.com) 并加入 PATH。"
+        )
     if not git_ops.is_git_repo(path):
-        print(f"[ERROR] {path} 不是 git 仓库,无法 boot。")
-        return 2
+        raise RuntimeError(
+            f"{path} 不是 git 仓库。\n请确认 oops.exe 放在【一条龙项目根目录】"
+            "(即和 OneDragon-Launcher.exe 同级)。"
+        )
 
     launcher = find_launcher(path)
     if not launcher:
-        print(f"[!] 未在 {path} 找到 OneDragon-Launcher.exe。")
-        return 1
+        raise RuntimeError(
+            f"未在 {path} 找到 OneDragon-Launcher.exe。\n"
+            "请确认 oops.exe 与 OneDragon-Launcher.exe 在同一目录。"
+        )
 
     # 新鲜度缓存:窗口内直接启动(不联网、不看 origin)
     if is_fresh(path):
-        print(f"[*] 近期已确认最新({CACHE_FILE}),跳过自检。")
+        print(f"[*] 近期已确认最新({CACHE_FILE}),跳过自检,直接启动。")
         print()
-        launch(launcher)
+        if not launch(launcher):
+            raise RuntimeError(f"启动 {launcher.name} 失败。")
         return 0
 
     ensure_cnb_remote(path)
@@ -163,20 +174,15 @@ def boot(path: str) -> int:
         print("[*] 一条龙已是最新。")
         mark_fresh(path)
         print()
-        launch(launcher)
+        if not launch(launcher):
+            raise RuntimeError(f"启动 {launcher.name} 失败。")
         return 0
 
-    print("[*] 检测到本地落后于最新 HEAD。")
-    if not _countdown_apply(5):
-        print("[*] 已跳过更新,直接启动。")
-        print()
-        launch(launcher)
-        return 0
-
-    print(f"[*] 对齐到 {target}(自动备份后硬重置)...")
+    print("[*] 检测到有更新,正在自动应用(已备份,可回退)...")
     _align(path, target)
-    print("[完成] 已对齐到最新。")
+    print("[完成] 已更新到最新。")
     mark_fresh(path)
     print()
-    launch(launcher)
+    if not launch(launcher):
+        raise RuntimeError(f"启动 {launcher.name} 失败。")
     return 0
