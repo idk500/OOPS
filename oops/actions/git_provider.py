@@ -35,7 +35,11 @@ PINNED_FALLBACK = ("v2.43.0.windows.1", "MinGit-2.43.0-64-bit.zip")
 def system_git_available() -> bool:
     try:
         r = subprocess.run(
-            ["git", "--version"], capture_output=True, text=True, timeout=8
+            ["git", "--version"],
+            capture_output=True,
+            timeout=8,
+            encoding="utf-8",
+            errors="replace",
         )
         return r.returncode == 0
     except Exception:
@@ -174,7 +178,11 @@ def ensure_git(progress=print) -> Optional[str]:
     if cached.exists():
         try:
             r = subprocess.run(
-                [str(cached), "--version"], capture_output=True, text=True, timeout=8
+                [str(cached), "--version"],
+                capture_output=True,
+                timeout=8,
+                encoding="utf-8",
+                errors="replace",
             )
             if r.returncode == 0:
                 git_ops.set_resolved_git(str(cached))

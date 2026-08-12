@@ -3,20 +3,20 @@ oops boot —— 作为 OneDragon-Launcher.exe 的引导(默认双击运行)
 
 设计要点(与启动器解耦):
   - OOPS 用**专用 remote `oops-cnb`** 指向 CNB 镜像来 fetch/比对/对齐,
-    **完全不碰 `origin`**。OneDragon 启动器同步后会用 `_restore_origin()`
+    **完全不碰 `origin`**。OneDragon 启动器同步后会 `_restore_origin()`
     把 origin 恢复成 primary(github)——那是它的事,OOPS 不参与争夺。
   - 新鲜度缓存只看时间戳(窗口内直接启动,不联网);不看 origin。
+  - 所有输出走 `reporter`(默认 print);GUI 模式下传一个置顶窗口的方法,
+    这样双击时进度/倒数/错误都显示在 GUI 窗口里,不依赖黑控制台。
+  - 倒数仅作可见提示,无人值守(到点自动继续,不需要用户操作)。
 
-流程:
-  1. 缓存命中(窗口内) → 跳过检查,直接启动 launcher
-  2. 否则 fetch `oops-cnb` 比对:落后 → 倒数 5 秒 → 对齐(备份 + reset)
-  3. 启动 OneDragon-Launcher.exe(detached),OOPS 随即退出
+失败时抛 RuntimeError(由顶层捕获 → 置顶错误窗 + 写 oops-error.txt)。
 """
 
 import subprocess
 import time
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 from oops.actions import git_ops
 from oops.actions.mirror import MIRROR_URLS
@@ -27,6 +27,8 @@ OOPS_CNB_REMOTE = "oops-cnb"  # OOPS 专用 remote,与启动器的 origin 互不
 CACHE_FILE = ".oops_boot_checked"
 FRESH_WINDOW = 6 * 3600  # 默认 6 小时内认为已最新,跳过联网检查
 LAUNCHER_NAMES = ["OneDragon-Launcher.exe", "OneDragon-LauncherE.exe"]
+
+Reporter = Callable[[str], None]
 
 
 def find_launcher(path: str) -> Optional[Path]:
@@ -73,7 +75,7 @@ def ensure_cnb_remote(path: str) -> None:
         git_ops.set_remote_url(path, OOPS_CNB_REMOTE, CNB_URL, add=True)
 
 
-def cnb_behind(path: str) -> Tuple[bool, Optional[str]]:
+def cnb_behind(path: str, reporter: Reporter = print) -> Tuple[bool, Optional[str]]:
     """fetch oops-cnb 并比对。返回 (是否落后, 对齐目标如 'oops-cnb/main')。"""
     fr = git_ops.run_git(
         ["fetch", OOPS_CNB_REMOTE, "--prune", "--tags"],
@@ -81,23 +83,22 @@ def cnb_behind(path: str) -> Tuple[bool, Optional[str]]:
         timeout=git_ops.FETCH_TIMEOUT,
     )
     if fr.returncode != 0:
-        print(f"[!] fetch {OOPS_CNB_REMOTE} 失败,跳过本次更新检查。")
-        print(f"    {fr.stderr.strip() or fr.stdout.strip()}")
+        reporter(f"从 CNB 拉取失败,跳过本次更新检查。")
         return False, None
     branch = git_ops.current_branch(path) or "main"
     target = f"{OOPS_CNB_REMOTE}/{branch}"
     if not git_ops.verify_ref(path, target):
         target = f"{OOPS_CNB_REMOTE}/HEAD"
         if not git_ops.verify_ref(path, target):
-            print(f"[!] 无法解析 {OOPS_CNB_REMOTE} 的 HEAD,跳过更新检查。")
+            reporter(f"无法解析 {OOPS_CNB_REMOTE} 的 HEAD,跳过更新检查。")
             return False, None
     local = git_ops.run_git(["rev-parse", "HEAD"], cwd=path, timeout=15).stdout.strip()
     remote = git_ops.run_git(["rev-parse", target], cwd=path, timeout=15).stdout.strip()
     return local != remote, target
 
 
-def _align(path: str, target: str) -> None:
-    """备份后对齐到 target(不改动分支的 upstream 跟踪,避免干扰启动器的 origin 跟踪)。"""
+def _align(path: str, target: str, reporter: Reporter = print) -> None:
+    """备份后对齐到 target(不改动分支的 upstream 跟踪,避免干扰启动器的 origin)。"""
     from oops.actions.sync import backup_tag
 
     bk = backup_tag()
@@ -110,12 +111,19 @@ def _align(path: str, target: str) -> None:
             f"对齐失败: git reset --hard {target} 未成功。\n{rr.stderr.strip() or rr.stdout.strip()}"
         )
     git_ops.run_git(["clean", "-fd"], cwd=path, timeout=60)  # clean 失败不致命
-    print(f"[备份] 备份分支: {bk}(回滚: git reset --hard {bk})")
+    reporter(f"已备份(分支 {bk};回滚: git reset --hard {bk})")
+
+
+def _countdown(seconds: int, reporter: Reporter = print) -> None:
+    """可见倒数(无人值守:到点自动继续,不需要用户操作)。"""
+    for i in range(seconds, 0, -1):
+        reporter(f"{i} 秒后开始更新…")
+        time.sleep(1)
+    reporter("开始更新。")
 
 
 def launch(launcher: Path) -> bool:
     """detached 启动 launcher,OOPS 可独立退出。"""
-    print(f"[*] 启动 {launcher.name} ...")
     flags = 0
     if hasattr(subprocess, "DETACHED_PROCESS"):
         flags |= subprocess.DETACHED_PROCESS
@@ -128,18 +136,16 @@ def launch(launcher: Path) -> bool:
             close_fds=True,
             creationflags=flags,
         )
-        print(f"[+] 已启动 {launcher.name}")
         return True
     except Exception as e:
         print(f"[ERROR] 启动 {launcher.name} 失败: {e}")
         return False
 
 
-def boot(path: str) -> int:
+def boot(path: str, reporter: Reporter = print) -> int:
     """引导:必要时经 CNB 自检/更新,然后启动 OneDragon-Launcher.exe。
 
-    完全无人值守:无倒数、无交互;失败时抛 RuntimeError(由顶层捕获并置顶弹窗)。
-    成功启动 launcher 返回 0。
+    完全无人值守;失败抛 RuntimeError(顶层捕获 → 置顶错误窗 + 写日志)。
     """
     if not git_ops.ensure_git_or_report():
         raise RuntimeError(
@@ -159,30 +165,29 @@ def boot(path: str) -> int:
             "请确认 oops.exe 与 OneDragon-Launcher.exe 在同一目录。"
         )
 
-    # 新鲜度缓存:窗口内直接启动(不联网、不看 origin)
+    # 新鲜度缓存:窗口内直接启动
     if is_fresh(path):
-        print(f"[*] 近期已确认最新({CACHE_FILE}),跳过自检,直接启动。")
-        print()
+        reporter("近期已确认最新,直接启动一条龙。")
         if not launch(launcher):
             raise RuntimeError(f"启动 {launcher.name} 失败。")
         return 0
 
     ensure_cnb_remote(path)
-    print(f"[*] 检查一条龙更新状态(源: CNB,专用 remote {OOPS_CNB_REMOTE})...")
-    behind, target = cnb_behind(path)
+    reporter("检查一条龙更新状态(源: CNB)…")
+    behind, target = cnb_behind(path, reporter)
     if not behind:
-        print("[*] 一条龙已是最新。")
+        reporter("一条龙已是最新。")
         mark_fresh(path)
-        print()
         if not launch(launcher):
             raise RuntimeError(f"启动 {launcher.name} 失败。")
         return 0
 
-    print("[*] 检测到有更新,正在自动应用(已备份,可回退)...")
-    _align(path, target)
-    print("[完成] 已更新到最新。")
+    reporter("检测到一条龙有更新。")
+    _countdown(5, reporter)  # 可见倒数,无人值守自动继续
+    reporter("正在应用更新(已备份,可回退)…")
+    _align(path, target, reporter)
+    reporter("已更新到最新。")
     mark_fresh(path)
-    print()
     if not launch(launcher):
         raise RuntimeError(f"启动 {launcher.name} 失败。")
     return 0

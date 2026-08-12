@@ -639,9 +639,16 @@ async def main():
 
     path = git_ops.resolve_target_path(getattr(args, "path", None))
     if path:
+        from oops.actions.self_update import install_dir, is_frozen
+
+        if is_frozen():
+            # 打包 exe:用 GUI 引导窗(置顶,进度/倒数/错误都在窗口里,不依赖黑控制台)
+            from oops.actions.boot_gui import run_boot_window
+
+            sys.exit(run_boot_window(path, install_dir()))
+        # 源码运行:控制台 boot
         from oops.actions.boot import boot
         from oops.actions.errors import report_error
-        from oops.actions.self_update import install_dir
 
         try:
             boot(path)
@@ -649,7 +656,6 @@ async def main():
         except SystemExit:
             raise
         except Exception as e:
-            # 出错:置顶弹窗 + 写 oops-error.txt(方便用户手机拍照反馈)
             report_error(install_dir(), f"启动一条龙时出错:\n{e}", e)
             sys.exit(1)
     else:
@@ -674,6 +680,15 @@ if __name__ == "__main__":
         sys.stderr.reconfigure(encoding="utf-8", errors="replace")
     except Exception:
         pass
+
+    # 双击(打包 exe + 无参数)→ boot 模式:尽早隐藏控制台,避免黑框闪现
+    if getattr(sys, "frozen", False) and len(sys.argv) == 1:
+        try:
+            from oops.actions.boot_gui import hide_console
+
+            hide_console()
+        except Exception:
+            pass
 
     try:
         # 在 Windows 上使用 WindowsSelectorEventLoopPolicy 避免 ProactorEventLoop 的资源清理警告

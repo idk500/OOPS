@@ -49,7 +49,11 @@ def _resolve_bin() -> str:
         return _resolved_bin
     try:
         r = subprocess.run(
-            ["git", "--version"], capture_output=True, text=True, timeout=8
+            ["git", "--version"],
+            capture_output=True,
+            timeout=8,
+            encoding="utf-8",
+            errors="replace",
         )
         if r.returncode == 0:
             _resolved_bin = "git"
@@ -101,8 +105,9 @@ def run_git(
         cmd,
         cwd=cwd,
         capture_output=True,
-        text=True,
         timeout=timeout,
+        encoding="utf-8",
+        errors="replace",
     )
     if check and result.returncode != 0:
         raise subprocess.CalledProcessError(
