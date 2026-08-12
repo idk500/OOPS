@@ -1,15 +1,10 @@
-# .cnb.yml —— 把 GitHub release 的 Windows exe 镜像到 CNB release(国内下载快)
+# .cnb.yml —— 镜像 GitHub release 的 Windows exe 到 CNB release(国内下载快)
 #
-# 为什么这样:CNB(Linux runner)无法构建 Windows exe;exe 由 GitHub Actions 构建。
-# 这里在 tag 推送时,把同 tag 的 GitHub release exe 抓回来,用 cnbcool/attachments
-# 挂到 CNB release,让国内用户 / oops self-update 能从 CNB 高速下载。
-#
-# 不在 CNB 重复 lint/test(GitHub .github/workflows/ci.yml 已覆盖)。CNB 只做这件独有事。
-#
-# ⚠️ 需在 CNB 首次运行后按平台实际行为微调(我无法从这里测 CNB 流水线):
-#   - tag 的环境变量名 / release 是否随 tag 自动创建。
-#   - 若报 "release 不存在",需在前面加 git:release 内置步骤建 release。
-$:  
+# CNB(Linux runner)无法构建 Windows exe;exe 由 GitHub Actions 构建。
+# tag 推送时:从 GitHub release 抓同 tag 的 exe → 用 git:release 建 CNB release
+# → 用 cnbcool/attachments 把 exe 挂上去。CNB 不重复 lint/test(GitHub ci.yml 已覆盖)。
+#:
+$:
   tag_push:
     - stages:
         - name: fetch-exe-from-github
@@ -21,7 +16,7 @@ $:
             [ -n "$TAG" ] || { echo "无法解析 tag(git describe 失败)"; exit 1; }
             echo "镜像 tag=$TAG 的 GitHub release exe"
             ASSET="oops-windows-x64_${TAG}.zip"
-            # GitHub Actions 构建约需 1~2 分钟,带重试;GitHub 直链 + ghfast 代理兜底
+            # GitHub 直链 + ghfast 代理兜底(带重试,GitHub Actions 构建约需 1~2 分钟)
             for U in \
               "https://github.com/idk500/OOPS/releases/download/${TAG}/${ASSET}" \
               "https://ghfast.top/https://github.com/idk500/OOPS/releases/download/${TAG}/${ASSET}" ; do
@@ -32,7 +27,10 @@ $:
             done
             test -s "${ASSET}" || { echo "下载失败(GitHub release 可能还没构建完或不可达)"; exit 1; }
             ls -la "${ASSET}"
-            echo "ASSET=${ASSET}" > workspace.env
+        - name: create-cnb-release
+          type: git:release
+          options:
+            description: "Windows exe 由 GitHub Actions 构建,本仓为国内下载镜像。完整说明: https://github.com/idk500/OOPS/releases"
         - name: upload-to-cnb-release
           image: cnbcool/attachments:latest
           settings:
