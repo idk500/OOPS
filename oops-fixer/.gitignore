@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# 构建产物
+deploy/build/
+deploy/dist/
+dist/
+
+# 本地环境与缓存
+.venv/
+.uv_cache/
+.ruff_cache/
+
+# 运行残留
+*.log
+.oops_download_*.tmp
+.oops_reset_*.tmp

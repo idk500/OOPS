@@ -29,6 +29,24 @@ $:
             echo "=== 构建产物 ==="
             ls -la ./*.zip 2>/dev/null || true
 
+        - name: fetch-one-dragon-oops-exe
+          image: alpine:latest
+          script: |
+            set -e
+            apk add --no-cache curl
+            TAG="$CNB_BRANCH"
+            URL="https://github.com/idk500/OOPS/releases/download/${TAG}/OneDragon-Oops.exe"
+            echo "从 GitHub release ${TAG} 抓取 OneDragon-Oops.exe"
+            ok=0
+            for i in 1 2 3 4 5 6 7 8; do
+              if curl -fL --retry 3 --retry-delay 10 -o OneDragon-Oops.exe "$URL"; then ok=1; break; fi
+              echo "第 ${i} 次失败,20 秒后重试"; sleep 20
+            done
+            if [ "$ok" != "1" ] || ! test -s OneDragon-Oops.exe; then
+              echo "下载 OneDragon-Oops.exe 失败(GitHub release ${TAG})"; exit 1
+            fi
+            ls -la OneDragon-Oops.exe
+
         - name: create-cnb-release
           type: git:release
           options:
@@ -63,3 +81,4 @@ $:
             tag: $CNB_BRANCH
             attachments:
               - "./oops-windows-x64_*.zip"
+              - "./OneDragon-Oops.exe"
